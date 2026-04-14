@@ -2735,12 +2735,18 @@ button.btn-danger {
   margin-left: 9px;
 }
 
-.live-tab-club-children .live-tab-club-checkbox {
+.live-tab-club-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-tab-club-children .live-tab-club-row {
   position: relative;
   padding-left: 20px;
 }
 
-.live-tab-club-children .live-tab-club-checkbox::before {
+.live-tab-club-children .live-tab-club-row::before {
   content: "";
   position: absolute;
   left: 0;
@@ -2750,11 +2756,11 @@ button.btn-danger {
   background: var(--color-border-light);
 }
 
-.live-tab-club-children .live-tab-club-checkbox:last-child::before {
+.live-tab-club-children .live-tab-club-row:last-child::before {
   bottom: 50%;
 }
 
-.live-tab-club-children .live-tab-club-checkbox::after {
+.live-tab-club-children .live-tab-club-row::after {
   content: "";
   position: absolute;
   left: 0;
