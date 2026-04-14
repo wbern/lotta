@@ -1,0 +1,313 @@
+// @vitest-environment jsdom
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+const { mockDeleteGames, mockMutate, mockMutationState } = vi.hoisted(() => ({
+  mockDeleteGames: vi.fn(),
+  mockMutate: vi.fn(),
+  mockMutationState: {
+    error: null as unknown,
+    variables: undefined as unknown,
+    reset: vi.fn(),
+  },
+}))
+
+// Mock all the hooks used by PairingsTab
+vi.mock('../../hooks/useRounds', () => ({
+  useRound: () => ({
+    data: {
+      games: [
+        {
+          boardNr: 1,
+          whitePlayer: { name: 'White A', rating: 1500 },
+          blackPlayer: { name: 'Black A', rating: 1400 },
+          resultDisplay: '1-0',
+          whiteScore: 1,
+          blackScore: 0,
+        },
+        {
+          boardNr: 2,
+          whitePlayer: { name: 'White B', rating: 1600 },
+          blackPlayer: { name: 'Black B', rating: 1300 },
+          resultDisplay: '',
+          whiteScore: 0,
+          blackScore: 0,
+        },
+        {
+          boardNr: 3,
+          whitePlayer: { name: 'White C', rating: 1700 },
+          blackPlayer: { name: 'Black C', rating: 1200 },
+          resultDisplay: '',
+          whiteScore: 0,
+          blackScore: 0,
+        },
+      ],
+    },
+  }),
+}))
+
+vi.mock('../../hooks/useStandings', () => ({
+  useSetResult: () => ({ mutate: mockMutate, ...mockMutationState }),
+}))
+
+vi.mock('../../api/results', () => ({
+  deleteGame: vi.fn(),
+  deleteGames: mockDeleteGames,
+}))
+
+import { PairingsTab } from './PairingsTab'
+
+function renderTab(props?: {
+  pointsPerGame?: number
+  maxPointsImmediately?: boolean
+  chess4?: boolean
+}) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={qc}>
+      <PairingsTab
+        tournamentId={1}
+        round={1}
+        rounds={[{ roundNr: 1, hasAllResults: false, gameCount: 0, games: [] }]}
+        {...props}
+      />
+    </QueryClientProvider>,
+  )
+}
+
+describe('PairingsTab result cell', () => {
+  afterEach(() => cleanup())
+
+  it('renders a dropdown indicator on the result cell', () => {
+    renderTab()
+
+    const indicator = screen.getByTestId('result-dropdown-1')
+    expect(indicator).toBeTruthy()
+  })
+})
+
+describe('PairingsTab multi-select', () => {
+  afterEach(() => {
+    cleanup()
+    vi.clearAllMocks()
+  })
+
+  it('plain click selects only that board', () => {
+    renderTab()
+
+    const rowA = screen.getByText('White A').closest('tr')!
+    const rowB = screen.getByText('White B').closest('tr')!
+
+    fireEvent.click(rowA)
+    expect(rowA.className).toContain('selected')
+    expect(rowB.className).not.toContain('selected')
+
+    // Plain click on B replaces selection
+    fireEvent.click(rowB)
+    expect(rowA.className).not.toContain('selected')
+    expect(rowB.className).toContain('selected')
+
+    // Clicking already-selected item keeps it selected
+    fireEvent.click(rowB)
+    expect(rowB.className).toContain('selected')
+  })
+})
+
+describe('PairingsTab keyboard score entry', () => {
+  afterEach(() => {
+    cleanup()
+    mockMutate.mockClear()
+  })
+
+  it('ignores numeric keys that exceed effective pointsPerGame when maxPointsImmediately is off', () => {
+    renderTab({ pointsPerGame: 4, maxPointsImmediately: false })
+
+    // Select board 2 (no result yet)
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    // Press '3' — effective ppg is 1 (maxPointsImmediately off), so 3 > 1 should be ignored
+    fireEvent.keyDown(document, { key: '3' })
+
+    expect(mockMutate).not.toHaveBeenCalled()
+  })
+
+  it('accepts numeric key 3 as white score 3, black score 1 when maxPointsImmediately is on with ppg=4', () => {
+    renderTab({ pointsPerGame: 4, maxPointsImmediately: true })
+
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    fireEvent.keyDown(document, { key: '3' })
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      boardNr: 2,
+      req: { resultType: 'WHITE_WIN', whiteScore: 3, blackScore: 1, expectedPrior: 'NO_RESULT' },
+    })
+  })
+
+  it('accepts numeric key 2 as draw (2-2) when maxPointsImmediately is on with ppg=4', () => {
+    renderTab({ pointsPerGame: 4, maxPointsImmediately: true })
+
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    fireEvent.keyDown(document, { key: '2' })
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      boardNr: 2,
+      req: { resultType: 'DRAW', whiteScore: 2, blackScore: 2, expectedPrior: 'NO_RESULT' },
+    })
+  })
+
+  it('ignores numeric key exceeding ppg even when maxPointsImmediately is on', () => {
+    renderTab({ pointsPerGame: 2, maxPointsImmediately: true })
+
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    fireEvent.keyDown(document, { key: '3' })
+
+    expect(mockMutate).not.toHaveBeenCalled()
+  })
+
+  it('r key produces a draw with scaled scores when maxPointsImmediately is on with ppg=4', () => {
+    renderTab({ pointsPerGame: 4, maxPointsImmediately: true })
+
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    fireEvent.keyDown(document, { key: 'r' })
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      boardNr: 2,
+      req: { resultType: 'DRAW', whiteScore: 2, blackScore: 2, expectedPrior: 'NO_RESULT' },
+    })
+  })
+
+  it('v key produces white win with scaled scores when maxPointsImmediately is on with ppg=4', () => {
+    renderTab({ pointsPerGame: 4, maxPointsImmediately: true })
+
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    fireEvent.keyDown(document, { key: 'v' })
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      boardNr: 2,
+      req: { resultType: 'WHITE_WIN', whiteScore: 4, blackScore: 0, expectedPrior: 'NO_RESULT' },
+    })
+  })
+
+  it('f key produces black win with scaled scores when maxPointsImmediately is on with ppg=4', () => {
+    renderTab({ pointsPerGame: 4, maxPointsImmediately: true })
+
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    fireEvent.keyDown(document, { key: 'f' })
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      boardNr: 2,
+      req: { resultType: 'BLACK_WIN', whiteScore: 0, blackScore: 4, expectedPrior: 'NO_RESULT' },
+    })
+  })
+
+  it('semantic keys use ppg=1 scale when maxPointsImmediately is off', () => {
+    renderTab({ pointsPerGame: 4, maxPointsImmediately: false })
+
+    const row = screen.getByText('White B').closest('tr')!
+    fireEvent.click(row)
+
+    fireEvent.keyDown(document, { key: 'v' })
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      boardNr: 2,
+      req: { resultType: 'WHITE_WIN', whiteScore: 1, blackScore: 0, expectedPrior: 'NO_RESULT' },
+    })
+  })
+})
+
+describe('ContextMenuPopup keyboard hints', () => {
+  afterEach(() => cleanup())
+
+  it('shows shortcut hints next to result menu items', () => {
+    renderTab()
+
+    // Right-click on a result cell to open context menu
+    const resultCell = screen.getByTestId('result-dropdown-2')
+    fireEvent.contextMenu(resultCell)
+
+    // Menu items should display keyboard shortcut hints
+    expect(screen.getByTestId('shortcut-no-result').textContent).toBe('Space')
+    expect(screen.getByTestId('shortcut-white-win').textContent).toBe('V')
+    expect(screen.getByTestId('shortcut-draw').textContent).toBe('R')
+    expect(screen.getByTestId('shortcut-black-win').textContent).toBe('F')
+  })
+})
+
+describe('ContextMenuPopup sends correct scores for ppg>1', () => {
+  afterEach(() => {
+    cleanup()
+    mockMutate.mockClear()
+  })
+
+  it('passes scaled scores when selecting white win via context menu with ppg=4 chess4', () => {
+    renderTab({ pointsPerGame: 4, chess4: true })
+
+    // Right-click on board 2 to open context menu
+    const resultCell = screen.getByTestId('result-dropdown-2')
+    fireEvent.contextMenu(resultCell)
+
+    // Click "Vit vinst"
+    const whiteWinBtn = screen.getByTestId('shortcut-white-win').closest('button')!
+    fireEvent.click(whiteWinBtn)
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      boardNr: 2,
+      req: { resultType: 'WHITE_WIN', whiteScore: 3, blackScore: 1, expectedPrior: 'NO_RESULT' },
+    })
+  })
+})
+
+describe('PairingsTab conflict notification', () => {
+  afterEach(() => {
+    cleanup()
+    mockMutationState.error = null
+    mockMutationState.variables = undefined
+    mockMutationState.reset.mockClear()
+  })
+
+  it('shows conflict notification when ResultConflictError occurs', async () => {
+    const { ResultConflictError } = await import('../../api/result-command')
+    mockMutationState.error = new ResultConflictError('WHITE_WIN')
+    mockMutationState.variables = { boardNr: 1 }
+
+    renderTab()
+
+    const notification = screen.getByTestId('conflict-notification')
+    expect(notification.textContent).toContain('Bord 1')
+    expect(notification.textContent).toContain('1-0')
+  })
+
+  it('uses chess4 labels in conflict notification so Schack4an shows 3-1 not 1-0', async () => {
+    const { ResultConflictError } = await import('../../api/result-command')
+    mockMutationState.error = new ResultConflictError('WHITE_WIN')
+    mockMutationState.variables = { boardNr: 1 }
+
+    renderTab({ chess4: true, pointsPerGame: 4 })
+
+    const notification = screen.getByTestId('conflict-notification')
+    expect(notification.textContent).toContain('3-1')
+    expect(notification.textContent).not.toContain('1-0')
+  })
+
+  it('does not show notification when no conflict error', () => {
+    mockMutationState.error = null
+    renderTab()
+
+    expect(screen.queryByTestId('conflict-notification')).toBeNull()
+  })
+})

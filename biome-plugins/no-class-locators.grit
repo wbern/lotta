@@ -1,0 +1,5 @@
+`$call($arg)` where {
+  $call <: `$_.locator`,
+  $arg <: r"^'\..*'$",
+  register_diagnostic(span=$arg, message="Prefer getByTestId() over CSS class locator.", severity="warn")
+}

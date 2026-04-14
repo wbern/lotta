@@ -1,0 +1,4 @@
+`$fn($args)` where {
+  $fn <: `$_.waitForTimeout`,
+  register_diagnostic(span=$fn, message="Avoid waitForTimeout; use locator assertions or waitFor instead.", severity="warn")
+}

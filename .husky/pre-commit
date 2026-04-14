@@ -1,0 +1,8 @@
+pnpm exec lint-staged
+
+FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -n "$FILES" ] && pnpm exec secretlint --maskSecrets $FILES
+
+pnpm exec knip --no-config-hints
+pnpm exec jscpd src/
+pnpm exec tsc -b

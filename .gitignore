@@ -1,0 +1,54 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+package-lock.json
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Generated at build time
+public/version.json
+
+# E2E test artifacts
+.e2e-state.json
+.e2e-db-*
+test-results/
+playwright-report/
+showcase.mp4
+showcase-stress.mp4
+e2e/certs/
+
+# Infrastructure (secrets, IPs, deploy scripts)
+infra/
+
+# BrowserStack (may contain credentials + SDK logs)
+browserstack.yml
+browserstack.err
+log/
+
+# Gas Town (added by gt)
+.runtime/
+.claude/
+.beads/
+.logs/
+__pycache__/
+state.json
+CLAUDE.md

@@ -1,0 +1,16 @@
+{
+  "threshold": 0,
+  "minTokens": 150,
+  "reporters": ["console"],
+  "ignore": [
+    "node_modules",
+    "dist",
+    "playwright-report",
+    "test-results",
+    "**/*-snapshots.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "absolute": false,
+  "gitignore": true
+}

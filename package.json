@@ -1,0 +1,72 @@
+{
+  "name": "lotta",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "biome lint .",
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:browserstack": "browserstack-node-sdk playwright test",
+    "test:e2e:video": "playwright test && node scripts/concat-videos.mjs",
+    "prepare": "husky",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check --write .",
+    "knip": "knip",
+    "jscpd": "jscpd src/",
+    "secretlint": "secretlint '**/*'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate-pwa-assets": "pwa-assets-generator"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp"]
+  },
+  "lint-staged": {
+    "*": ["biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"]
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-router": "^1.167.3",
+    "@trystero-p2p/mqtt": "0.23.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sql.js": "^1.14.1",
+    "trystero": "^0.23.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.11",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@playwright/test": "^1.58.2",
+    "@secretlint/core": "^11.4.0",
+    "@secretlint/secretlint-rule-preset-recommend": "^11.4.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/sql.js": "^1.4.10",
+    "@vite-pwa/assets-generator": "^1.0.2",
+    "@vitejs/plugin-react": "^6.0.0",
+    "browserstack-node-sdk": "^1.50.11",
+    "fake-indexeddb": "^6.2.5",
+    "husky": "^9.1.7",
+    "jscpd": "^4.0.8",
+    "jsdom": "^29.0.1",
+    "knip": "^6.0.6",
+    "lint-staged": "^16.4.0",
+    "msw": "^2.13.2",
+    "secretlint": "^11.4.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0",
+    "vite-plugin-pwa": "^1.2.0",
+    "vite-plugin-static-copy": "^4.0.0",
+    "vitest": "^4.1.2",
+    "workbox-window": "^7.4.0"
+  }
+}
