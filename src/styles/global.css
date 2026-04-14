@@ -1405,29 +1405,27 @@ button.btn-danger {
 
 /* Empty state guidance steps (landing page) */
 .empty-state-steps {
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  text-align: left;
-  font-size: var(--font-size-small);
+  gap: 18px;
+  text-align: center;
 }
 
 .empty-state-step {
   display: flex;
-  gap: 8px;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .empty-state-step-path {
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
-  min-width: 160px;
-  text-align: right;
 }
 
 .empty-state-step-label {
   color: var(--color-text-muted);
+  font-weight: 400;
 }
 
 /* Empty state icons — CSS-only ~48px illustrations */
