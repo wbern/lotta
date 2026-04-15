@@ -63,6 +63,22 @@ describe('buildClubCodesPdf', () => {
     expect(texts.some((t) => t.includes('example.com'))).toBe(true)
   })
 
+  it('omits the duplicate label and code hint when the entry has neither', () => {
+    const doc = buildClubCodesPdf({
+      tournamentName: 'Test Cup',
+      entries: [
+        {
+          url: 'https://example.com/live/ABC',
+          qrDataUrl: FAKE_QR_DATA_URL,
+        },
+      ],
+    })
+    const texts = extractText(doc)
+    const tournamentMatches = texts.filter((t) => t === 'Test Cup')
+    expect(tournamentMatches.length).toBe(1)
+    expect(texts.some((t) => /ombedd/i.test(t))).toBe(false)
+  })
+
   it('renders tournament name, club label, code, url, and a manual-code hint on each page', () => {
     const doc = buildClubCodesPdf({
       tournamentName: 'Test Cup',

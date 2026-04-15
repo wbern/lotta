@@ -2000,7 +2000,7 @@ button.btn-danger {
 .live-tab-share-box {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
   padding: 16px;
   margin-bottom: 20px;
@@ -2030,9 +2030,16 @@ button.btn-danger {
   color: var(--color-text-muted);
 }
 
+.live-tab-link-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 .live-tab-link-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   min-width: 0;
 }
@@ -2052,9 +2059,8 @@ button.btn-danger {
 .live-tab-url {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
+  line-height: 1.6;
 }
 
 .btn-icon {
@@ -2063,14 +2069,6 @@ button.btn-danger {
   line-height: 1;
   min-width: 28px;
   text-align: center;
-}
-
-.live-tab-qr-expand {
-  display: block;
-  margin: 8px auto 0;
-  font-size: 18px;
-  line-height: 1;
-  padding: 4px 12px;
 }
 
 .live-tab-qr-actions {
@@ -2766,6 +2764,18 @@ button.btn-danger {
   min-width: 0;
   font-size: calc(var(--font-size-base) * 0.85);
   line-height: 1.1;
+}
+
+.live-tab-club-row button[data-testid^="share-club-btn-"] {
+  align-self: stretch;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .live-tab-club-name {

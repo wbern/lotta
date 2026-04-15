@@ -29,7 +29,7 @@ let mockBroadcastPeerCountCalls: unknown[] = []
 
 interface PdfSaveCall {
   filename: string
-  entries: { label: string; code: string; url: string; qrDataUrl: string }[]
+  entries: { label?: string; code?: string; url: string; qrDataUrl: string }[]
   tournamentName: string
 }
 let mockPdfSaveCalls: PdfSaveCall[] = []
@@ -277,6 +277,30 @@ describe('LiveTab', () => {
     expect(linkCode?.textContent).toMatch(/^https?:\/\//)
   })
 
+  it('labels the print button so it explains what the PDF contains', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    const printBtn = screen.getByTestId('print-main-qr')
+    expect(printBtn.textContent).toBe('Skriv ut QR-kod med instruktioner')
+  })
+
+  it('uses an icon-only fullscreen button in the share box', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    const fullscreenBtn = screen.getByRole('button', { name: 'Visa i fullskärm' })
+    expect(fullscreenBtn.textContent?.trim()).toBe('⛶')
+  })
+
+  it('stacks the Länk label above the URL instead of inline beside it', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    const shareBox = screen.getByTestId('live-tab-share-box')
+    const label = shareBox.querySelector('.live-tab-link-label')
+    const urlCode = shareBox.querySelector('.live-tab-url')
+    // The label must not share a parent flex row with the URL code.
+    expect(label?.parentElement).not.toBe(urlCode?.parentElement)
+  })
+
   it('stops hosting when stop button is clicked', () => {
     renderLiveTab()
     fireEvent.click(screen.getByText('Starta Live'))
@@ -434,17 +458,15 @@ describe('LiveTab', () => {
     expect(mockSend).not.toHaveBeenCalled()
   })
 
-  it('shows Dela vy sub-tab when hosting and switching to it does not destroy session', () => {
+  it('shows Domarstyrning sub-tab when hosting and switching to it does not destroy session', () => {
     renderLiveTab()
     fireEvent.click(screen.getByText('Starta Live'))
 
-    // Dela vy sub-tab should be visible when hosting
-    const delaVyTab = screen.getByRole('tab', { name: 'Dela vy' })
-    expect(delaVyTab).toBeTruthy()
+    const refereeTab = screen.getByRole('tab', { name: 'Domarstyrning' })
+    expect(refereeTab).toBeTruthy()
 
-    // Switch to Dela vy sub-tab
     mockLeaveCalled = false
-    fireEvent.click(delaVyTab)
+    fireEvent.click(refereeTab)
 
     // P2P session should NOT have been torn down
     expect(mockLeaveCalled).toBe(false)
@@ -940,12 +962,12 @@ describe('LiveTab', () => {
     expect(mockBroadcastChatDeleteCalls[0].id).toBe('msg-to-delete')
   })
 
-  it('shows Dela vy panel with QR code and share link when subtab is active', () => {
+  it('shows Domarstyrning panel with QR code and share link when subtab is active', () => {
     renderLiveTab()
     fireEvent.click(screen.getByText('Starta Live'))
-    fireEvent.click(screen.getByRole('tab', { name: 'Dela vy' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
 
-    expect(screen.getByRole('heading', { name: 'Dela vy' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Domarstyrning' })).toBeTruthy()
     // Should have QR code
     const qrCodes = screen.getAllByTestId('qr-code')
     expect(qrCodes.length).toBeGreaterThanOrEqual(1)
@@ -956,6 +978,18 @@ describe('LiveTab', () => {
     expect(url.searchParams.get('share')).toBe('full')
     expect(url.searchParams.get('token')).toBeTruthy()
     expect(url.pathname).toContain('/live/')
+  })
+
+  it('Domarstyrning panel groups the QR and share link in one share-box like Delning', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    const shareBox = screen.getByTestId('live-tab-vydelning-share-box')
+    expect(shareBox.querySelector('[data-testid="qr-code"]')).toBeTruthy()
+    expect(shareBox.querySelector('[data-testid="vydelning-url"]')).toBeTruthy()
+    // No Rumskod row anymore (consistent with the Delning simplification)
+    expect(screen.queryByText(/^Rumskod:/)).toBeNull()
   })
 
   it('hides club codes until the organizer enables club filtering', () => {
@@ -1101,8 +1135,8 @@ describe('LiveTab', () => {
     expect(call.entries.length).toBe(1)
     const entry = call.entries[0]
     expect(entry.qrDataUrl).toMatch(/^data:image\//)
-    // The main sheet carries the 6-char room code as the manual-entry fallback
-    expect(entry.code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/)
+    // Main viewer URL never prompts for a code — skip the manual-entry fallback
+    expect(entry.code).toBeUndefined()
     // URL is the viewer share URL
     expect(entry.url).toContain('/live/')
   })

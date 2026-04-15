@@ -376,7 +376,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     const qrDataUrl = await QRCode.toDataURL(url, { margin: 1, width: 512 })
     const doc = buildClubCodesPdf({
       tournamentName,
-      entries: [{ label: tournamentName, code: roomCode, url, qrDataUrl }],
+      entries: [{ url, qrDataUrl }],
     })
     doc.save(`live-${tournamentName}.pdf`)
   }, [roomCode, viewToken, tournamentName])
@@ -550,7 +550,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
             className={`live-tab-subtab ${activeSubTab === 'vydelning' ? 'active' : ''}`}
             onClick={() => setActiveSubTab('vydelning')}
           >
-            Dela vy
+            Domarstyrning
           </button>
           <button
             role="tab"
@@ -585,9 +585,10 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
                 <div className="live-tab-share-main">
                   <div className="live-tab-qr-actions">
                     <button
-                      className="btn btn-small"
+                      className="btn btn-small btn-icon"
                       onClick={() => setQrFullscreen(viewUrl)}
-                      title="Visa i helskärm"
+                      title="Visa i fullskärm"
+                      aria-label="Visa i fullskärm"
                     >
                       ⛶
                     </button>
@@ -597,19 +598,21 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
                       onClick={printMainQr}
                       title="Ladda ner PDF"
                     >
-                      Skriv ut
+                      Skriv ut QR-kod med instruktioner
                     </button>
                   </div>
-                  <div className="live-tab-link-row">
+                  <div className="live-tab-link-group">
                     <span className="live-tab-link-label">Länk:</span>
-                    <code className="live-tab-url">{viewUrl}</code>
-                    <button
-                      className="btn btn-small btn-icon"
-                      onClick={() => copyToClipboard(viewUrl, 'viewUrl')}
-                      title="Kopiera"
-                    >
-                      {copied === 'viewUrl' ? '✓' : '📋'}
-                    </button>
+                    <div className="live-tab-link-row">
+                      <code className="live-tab-url">{viewUrl}</code>
+                      <button
+                        className="btn btn-small btn-icon"
+                        onClick={() => copyToClipboard(viewUrl, 'viewUrl')}
+                        title="Kopiera"
+                      >
+                        {copied === 'viewUrl' ? '✓' : '📋'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -800,46 +803,42 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
         {activeSubTab === 'vydelning' && (
           <div className="live-tab-panels">
             <div className="live-tab-share">
-              <h4>Dela vy</h4>
+              <h4>Domarstyrning</h4>
               <p>
                 Dela denna länk med domare eller andra som ska kunna se och rapportera resultat i
                 turneringen.
               </p>
-              <div className="live-tab-qr">
-                <QRCodeSVG value={shareUrl} size={180} />
-                <p className="live-tab-tournament-label">{tournamentName}</p>
-                <button
-                  className="btn btn-small live-tab-qr-expand"
-                  onClick={() => setQrFullscreen(shareUrl)}
-                  title="Visa i helskärm"
-                >
-                  ⛶
-                </button>
-              </div>
-              <div className="live-tab-links">
-                <div className="live-tab-link-row">
-                  <span className="live-tab-link-label">Rumskod:</span>
-                  <code>{roomCode}</code>
-                  <button
-                    className="btn btn-small btn-icon"
-                    onClick={() => copyToClipboard(roomCode, 'shareRoomCode')}
-                    title="Kopiera"
-                  >
-                    {copied === 'shareRoomCode' ? '✓' : '📋'}
-                  </button>
+              <div className="live-tab-share-box" data-testid="live-tab-vydelning-share-box">
+                <div className="live-tab-share-qr">
+                  <QRCodeSVG value={shareUrl} size={180} />
+                  <p className="live-tab-tournament-label">{tournamentName}</p>
                 </div>
-                <div className="live-tab-link-row">
-                  <span className="live-tab-link-label">Delningslänk:</span>
-                  <code className="live-tab-url" data-testid="vydelning-url">
-                    {shareUrl}
-                  </code>
-                  <button
-                    className="btn btn-small btn-icon"
-                    onClick={() => copyToClipboard(shareUrl, 'shareUrl')}
-                    title="Kopiera"
-                  >
-                    {copied === 'shareUrl' ? '✓' : '📋'}
-                  </button>
+                <div className="live-tab-share-main">
+                  <div className="live-tab-qr-actions">
+                    <button
+                      className="btn btn-small btn-icon"
+                      onClick={() => setQrFullscreen(shareUrl)}
+                      title="Visa i fullskärm"
+                      aria-label="Visa i fullskärm"
+                    >
+                      ⛶
+                    </button>
+                  </div>
+                  <div className="live-tab-link-group">
+                    <span className="live-tab-link-label">Delningslänk:</span>
+                    <div className="live-tab-link-row">
+                      <code className="live-tab-url" data-testid="vydelning-url">
+                        {shareUrl}
+                      </code>
+                      <button
+                        className="btn btn-small btn-icon"
+                        onClick={() => copyToClipboard(shareUrl, 'shareUrl')}
+                        title="Kopiera"
+                      >
+                        {copied === 'shareUrl' ? '✓' : '📋'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
