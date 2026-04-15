@@ -100,7 +100,6 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const roundRef = useRef(round)
   const [isHosting, setIsHosting] = useState(false)
   const [roomCode, setRoomCode] = useState('')
-  const [, setRefereeToken] = useState('')
   const [peers, setPeers] = useState<P2PPeer[]>([])
   const [peerTimestamp, setPeerTimestamp] = useState(() => Date.now())
   const [copied, setCopied] = useState<string | null>(null)
@@ -305,7 +304,6 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
 
     service.startHosting(code)
     setRoomCode(code)
-    setRefereeToken(token)
     setIsHosting(true)
     setActiveSubTab('delning')
     setLiveStatus({ state: 'connected', role: 'host', peerCount: 0 })
@@ -325,7 +323,6 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     setLiveStatus(null)
     setIsHosting(false)
     setRoomCode('')
-    setRefereeToken('')
     setPeers([])
     setActiveSubTab('delning')
     setChatMessages([])
