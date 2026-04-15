@@ -67,6 +67,7 @@ export default defineConfig({
     { name: 'error-cases', testMatch: 'error-cases.spec.ts' },
     { name: 'live', testMatch: 'live.spec.ts' },
     { name: 'undo', testMatch: 'undo.spec.ts' },
+    { name: 'scroll', testMatch: 'scroll.spec.ts' },
     { name: 'fix-screenshots', testMatch: 'fix-screenshots.spec.ts' },
     ...(runningP2P
       ? [

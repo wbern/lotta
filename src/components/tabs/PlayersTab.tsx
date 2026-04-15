@@ -35,7 +35,7 @@ export function PlayersTab({ tournamentId, showELO, showGroup }: Props) {
   }
 
   return (
-    <div className="table-scroll">
+    <div className="table-scroll" data-testid="scroll-container">
       <table className="data-table" data-testid="data-table">
         <thead>
           <tr>

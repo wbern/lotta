@@ -557,7 +557,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
       )
     }
     return (
-      <div className="live-tab-container">
+      <div className="live-tab-container" data-testid="scroll-container">
         <div className="live-tab-intro">
           <EmptyState
             icon="broadcast"
@@ -605,7 +605,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   }
 
   return (
-    <div className="live-tab-container">
+    <div className="live-tab-container" data-testid="scroll-container">
       <div className="live-tab-hosting">
         <div className="live-tab-header">
           <h3>

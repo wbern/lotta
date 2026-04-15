@@ -46,7 +46,7 @@ export function StandingsTab({ tournamentId, round, showELO, showGroup }: Props)
   const tiebreakKeys = Object.keys(standings[0]?.tiebreaks || {})
 
   return (
-    <div className="table-scroll">
+    <div className="table-scroll" data-testid="scroll-container">
       <table className="data-table" data-testid="data-table">
         <thead>
           <tr>

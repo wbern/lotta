@@ -275,7 +275,7 @@ export function PairingsTab({
           {formatResultLabel(conflictError.current, { chess4, pointsPerGame })}
         </div>
       )}
-      <div className="table-scroll">
+      <div className="table-scroll" data-testid="scroll-container">
         <table className="data-table" data-testid="data-table">
           <thead>
             <tr>

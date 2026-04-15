@@ -36,7 +36,7 @@ export function Chess4StandingsTab({ tournamentId, round }: Props) {
 
   // jscpd:ignore-start — structurally similar to ClubStandingsTab by design
   return (
-    <div className="table-scroll">
+    <div className="table-scroll" data-testid="scroll-container">
       <table className="data-table" data-testid="data-table">
         <thead>
           <tr>
