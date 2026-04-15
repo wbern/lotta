@@ -3,6 +3,7 @@ import { generateClubCodeMap } from '../domain/club-codes'
 import type { DataProvider } from './data-provider'
 import {
   clearAllPeerPermissions,
+  clearPeerPermissions,
   createFullPermissions,
   createP2pClientProvider,
   createViewPermissions,
@@ -835,6 +836,63 @@ describe('startP2pRpcServer', () => {
       )
     })
     expect(provider.results.set).toHaveBeenCalled()
+  })
+
+  it('rejects commands.setResult after the peer permissions have been cleared', async () => {
+    const service = createMockServerService()
+    const provider: DataProvider = {
+      tournaments: { list: vi.fn(), get: vi.fn(), create: vi.fn() },
+      tournamentPlayers: {
+        list: vi.fn(),
+        add: vi.fn(),
+        addMany: vi.fn(),
+        update: vi.fn(),
+        remove: vi.fn(),
+        removeMany: vi.fn(),
+      },
+      rounds: {
+        list: vi.fn(),
+        get: vi.fn().mockResolvedValue({
+          roundNr: 1,
+          hasAllResults: false,
+          gameCount: 1,
+          games: [{ boardNr: 1, resultType: 'NO_RESULT' }],
+        }),
+        pairNext: vi.fn(),
+        unpairLast: vi.fn(),
+      },
+      results: { set: vi.fn() },
+      standings: { get: vi.fn() },
+    }
+
+    startP2pRpcServer(service, provider)
+    setPeerPermissions('peer-1', createFullPermissions())
+    clearPeerPermissions('peer-1')
+
+    service._simulateRequest(
+      {
+        id: 26,
+        method: 'commands.setResult',
+        args: [
+          {
+            tournamentId: 1,
+            roundNr: 1,
+            boardNr: 1,
+            resultType: 'WHITE_WIN',
+            expectedPrior: 'NO_RESULT',
+          },
+        ],
+      },
+      'peer-1',
+    )
+
+    await vi.waitFor(() => {
+      expect(service.sendRpcResponse).toHaveBeenCalledWith(
+        { id: 26, error: 'Permission denied: commands.setResult' },
+        'peer-1',
+      )
+    })
+    expect(provider.results.set).not.toHaveBeenCalled()
   })
 
   it('returns conflict from commands.setResult when expectedPrior mismatches', async () => {

@@ -46,6 +46,11 @@ export function clearAllPeerPermissions(): void {
   peerAuthorizedClubs.clear()
 }
 
+export function clearPeerPermissions(peerId: string): void {
+  peerPermissions.delete(peerId)
+  peerAuthorizedClubs.delete(peerId)
+}
+
 export function createFullPermissions(): RpcPermissions {
   return {
     'tournaments.list': true,

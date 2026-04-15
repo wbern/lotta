@@ -162,6 +162,7 @@ vi.mock('../../api/p2p-data-provider', async () => {
     ...actual,
     startP2pRpcServer: vi.fn(),
     setPeerPermissions: vi.fn(),
+    clearPeerPermissions: vi.fn(),
   }
 })
 
@@ -568,6 +569,83 @@ describe('LiveTab', () => {
     })
 
     expect(mockSet).not.toHaveBeenCalled()
+  })
+
+  it('clears permissions for already-connected peers when their grant is revoked', async () => {
+    const { clearPeerPermissions } = await import('../../api/p2p-data-provider')
+    const mockClear = vi.mocked(clearPeerPermissions)
+
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    fireEvent.change(screen.getByTestId('grant-label-input'), {
+      target: { value: 'Domare Sofia' },
+    })
+    fireEvent.click(screen.getByTestId('grant-preset-full'))
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    const row = screen
+      .getByTestId('live-tab-grants-panel')
+      .querySelector('[data-testid^="grant-row-"]') as HTMLElement
+    const qr = row.querySelector('[data-testid="qr-code"]') as HTMLElement
+    const token = new URL(qr.textContent!).searchParams.get('token')!
+
+    // Peer connects and presents the grant token before revoke
+    act(() => {
+      mockOnPeerToken?.('peer-abc', token)
+    })
+
+    mockClear.mockClear()
+    const revokeBtn = row.querySelector('[data-testid^="grant-revoke-"]') as HTMLElement
+    fireEvent.click(revokeBtn)
+
+    expect(mockClear).toHaveBeenCalledWith('peer-abc')
+  })
+
+  it('only clears peers authenticated with the revoked grant, not others', async () => {
+    const { clearPeerPermissions } = await import('../../api/p2p-data-provider')
+    const mockClear = vi.mocked(clearPeerPermissions)
+
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    // Grant 1 — will be revoked
+    fireEvent.change(screen.getByTestId('grant-label-input'), {
+      target: { value: 'Sofia' },
+    })
+    fireEvent.click(screen.getByTestId('grant-preset-full'))
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    // Grant 2 — must NOT be affected
+    fireEvent.change(screen.getByTestId('grant-label-input'), {
+      target: { value: 'Lisa' },
+    })
+    fireEvent.click(screen.getByTestId('grant-preset-full'))
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    const panel = screen.getByTestId('live-tab-grants-panel')
+    const rows = Array.from(panel.querySelectorAll('[data-testid^="grant-row-"]')) as HTMLElement[]
+    const [row1, row2] = rows
+    const token1 = new URL(
+      (row1.querySelector('[data-testid="qr-code"]') as HTMLElement).textContent!,
+    ).searchParams.get('token')!
+    const token2 = new URL(
+      (row2.querySelector('[data-testid="qr-code"]') as HTMLElement).textContent!,
+    ).searchParams.get('token')!
+
+    act(() => {
+      mockOnPeerToken?.('peer-sofia', token1)
+      mockOnPeerToken?.('peer-lisa', token2)
+    })
+
+    mockClear.mockClear()
+    const revokeBtn = row1.querySelector('[data-testid^="grant-revoke-"]') as HTMLElement
+    fireEvent.click(revokeBtn)
+
+    expect(mockClear).toHaveBeenCalledWith('peer-sofia')
+    expect(mockClear).not.toHaveBeenCalledWith('peer-lisa')
   })
 
   it('removes a grant row when its revoke button is clicked', () => {

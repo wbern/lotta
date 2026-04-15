@@ -6,6 +6,7 @@ import { handleResultSubmission, sendCurrentStateToPeer } from '../../api/p2p-br
 import type { RpcPermissions } from '../../api/p2p-data-provider'
 import {
   clearAllPeerPermissions,
+  clearPeerPermissions,
   createFullPermissions,
   createViewPermissions,
   setPeerPermissions,
@@ -124,6 +125,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const [grantPreset, setGrantPreset] = useState<'full' | 'view'>('full')
   const [clubCodeSecret, setClubCodeSecret] = useState<string | null>(null)
   const tokenPermissionsRef = useRef(new Map<string, RpcPermissions>())
+  const peerTokensRef = useRef(new Map<string, string>())
   const allClubEntriesRef = useRef<string[]>([])
   const [clubFilterEnabled, setClubFilterEnabled] = useState(false)
   const clubFilterEnabledRef = useRef(false)
@@ -213,10 +215,13 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     }
 
     // When a peer presents a token, assign per-peer permissions
+    const peerTokens = peerTokensRef.current
+    peerTokens.clear()
     service.onPeerToken = (peerId: string, peerToken: string) => {
       const perms = tokenPerms.get(peerToken)
       if (perms) {
         setPeerPermissions(peerId, perms)
+        peerTokens.set(peerId, peerToken)
       }
     }
 
@@ -320,6 +325,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     clearSession()
     clearAllPeerPermissions()
     tokenPermissionsRef.current.clear()
+    peerTokensRef.current.clear()
     setLiveStatus(null)
     setIsHosting(false)
     setRoomCode('')
@@ -476,7 +482,16 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     (id: string) => {
       setGrants((prev) => {
         const target = prev.find((g) => g.id === id)
-        if (target) tokenPermissionsRef.current.delete(target.token)
+        if (target) {
+          tokenPermissionsRef.current.delete(target.token)
+          const peerTokens = peerTokensRef.current
+          for (const [peerId, peerToken] of peerTokens.entries()) {
+            if (peerToken === target.token) {
+              clearPeerPermissions(peerId)
+              peerTokens.delete(peerId)
+            }
+          }
+        }
         const next = prev.filter((g) => g.id !== id)
         persistGrants(next)
         return next
