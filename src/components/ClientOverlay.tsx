@@ -57,9 +57,15 @@ export function ClientOverlay() {
   const sendChatMessage = useCallback(() => {
     const text = chatInput.trim()
     if (!text || !store.chatEnabled) return
+    let senderName = ''
+    try {
+      senderName = getP2PService().label ?? ''
+    } catch {
+      // Service unavailable
+    }
     const msg: ChatMessage = {
       id: crypto.randomUUID(),
-      senderName: 'Deltagare',
+      senderName,
       senderRole: 'viewer',
       text,
       timestamp: Date.now(),

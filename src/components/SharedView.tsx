@@ -6,6 +6,7 @@ import { cleanupClientSession } from '../api/p2p-session'
 import { setLiveStatus } from '../hooks/useLiveStatus'
 import { isRateLimited, verifyChatMessage } from '../lib/chat'
 import { getCompatWarnings } from '../lib/device-compat'
+import { LIVE_NAME_STORAGE_KEY } from '../lib/live-name'
 import { playSound } from '../lib/notification-sounds'
 import { queryClient } from '../query-client'
 import { clearP2PService, setP2PService } from '../services/p2p-provider'
@@ -26,6 +27,7 @@ import {
 } from '../stores/client-p2p-store'
 import type { P2PConnectionState } from '../types/p2p'
 import { CompatWarnings } from './CompatWarnings'
+import { LiveNameEntry } from './LiveNameEntry'
 
 const CONNECTION_TIMEOUT_S = 90
 
@@ -68,6 +70,10 @@ export function SharedView({ roomCode, token, mode = 'full', code }: SharedViewP
   const [blocked, setBlocked] = useState(() =>
     compatWarnings.some((w) => w.severity === 'blocking'),
   )
+  // View-mode (Avläsare) doesn't chat, so no name needed. Full-mode (Domare) does.
+  const [confirmedName, setConfirmedName] = useState<string | null>(() =>
+    mode === 'view' ? '' : localStorage.getItem(LIVE_NAME_STORAGE_KEY),
+  )
   const hasWarnings = compatWarnings.length > 0
 
   const updateStageFromDiagnostic = useCallback((message: string) => {
@@ -86,10 +92,11 @@ export function SharedView({ roomCode, token, mode = 'full', code }: SharedViewP
   }, [])
 
   useEffect(() => {
-    if (initialized.current || blocked) return
+    if (initialized.current || blocked || confirmedName === null) return
     initialized.current = true
 
-    const service = new P2PService('viewer', token)
+    const label = confirmedName || undefined
+    const service = new P2PService('viewer', token, label)
     setP2PService(service)
     const provider = createP2pClientProvider(service)
     setActiveDataProvider(provider)
@@ -156,7 +163,7 @@ export function SharedView({ roomCode, token, mode = 'full', code }: SharedViewP
     }
 
     service.joinRoom(roomCode)
-  }, [roomCode, token, mode, blocked, updateStageFromDiagnostic])
+  }, [roomCode, token, mode, blocked, confirmedName, updateStageFromDiagnostic])
 
   // Countdown timer
   useEffect(() => {
@@ -175,6 +182,10 @@ export function SharedView({ roomCode, token, mode = 'full', code }: SharedViewP
     if (connectionState !== 'connected') return
     navigate({ to: '/', search: { tournamentId: undefined, round: undefined, tab: 'pairings' } })
   }, [connectionState, navigate])
+
+  if (confirmedName === null) {
+    return <LiveNameEntry title="Domare" onConfirm={setConfirmedName} />
+  }
 
   return (
     <div className="connecting-screen" data-testid="shared-provider-ready">

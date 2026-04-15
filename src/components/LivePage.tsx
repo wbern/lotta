@@ -29,6 +29,7 @@ import type {
 import { ChatMessageItem } from './ChatMessageItem'
 import { CompatWarnings } from './CompatWarnings'
 import { ConnectionDiagnostics } from './ConnectionDiagnostics'
+import { LiveNameEntry } from './LiveNameEntry'
 
 interface LivePageProps {
   roomCode: string
@@ -234,7 +235,6 @@ function LivePageInner({
   const [kiosk, setKiosk] = useState(!!kioskFromUrl)
   const serviceRef = useRef<P2PService | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
-  const [nameInput, setNameInput] = useState(() => localStorage.getItem('lotta-live-name') ?? '')
   const [confirmedName, setConfirmedName] = useState<string | null>(isReferee ? null : '')
   const [rounds, setRounds] = useState<Map<number, Map<PageType, CachedPage>>>(() =>
     loadCachedRounds(normalizedRoom),
@@ -415,7 +415,7 @@ function LivePageInner({
 
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [isReferee, confirmedName, refereeName])
+  }, [isReferee, confirmedName])
 
   // Auto-dismiss ack feedback after 3 seconds
   useEffect(() => {
@@ -515,46 +515,18 @@ function LivePageInner({
   // Referee name entry screen
   if (isReferee && confirmedName === null) {
     return (
-      <div className="live-page">
-        <header className="live-header">
-          <div className="live-title">Domare</div>
-        </header>
-        <main className="live-content">
-          <div className="live-name-entry">
-            <label htmlFor="referee-name">Ange ditt namn:</label>
-            <input
-              id="referee-name"
-              type="text"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && nameInput.trim()) {
-                  localStorage.setItem('lotta-live-name', nameInput.trim())
-                  setConfirmedName(nameInput.trim())
-                }
-              }}
-              placeholder="Ditt namn"
-              autoFocus
-            />
-            {versionMismatch && (
-              <div className="live-version-warning">
-                Arrangörens version ({hostVersion}) skiljer sig från din ({__COMMIT_HASH__}). Det
-                kan uppstå oväntade problem.
-              </div>
-            )}
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                const name = nameInput.trim() || 'Domare'
-                localStorage.setItem('lotta-live-name', name)
-                setConfirmedName(name)
-              }}
-            >
-              Anslut
-            </button>
-          </div>
-        </main>
-      </div>
+      <LiveNameEntry
+        title="Domare"
+        onConfirm={setConfirmedName}
+        warning={
+          versionMismatch ? (
+            <div className="live-version-warning">
+              Arrangörens version ({hostVersion}) skiljer sig från din ({__COMMIT_HASH__}). Det kan
+              uppstå oväntade problem.
+            </div>
+          ) : null
+        }
+      />
     )
   }
 

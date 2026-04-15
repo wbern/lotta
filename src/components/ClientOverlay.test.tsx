@@ -16,6 +16,7 @@ import type { ChatMessage } from '../types/p2p'
 import { ClientOverlay } from './ClientOverlay'
 
 const mockBroadcastChatMessage = vi.fn()
+let mockServiceLabel: string | undefined
 
 vi.mock('../services/p2p-provider', () => ({
   getP2PService: () => ({
@@ -26,6 +27,7 @@ vi.mock('../services/p2p-provider', () => ({
     getSelfId: () => 'self-id',
     role: 'viewer',
     strategy: 'mesh',
+    label: mockServiceLabel,
   }),
 }))
 
@@ -56,6 +58,7 @@ afterEach(() => {
   cleanup()
   resetClientStore()
   mockBroadcastChatMessage.mockReset()
+  mockServiceLabel = undefined
 })
 
 describe('ClientOverlay', () => {
@@ -129,7 +132,8 @@ describe('ClientOverlay', () => {
       expect(screen.getByText('Hej från arrangören!')).toBeTruthy()
     })
 
-    it('sends a chat message', () => {
+    it('sends a chat message with the P2PService label as senderName', () => {
+      mockServiceLabel = 'Anna'
       toggleChat()
       render(<ClientOverlay />)
 
@@ -141,7 +145,24 @@ describe('ClientOverlay', () => {
         expect.objectContaining({
           text: 'Mitt meddelande',
           senderRole: 'viewer',
-          senderName: 'Deltagare',
+          senderName: 'Anna',
+        }),
+      )
+    })
+
+    it('sends empty senderName when the P2PService has no label', () => {
+      mockServiceLabel = undefined
+      toggleChat()
+      render(<ClientOverlay />)
+
+      const input = screen.getByPlaceholderText('Skriv ett meddelande...')
+      fireEvent.change(input, { target: { value: 'Utan namn' } })
+      fireEvent.click(screen.getByText('Skicka'))
+
+      expect(mockBroadcastChatMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: 'Utan namn',
+          senderName: '',
         }),
       )
     })

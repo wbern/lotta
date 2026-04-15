@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getClientP2PState, resetClientStore } from '../stores/client-p2p-store'
 import { SharedView } from './SharedView'
@@ -186,6 +186,11 @@ describe('SharedView', () => {
     mockInvalidateQueries.mockReset()
     mockResumePausedMutations.mockReset()
     resetClientStore()
+    localStorage.setItem('lotta-live-name', 'Test User')
+  })
+
+  afterEach(() => {
+    localStorage.clear()
   })
 
   it('shows connecting screen and joins room on mount', () => {
@@ -193,6 +198,40 @@ describe('SharedView', () => {
 
     expect(screen.getByText(/Förbereder anslutning/)).toBeTruthy()
     expect(mockJoinRoomCalls).toContain('ABC123')
+  })
+
+  it('shows name entry gate for full-mode when no stored name', () => {
+    localStorage.removeItem('lotta-live-name')
+    render(<SharedView roomCode="ABC123" token="tok-1" mode="full" />)
+
+    expect(screen.getByPlaceholderText('Ditt namn')).toBeTruthy()
+    expect(mockJoinRoomCalls).toEqual([])
+
+    fireEvent.change(screen.getByPlaceholderText('Ditt namn'), { target: { value: 'Anna' } })
+    fireEvent.click(screen.getByText('Anslut'))
+
+    expect(mockJoinRoomCalls).toEqual(['ABC123'])
+    expect(localStorage.getItem('lotta-live-name')).toBe('Anna')
+  })
+
+  it('keeps Anslut disabled and does not join on empty input', () => {
+    localStorage.removeItem('lotta-live-name')
+    render(<SharedView roomCode="ABC123" token="tok-1" mode="full" />)
+
+    const button = screen.getByText('Anslut') as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+
+    fireEvent.click(button)
+    expect(mockJoinRoomCalls).toEqual([])
+    expect(localStorage.getItem('lotta-live-name')).toBeNull()
+  })
+
+  it('skips name entry gate for view-mode (Avläsare)', () => {
+    localStorage.removeItem('lotta-live-name')
+    render(<SharedView roomCode="ABC123" token="tok-1" mode="view" />)
+
+    expect(screen.queryByPlaceholderText('Ditt namn')).toBeNull()
+    expect(mockJoinRoomCalls).toEqual(['ABC123'])
   })
 
   it('sets active provider and wires up RPC on mount', async () => {
