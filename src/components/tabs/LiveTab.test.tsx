@@ -458,6 +458,79 @@ describe('LiveTab', () => {
     expect(mockSend).not.toHaveBeenCalled()
   })
 
+  it('shows empty-state hint in Domarstyrning panel when no grants exist', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    const panel = screen.getByTestId('live-tab-grants-panel')
+    expect(panel.textContent).toMatch(/Lägg till en åtkomst/i)
+    expect(panel.querySelectorAll('[data-testid^="grant-row-"]').length).toBe(0)
+  })
+
+  it('renders the grant form with label input, preset radios, and submit button', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    const labelInput = screen.getByTestId('grant-label-input') as HTMLInputElement
+    expect(labelInput).toBeTruthy()
+    expect(labelInput.value).toBe('')
+
+    const fullRadio = screen.getByTestId('grant-preset-full') as HTMLInputElement
+    const viewRadio = screen.getByTestId('grant-preset-view') as HTMLInputElement
+    expect(fullRadio.type).toBe('radio')
+    expect(viewRadio.type).toBe('radio')
+
+    const submitBtn = screen.getByTestId('grant-submit')
+    expect(submitBtn.tagName.toLowerCase()).toBe('button')
+  })
+
+  it('adds a grant row when the form is submitted', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    const labelInput = screen.getByTestId('grant-label-input') as HTMLInputElement
+    fireEvent.change(labelInput, { target: { value: 'Sofia — KSS' } })
+    fireEvent.click(screen.getByTestId('grant-preset-full'))
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    const panel = screen.getByTestId('live-tab-grants-panel')
+    const rows = panel.querySelectorAll('[data-testid^="grant-row-"]')
+    expect(rows.length).toBe(1)
+    expect(rows[0].textContent).toContain('Sofia — KSS')
+    // Form should clear
+    expect(labelInput.value).toBe('')
+  })
+
+  it('grant row contains a QR code, fullscreen button, and copy button tied to a /live share URL', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    fireEvent.change(screen.getByTestId('grant-label-input'), {
+      target: { value: 'Domare Anna' },
+    })
+    fireEvent.click(screen.getByTestId('grant-preset-full'))
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    const row = screen
+      .getByTestId('live-tab-grants-panel')
+      .querySelector('[data-testid^="grant-row-"]') as HTMLElement
+    // QR code lives inside the row
+    const qr = row.querySelector('[data-testid="qr-code"]')
+    expect(qr).toBeTruthy()
+    // QR value is a /live share URL carrying a token
+    const url = new URL(qr!.textContent!)
+    expect(url.pathname).toContain('/live/')
+    expect(url.searchParams.get('token')).toBeTruthy()
+    expect(url.searchParams.get('share')).toBe('full')
+    // Fullscreen + copy buttons inside the row
+    expect(row.querySelector('[data-testid^="grant-fullscreen-"]')).toBeTruthy()
+    expect(row.querySelector('[data-testid^="grant-copy-"]')).toBeTruthy()
+  })
+
   it('shows Domarstyrning sub-tab when hosting and switching to it does not destroy session', () => {
     renderLiveTab()
     fireEvent.click(screen.getByText('Starta Live'))
@@ -960,36 +1033,6 @@ describe('LiveTab', () => {
 
     expect(mockBroadcastChatDeleteCalls).toHaveLength(1)
     expect(mockBroadcastChatDeleteCalls[0].id).toBe('msg-to-delete')
-  })
-
-  it('shows Domarstyrning panel with QR code and share link when subtab is active', () => {
-    renderLiveTab()
-    fireEvent.click(screen.getByText('Starta Live'))
-    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
-
-    expect(screen.getByRole('heading', { name: 'Domarstyrning' })).toBeTruthy()
-    // Should have QR code
-    const qrCodes = screen.getAllByTestId('qr-code')
-    expect(qrCodes.length).toBeGreaterThanOrEqual(1)
-    // Should have share URL
-    const urlEl = screen.getByTestId('vydelning-url')
-    expect(urlEl).toBeTruthy()
-    const url = new URL(urlEl.textContent!)
-    expect(url.searchParams.get('share')).toBe('full')
-    expect(url.searchParams.get('token')).toBeTruthy()
-    expect(url.pathname).toContain('/live/')
-  })
-
-  it('Domarstyrning panel groups the QR and share link in one share-box like Delning', () => {
-    renderLiveTab()
-    fireEvent.click(screen.getByText('Starta Live'))
-    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
-
-    const shareBox = screen.getByTestId('live-tab-vydelning-share-box')
-    expect(shareBox.querySelector('[data-testid="qr-code"]')).toBeTruthy()
-    expect(shareBox.querySelector('[data-testid="vydelning-url"]')).toBeTruthy()
-    // No Rumskod row anymore (consistent with the Delning simplification)
-    expect(screen.queryByText(/^Rumskod:/)).toBeNull()
   })
 
   it('hides club codes until the organizer enables club filtering', () => {

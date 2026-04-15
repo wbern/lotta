@@ -4,7 +4,7 @@ import {
   type RpcPermissions,
 } from '../api/p2p-data-provider'
 
-interface Grant {
+export interface Grant {
   id: string
   label: string
   preset: 'full' | 'view'

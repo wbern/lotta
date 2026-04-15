@@ -14,6 +14,7 @@ import {
 import { generateClubCodeMap } from '../../domain/club-codes'
 import { buildClubCodesPdf } from '../../domain/club-codes-pdf'
 import { CLUBLESS_KEY } from '../../domain/club-filter'
+import { createGrant, type Grant } from '../../domain/grants'
 import { useChatAutoScroll } from '../../hooks/useChatAutoScroll'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { setLiveStatus } from '../../hooks/useLiveStatus'
@@ -98,7 +99,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const roundRef = useRef(round)
   const [isHosting, setIsHosting] = useState(false)
   const [roomCode, setRoomCode] = useState('')
-  const [refereeToken, setRefereeToken] = useState('')
+  const [, setRefereeToken] = useState('')
   const [peers, setPeers] = useState<P2PPeer[]>([])
   const [peerTimestamp, setPeerTimestamp] = useState(() => Date.now())
   const [copied, setCopied] = useState<string | null>(null)
@@ -118,6 +119,9 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const chatRateLimitRef = useRef(new Map<string, number>())
   const mutationUnsubRef = useRef<(() => void) | null>(null)
   const [viewToken, setViewToken] = useState('')
+  const [grants, setGrants] = useState<Grant[]>([])
+  const [grantLabel, setGrantLabel] = useState('')
+  const [grantPreset, setGrantPreset] = useState<'full' | 'view'>('full')
   const [clubCodeSecret, setClubCodeSecret] = useState<string | null>(null)
   const tokenPermissionsRef = useRef(new Map<string, RpcPermissions>())
   const allClubEntriesRef = useRef<string[]>([])
@@ -432,6 +436,14 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     })
   }, [])
 
+  const addGrant = useCallback(() => {
+    const trimmed = grantLabel.trim()
+    if (!trimmed) return
+    const grant = createGrant({ label: trimmed, preset: grantPreset })
+    setGrants((prev) => [...prev, grant])
+    setGrantLabel('')
+  }, [grantLabel, grantPreset])
+
   const sendChatMessage = useCallback(() => {
     const text = chatInput.trim()
     if (!text || !serviceRef.current || !chatEnabledRef.current) return
@@ -502,8 +514,6 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
       </div>
     )
   }
-
-  const shareUrl = refereeToken ? getShareUrl(roomCode, refereeToken) : ''
 
   return (
     <div className="live-tab-container">
@@ -802,45 +812,103 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
 
         {activeSubTab === 'vydelning' && (
           <div className="live-tab-panels">
-            <div className="live-tab-share">
+            <div className="live-tab-share" data-testid="live-tab-grants-panel">
               <h4>Domarstyrning</h4>
-              <p>
-                Dela denna länk med domare eller andra som ska kunna se och rapportera resultat i
-                turneringen.
-              </p>
-              <div className="live-tab-share-box" data-testid="live-tab-vydelning-share-box">
-                <div className="live-tab-share-qr">
-                  <QRCodeSVG value={shareUrl} size={180} />
-                  <p className="live-tab-tournament-label">{tournamentName}</p>
-                </div>
-                <div className="live-tab-share-main">
-                  <div className="live-tab-qr-actions">
-                    <button
-                      className="btn btn-small btn-icon"
-                      onClick={() => setQrFullscreen(shareUrl)}
-                      title="Visa i fullskärm"
-                      aria-label="Visa i fullskärm"
-                    >
-                      ⛶
-                    </button>
-                  </div>
-                  <div className="live-tab-link-group">
-                    <span className="live-tab-link-label">Delningslänk:</span>
-                    <div className="live-tab-link-row">
-                      <code className="live-tab-url" data-testid="vydelning-url">
-                        {shareUrl}
-                      </code>
-                      <button
-                        className="btn btn-small btn-icon"
-                        onClick={() => copyToClipboard(shareUrl, 'shareUrl')}
-                        title="Kopiera"
-                      >
-                        {copied === 'shareUrl' ? '✓' : '📋'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              <div className="live-tab-grant-form">
+                <label className="live-tab-grant-label">
+                  Namn
+                  <input
+                    type="text"
+                    data-testid="grant-label-input"
+                    value={grantLabel}
+                    onChange={(e) => setGrantLabel(e.target.value)}
+                  />
+                </label>
+                <fieldset className="live-tab-grant-presets">
+                  <legend>Typ</legend>
+                  <label>
+                    <input
+                      type="radio"
+                      name="grant-preset"
+                      data-testid="grant-preset-full"
+                      checked={grantPreset === 'full'}
+                      onChange={() => setGrantPreset('full')}
+                    />
+                    Domare
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="grant-preset"
+                      data-testid="grant-preset-view"
+                      checked={grantPreset === 'view'}
+                      onChange={() => setGrantPreset('view')}
+                    />
+                    Avläsare
+                  </label>
+                </fieldset>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  data-testid="grant-submit"
+                  disabled={!grantLabel.trim()}
+                  onClick={addGrant}
+                >
+                  Lägg till
+                </button>
               </div>
+              {grants.length === 0 ? (
+                <p className="live-tab-empty">
+                  Lägg till en åtkomst för att generera en QR-kod åt en domare.
+                </p>
+              ) : (
+                <div className="live-tab-grants-list">
+                  {grants.map((grant) => {
+                    const url =
+                      grant.preset === 'full'
+                        ? getShareUrl(roomCode, grant.token)
+                        : getViewUrl(roomCode, grant.token)
+                    return (
+                      <div
+                        key={grant.id}
+                        className="live-tab-grant-row"
+                        data-testid={`grant-row-${grant.id}`}
+                      >
+                        <div className="live-tab-grant-qr">
+                          <QRCodeSVG value={url} size={120} />
+                        </div>
+                        <div className="live-tab-grant-meta">
+                          <span className="live-tab-grant-row-label">{grant.label}</span>
+                          <span className="live-tab-grant-row-preset">
+                            {grant.preset === 'full' ? 'Domare' : 'Avläsare'}
+                          </span>
+                        </div>
+                        <div className="live-tab-grant-actions">
+                          <button
+                            type="button"
+                            className="btn btn-small btn-icon"
+                            data-testid={`grant-fullscreen-${grant.id}`}
+                            onClick={() => setQrFullscreen(url)}
+                            title="Visa i fullskärm"
+                            aria-label="Visa i fullskärm"
+                          >
+                            ⛶
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-small btn-icon"
+                            data-testid={`grant-copy-${grant.id}`}
+                            onClick={() => copyToClipboard(url, `grant-${grant.id}`)}
+                            title="Kopiera länk"
+                          >
+                            {copied === `grant-${grant.id}` ? '✓' : '📋'}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
