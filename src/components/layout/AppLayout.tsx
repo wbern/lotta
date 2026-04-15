@@ -18,6 +18,7 @@ import { useDeleteTournament, useTournament, useTournaments } from '../../hooks/
 import { useTimeline, useUndoActions, useUndoState } from '../../hooks/useUndo'
 import { useClientP2PStore } from '../../stores/client-p2p-store'
 import { ClientOverlay } from '../ClientOverlay'
+import { AddGroupDialog } from '../dialogs/AddGroupDialog'
 import { BackupExportDialog } from '../dialogs/BackupExportDialog'
 import { BackupRestoreDialog } from '../dialogs/BackupRestoreDialog'
 import { ConfirmDialog } from '../dialogs/ConfirmDialog'
@@ -84,6 +85,13 @@ export function AppLayout() {
   // Dialog state
   const [showTournamentDialog, setShowTournamentDialog] = useState(false)
   const [tournamentDialogEditId, setTournamentDialogEditId] = useState<number | undefined>()
+  const [tournamentDialogInitialName, setTournamentDialogInitialName] = useState<
+    string | undefined
+  >()
+  const [tournamentDialogPresetFromId, setTournamentDialogPresetFromId] = useState<
+    number | undefined
+  >()
+  const [showAddGroupDialog, setShowAddGroupDialog] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPlayerPool, setShowPlayerPool] = useState(false)
   const [showTournamentPlayers, setShowTournamentPlayers] = useState(false)
@@ -117,11 +125,33 @@ export function AppLayout() {
 
   const handleNewTournament = () => {
     setTournamentDialogEditId(undefined)
+    setTournamentDialogInitialName(undefined)
+    setTournamentDialogPresetFromId(undefined)
     setShowTournamentDialog(true)
   }
 
   const handleEditTournament = () => {
     setTournamentDialogEditId(tournamentId)
+    setTournamentDialogInitialName(undefined)
+    setTournamentDialogPresetFromId(undefined)
+    setShowTournamentDialog(true)
+  }
+
+  const handleAddGroup = () => {
+    setShowAddGroupDialog(true)
+  }
+
+  const handleAddGroupConfirm = ({
+    name,
+    presetFromId,
+  }: {
+    name: string
+    presetFromId: number | undefined
+  }) => {
+    setShowAddGroupDialog(false)
+    setTournamentDialogEditId(undefined)
+    setTournamentDialogInitialName(name)
+    setTournamentDialogPresetFromId(presetFromId)
     setShowTournamentDialog(true)
   }
 
@@ -328,6 +358,7 @@ export function AppLayout() {
         onShowTimeline={() => setShowTimeline(true)}
         onNewTournament={handleNewTournament}
         onEditTournament={handleEditTournament}
+        onAddGroup={handleAddGroup}
         onDeleteTournament={handleDeleteTournament}
         onPlayerPool={() => setShowPlayerPool(true)}
         onTournamentPlayers={() => setShowTournamentPlayers(true)}
@@ -409,8 +440,17 @@ export function AppLayout() {
       <TournamentDialog
         open={showTournamentDialog}
         tournamentId={tournamentDialogEditId}
+        initialName={tournamentDialogInitialName}
+        presetFromTournamentId={tournamentDialogPresetFromId}
         onClose={() => setShowTournamentDialog(false)}
         onCreated={(id) => setTournamentId(id)}
+      />
+      <AddGroupDialog
+        open={showAddGroupDialog}
+        tournaments={tournaments || []}
+        currentTournamentId={tournamentId}
+        onClose={() => setShowAddGroupDialog(false)}
+        onConfirm={handleAddGroupConfirm}
       />
       <SettingsDialog open={showSettings} onClose={() => setShowSettings(false)} />
       <PlayerPoolDialog open={showPlayerPool} onClose={() => setShowPlayerPool(false)} />

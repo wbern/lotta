@@ -8,6 +8,8 @@ import { Dialog } from './Dialog'
 interface Props {
   open: boolean
   tournamentId: number | undefined // undefined = create new
+  initialName?: string
+  presetFromTournamentId?: number
   onClose: () => void
   onCreated?: (id: number) => void
 }
@@ -65,8 +67,16 @@ const defaults: CreateTournamentRequest = {
   clubStandingsPage: 'klubbstallning.htm',
 }
 
-export function TournamentDialog({ open, tournamentId, onClose, onCreated }: Props) {
+export function TournamentDialog({
+  open,
+  tournamentId,
+  initialName,
+  presetFromTournamentId,
+  onClose,
+  onCreated,
+}: Props) {
   const { data: existing } = useTournament(tournamentId)
+  const { data: presetTournament } = useTournament(presetFromTournamentId)
   const createMutation = useCreateTournament()
   const updateMutation = useUpdateTournament()
 
@@ -84,6 +94,7 @@ export function TournamentDialog({ open, tournamentId, onClose, onCreated }: Pro
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
+    if (!open) return
     if (isEdit && existing) {
       setForm({
         name: existing.name,
@@ -115,10 +126,45 @@ export function TournamentDialog({ open, tournamentId, onClose, onCreated }: Pro
       })
       setManualMode(detectPointSystemPreset(existing.chess4, existing.pointsPerGame) === 'manual')
     } else if (!isEdit) {
-      setForm(defaults)
-      setManualMode(false)
+      if (presetTournament) {
+        setForm({
+          name: initialName ?? '',
+          group: '',
+          pairingSystem: presetTournament.pairingSystem,
+          initialPairing: presetTournament.initialPairing,
+          nrOfRounds: presetTournament.nrOfRounds,
+          barredPairing: presetTournament.barredPairing,
+          compensateWeakPlayerPP: presetTournament.compensateWeakPlayerPP,
+          pointsPerGame: presetTournament.pointsPerGame,
+          chess4: presetTournament.chess4,
+          ratingChoice: presetTournament.ratingChoice,
+          showELO: presetTournament.showELO,
+          showGroup: presetTournament.showGroup,
+          city: presetTournament.city,
+          startDate: presetTournament.startDate || undefined,
+          endDate: presetTournament.endDate || undefined,
+          chiefArbiter: presetTournament.chiefArbiter,
+          deputyArbiter: presetTournament.deputyArbiter,
+          timeControl: presetTournament.timeControl,
+          federation: presetTournament.federation,
+          selectedTiebreaks: presetTournament.selectedTiebreaks,
+          resultsPage: presetTournament.resultsPage,
+          standingsPage: presetTournament.standingsPage,
+          playerListPage: presetTournament.playerListPage,
+          roundForRoundPage: presetTournament.roundForRoundPage,
+          clubStandingsPage: presetTournament.clubStandingsPage,
+          roundDates: presetTournament.roundDates,
+        })
+        setManualMode(
+          detectPointSystemPreset(presetTournament.chess4, presetTournament.pointsPerGame) ===
+            'manual',
+        )
+      } else {
+        setForm({ ...defaults, name: initialName ?? '' })
+        setManualMode(false)
+      }
     }
-  }, [existing, isEdit, open])
+  }, [existing, isEdit, open, presetTournament, initialName])
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const update = (fields: Partial<CreateTournamentRequest>) => {

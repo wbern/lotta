@@ -13,7 +13,8 @@ const mockExisting = vi.hoisted(
 )
 
 vi.mock('../../hooks/useTournaments', () => ({
-  useTournament: () => ({ data: mockExisting.value }),
+  useTournament: (id: number | undefined) =>
+    id == null ? { data: undefined } : { data: mockExisting.value },
   useCreateTournament: () => mockMutation,
   useUpdateTournament: () => mockMutation,
 }))
@@ -108,6 +109,38 @@ describe('TournamentDialog save validation', () => {
 
     fireEvent.change(screen.getByTestId('tournament-name-input'), { target: { value: 'Test' } })
     expect(screen.queryByTestId('tournament-save-error')).toBeNull()
+  })
+})
+
+describe('TournamentDialog preset prefill', () => {
+  it('prefills name from initialName and copies settings from preset tournament with empty group', () => {
+    mockExisting.value = {
+      ...baseTournament,
+      id: 99,
+      name: 'Some other name',
+      group: 'X',
+      chess4: true,
+      pointsPerGame: 4,
+      nrOfRounds: 5,
+    }
+
+    render(
+      <TournamentDialog
+        open
+        tournamentId={undefined}
+        initialName="Vårspelen 2026"
+        presetFromTournamentId={99}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const nameInput = screen.getByTestId('tournament-name-input') as HTMLInputElement
+    const groupInput = screen.getByTestId('tournament-group-input') as HTMLInputElement
+    const pointSystem = screen.getByTestId('tournament-point-system-select') as HTMLSelectElement
+
+    expect(nameInput.value).toBe('Vårspelen 2026')
+    expect(groupInput.value).toBe('')
+    expect(pointSystem.value).toBe('schack4an')
   })
 })
 

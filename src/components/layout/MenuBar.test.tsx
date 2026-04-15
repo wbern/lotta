@@ -29,6 +29,18 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+describe('MenuBar add group item', () => {
+  it('fires onAddGroup when clicking "Lägg till grupp" under Turnering', () => {
+    const onAddGroup = vi.fn()
+    render(<MenuBar tournamentId={1} roundNr={undefined} onAddGroup={onAddGroup} />)
+
+    openMenu('Turnering')
+    fireEvent.click(screen.getByText('Lägg till grupp'))
+
+    expect(onAddGroup).toHaveBeenCalled()
+  })
+})
+
 describe('MenuBar disabled menus without tournament', () => {
   it('disables Lotta and Ställning when no tournament is selected', () => {
     renderMenuBar()

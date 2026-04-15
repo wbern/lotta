@@ -56,6 +56,7 @@ export default defineConfig({
   ],
 
   projects: [
+    { name: 'add-group', testMatch: 'add-group.spec.ts' },
     { name: 'app', testMatch: 'app.spec.ts' },
     { name: 'dialogs', testMatch: 'dialogs.spec.ts' },
     { name: 'menus', testMatch: 'menus.spec.ts' },

@@ -13,6 +13,7 @@ interface Props {
   onShowTimeline?: () => void
   onNewTournament?: () => void
   onEditTournament?: () => void
+  onAddGroup?: () => void
   onDeleteTournament?: () => void
   onPlayerPool?: () => void
   onTournamentPlayers?: () => void
@@ -41,6 +42,7 @@ export function MenuBar({
   onShowTimeline,
   onNewTournament,
   onEditTournament,
+  onAddGroup,
   onDeleteTournament,
   onPlayerPool,
   onTournamentPlayers,
@@ -95,6 +97,9 @@ export function MenuBar({
         {openMenu === 'tournament' && (
           <div className="menu-dropdown" data-testid="menu-dropdown">
             <button onClick={() => action(onNewTournament)}>Ny</button>
+            <button onClick={() => action(onAddGroup)} disabled={!hasTournament}>
+              Lägg till grupp
+            </button>
             <button onClick={() => action(onEditTournament)} disabled={!hasTournament}>
               Editera
             </button>
