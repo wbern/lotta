@@ -361,8 +361,11 @@ function ContextMenuPopup({
   onEditScore: () => void
   onClose: () => void
 }) {
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0
+  const flipUp = viewportHeight > 0 && y > viewportHeight / 2
+  const positionStyle = flipUp ? { left: x, bottom: viewportHeight - y } : { left: x, top: y }
   return (
-    <div className="context-menu" style={{ left: x, top: y }}>
+    <div className="context-menu" style={positionStyle}>
       <button onClick={() => onSelect('NO_RESULT')}>
         {sv.contextMenu.notPlayed}
         <span className="context-menu-shortcut" data-testid="shortcut-no-result">

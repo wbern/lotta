@@ -248,6 +248,36 @@ describe('ContextMenuPopup keyboard hints', () => {
   })
 })
 
+describe('ContextMenuPopup viewport positioning', () => {
+  afterEach(() => cleanup())
+
+  it('flips menu upward when opened near the bottom of the viewport', () => {
+    const originalHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', {
+      value: 500,
+      writable: true,
+      configurable: true,
+    })
+    try {
+      renderTab()
+
+      const resultCell = screen.getByTestId('result-dropdown-2')
+      fireEvent.contextMenu(resultCell, { clientX: 10, clientY: 400 })
+
+      const menu = document.querySelector('.context-menu') as HTMLElement
+      expect(menu).toBeTruthy()
+      expect(menu.style.bottom).toBe('100px')
+      expect(menu.style.top).toBe('')
+    } finally {
+      Object.defineProperty(window, 'innerHeight', {
+        value: originalHeight,
+        writable: true,
+        configurable: true,
+      })
+    }
+  })
+})
+
 describe('ContextMenuPopup sends correct scores for ppg>1', () => {
   afterEach(() => {
     cleanup()
