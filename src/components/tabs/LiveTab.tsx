@@ -14,7 +14,7 @@ import {
 import { generateClubCodeMap } from '../../domain/club-codes'
 import { buildClubCodesPdf } from '../../domain/club-codes-pdf'
 import { CLUBLESS_KEY } from '../../domain/club-filter'
-import { createGrant, type Grant } from '../../domain/grants'
+import { createGrant, type Grant, resolveGrantPermissions } from '../../domain/grants'
 import { useChatAutoScroll } from '../../hooks/useChatAutoScroll'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { setLiveStatus } from '../../hooks/useLiveStatus'
@@ -440,9 +440,18 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     const trimmed = grantLabel.trim()
     if (!trimmed) return
     const grant = createGrant({ label: trimmed, preset: grantPreset })
+    tokenPermissionsRef.current.set(grant.token, resolveGrantPermissions(grant))
     setGrants((prev) => [...prev, grant])
     setGrantLabel('')
   }, [grantLabel, grantPreset])
+
+  const revokeGrant = useCallback((id: string) => {
+    setGrants((prev) => {
+      const target = prev.find((g) => g.id === id)
+      if (target) tokenPermissionsRef.current.delete(target.token)
+      return prev.filter((g) => g.id !== id)
+    })
+  }, [])
 
   const sendChatMessage = useCallback(() => {
     const text = chatInput.trim()
@@ -902,6 +911,16 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
                             title="Kopiera länk"
                           >
                             {copied === `grant-${grant.id}` ? '✓' : '📋'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-small btn-icon btn-danger"
+                            data-testid={`grant-revoke-${grant.id}`}
+                            onClick={() => revokeGrant(grant.id)}
+                            title="Ta bort åtkomst"
+                            aria-label="Ta bort åtkomst"
+                          >
+                            ×
                           </button>
                         </div>
                       </div>

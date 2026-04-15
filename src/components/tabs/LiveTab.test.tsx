@@ -17,6 +17,7 @@ let mockLeaveCalled = false
 let mockOnResultSubmit: ((msg: ResultSubmitMessage, peerId: string) => void) | null = null
 let mockOnPeersChange: (() => void) | null = null
 let mockOnNewPeerJoin: ((peerId: string) => void) | null = null
+let mockOnPeerToken: ((peerId: string, token: string) => void) | null = null
 let mockConnectionState = 'disconnected'
 let mockPeers: { id: string; role: string; connectedAt: number; label?: string }[] = []
 let mockRoomId: string | null = null
@@ -134,9 +135,11 @@ vi.mock('../../services/p2p-service', () => {
         mockBroadcastChatDeleteCalls.push(msg)
       }
       kickPeer() {}
-      set onPeerToken(_cb: unknown) {}
+      set onPeerToken(cb: ((peerId: string, token: string) => void) | null) {
+        mockOnPeerToken = cb
+      }
       get onPeerToken() {
-        return null
+        return mockOnPeerToken
       }
     },
   }
@@ -158,6 +161,7 @@ vi.mock('../../api/p2p-data-provider', async () => {
   return {
     ...actual,
     startP2pRpcServer: vi.fn(),
+    setPeerPermissions: vi.fn(),
   }
 })
 
@@ -220,6 +224,7 @@ describe('LiveTab', () => {
     mockOnResultSubmit = null
     mockOnPeersChange = null
     mockOnNewPeerJoin = null
+    mockOnPeerToken = null
     mockOnChatMessage = null
     mockBroadcastChatMessageCalls = []
     mockSendChatToPeerCalls = []
@@ -502,6 +507,91 @@ describe('LiveTab', () => {
     expect(rows[0].textContent).toContain('Sofia — KSS')
     // Form should clear
     expect(labelInput.value).toBe('')
+  })
+
+  it('authorizes a peer presenting a live grant token with the grant preset permissions', async () => {
+    const { setPeerPermissions, createFullPermissions } = await import(
+      '../../api/p2p-data-provider'
+    )
+    const mockSet = vi.mocked(setPeerPermissions)
+
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    fireEvent.change(screen.getByTestId('grant-label-input'), {
+      target: { value: 'Domare Sofia' },
+    })
+    fireEvent.click(screen.getByTestId('grant-preset-full'))
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    const row = screen
+      .getByTestId('live-tab-grants-panel')
+      .querySelector('[data-testid^="grant-row-"]') as HTMLElement
+    const qr = row.querySelector('[data-testid="qr-code"]') as HTMLElement
+    const token = new URL(qr.textContent!).searchParams.get('token')!
+
+    mockSet.mockClear()
+    act(() => {
+      mockOnPeerToken?.('peer-abc', token)
+    })
+
+    expect(mockSet).toHaveBeenCalledWith('peer-abc', createFullPermissions())
+  })
+
+  it('stops authorizing peers presenting a revoked grant token', async () => {
+    const { setPeerPermissions } = await import('../../api/p2p-data-provider')
+    const mockSet = vi.mocked(setPeerPermissions)
+
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    fireEvent.change(screen.getByTestId('grant-label-input'), {
+      target: { value: 'Domare Sofia' },
+    })
+    fireEvent.click(screen.getByTestId('grant-preset-full'))
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    const row = screen
+      .getByTestId('live-tab-grants-panel')
+      .querySelector('[data-testid^="grant-row-"]') as HTMLElement
+    const qr = row.querySelector('[data-testid="qr-code"]') as HTMLElement
+    const token = new URL(qr.textContent!).searchParams.get('token')!
+
+    const revokeBtn = row.querySelector('[data-testid^="grant-revoke-"]') as HTMLElement
+    fireEvent.click(revokeBtn)
+
+    mockSet.mockClear()
+    act(() => {
+      mockOnPeerToken?.('peer-xyz', token)
+    })
+
+    expect(mockSet).not.toHaveBeenCalled()
+  })
+
+  it('removes a grant row when its revoke button is clicked', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
+
+    const labelInput = screen.getByTestId('grant-label-input') as HTMLInputElement
+
+    fireEvent.change(labelInput, { target: { value: 'First' } })
+    fireEvent.click(screen.getByTestId('grant-submit'))
+    fireEvent.change(labelInput, { target: { value: 'Second' } })
+    fireEvent.click(screen.getByTestId('grant-submit'))
+
+    const panel = screen.getByTestId('live-tab-grants-panel')
+    expect(panel.querySelectorAll('[data-testid^="grant-row-"]').length).toBe(2)
+
+    const firstRow = panel.querySelector('[data-testid^="grant-row-"]') as HTMLElement
+    const revokeBtn = firstRow.querySelector('[data-testid^="grant-revoke-"]') as HTMLElement
+    fireEvent.click(revokeBtn)
+
+    const remaining = panel.querySelectorAll('[data-testid^="grant-row-"]')
+    expect(remaining.length).toBe(1)
+    expect(remaining[0].textContent).toContain('Second')
   })
 
   it('grant row contains a QR code, fullscreen button, and copy button tied to a /live share URL', () => {
