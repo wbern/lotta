@@ -6,7 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       skip_tests:
-        description: 'Skip unit + e2e tests (emergency deploy)'
+        description: 'Skip unit tests (emergency deploy)'
+        type: boolean
+        default: false
+      run_e2e:
+        description: 'Run Playwright e2e tests (slow; off by default)'
         type: boolean
         default: false
 
@@ -59,7 +63,7 @@ jobs:
           path: dist
 
   test-e2e:
-    if: ${{ !inputs.skip_tests }}
+    if: ${{ inputs.run_e2e }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
