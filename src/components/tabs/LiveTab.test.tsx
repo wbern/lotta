@@ -252,6 +252,31 @@ describe('LiveTab', () => {
     expect(screen.getByText('Stoppa Live')).toBeTruthy()
   })
 
+  it('Dela med åskådare panel shows only the view link — no room code or projector URL', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    // Room code is implicit in the QR/link — no dedicated row
+    expect(screen.queryByText(/^Rumskod:/)).toBeNull()
+    // Kiosk/projector mode is offered inside the viewer, not as a separate URL
+    expect(screen.queryByText(/^Projektor:/)).toBeNull()
+    // The normal view link row is still there
+    expect(screen.getByText(/^Länk:/)).toBeTruthy()
+  })
+
+  it('groups the QR, share actions, and view link inside one share-box container', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+
+    const shareBox = screen.getByTestId('live-tab-share-box')
+    // QR code lives inside the box
+    expect(shareBox.querySelector('[data-testid="qr-code"]')).toBeTruthy()
+    // Fullscreen + print buttons live inside the box
+    expect(shareBox.querySelector('[data-testid="print-main-qr"]')).toBeTruthy()
+    // The view link URL is grouped inside the same box (not a free row below)
+    const linkCode = shareBox.querySelector('.live-tab-url')
+    expect(linkCode?.textContent).toMatch(/^https?:\/\//)
+  })
+
   it('stops hosting when stop button is clicked', () => {
     renderLiveTab()
     fireEvent.click(screen.getByText('Starta Live'))

@@ -26,7 +26,7 @@ import {
   resolveResultLabel,
   verifyChatMessage,
 } from '../../lib/chat'
-import { getKioskUrl, getShareUrl, getViewUrl, getViewUrlWithCode } from '../../lib/live-urls'
+import { getShareUrl, getViewUrl, getViewUrlWithCode } from '../../lib/live-urls'
 import { playSound } from '../../lib/notification-sounds'
 import { queryClient } from '../../query-client'
 import { subscribeMutationBroadcast } from '../../services/mutation-broadcast'
@@ -577,60 +577,40 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
           <div className="live-tab-panels">
             <div className="live-tab-share">
               <h4>Dela med åskådare</h4>
-              <div className="live-tab-qr">
-                <QRCodeSVG value={viewUrl} size={180} />
-                <p className="live-tab-tournament-label">{tournamentName}</p>
-                <div className="live-tab-qr-actions">
-                  <button
-                    className="btn btn-small"
-                    onClick={() => setQrFullscreen(viewUrl)}
-                    title="Visa i helskärm"
-                  >
-                    ⛶
-                  </button>
-                  <button
-                    className="btn btn-small"
-                    data-testid="print-main-qr"
-                    onClick={printMainQr}
-                    title="Ladda ner PDF"
-                  >
-                    Skriv ut
-                  </button>
+              <div className="live-tab-share-box" data-testid="live-tab-share-box">
+                <div className="live-tab-share-qr">
+                  <QRCodeSVG value={viewUrl} size={180} />
+                  <p className="live-tab-tournament-label">{tournamentName}</p>
                 </div>
-              </div>
-              <div className="live-tab-links">
-                <div className="live-tab-link-row">
-                  <span className="live-tab-link-label">Rumskod:</span>
-                  <code>{roomCode}</code>
-                  <button
-                    className="btn btn-small btn-icon"
-                    onClick={() => copyToClipboard(roomCode, 'roomCode')}
-                    title="Kopiera"
-                  >
-                    {copied === 'roomCode' ? '✓' : '📋'}
-                  </button>
-                </div>
-                <div className="live-tab-link-row">
-                  <span className="live-tab-link-label">Länk:</span>
-                  <code className="live-tab-url">{viewUrl}</code>
-                  <button
-                    className="btn btn-small btn-icon"
-                    onClick={() => copyToClipboard(viewUrl, 'viewUrl')}
-                    title="Kopiera"
-                  >
-                    {copied === 'viewUrl' ? '✓' : '📋'}
-                  </button>
-                </div>
-                <div className="live-tab-link-row">
-                  <span className="live-tab-link-label">Projektor:</span>
-                  <code className="live-tab-url">{getKioskUrl(roomCode)}</code>
-                  <button
-                    className="btn btn-small btn-icon"
-                    onClick={() => copyToClipboard(getKioskUrl(roomCode), 'kioskUrl')}
-                    title="Kopiera"
-                  >
-                    {copied === 'kioskUrl' ? '✓' : '📋'}
-                  </button>
+                <div className="live-tab-share-main">
+                  <div className="live-tab-qr-actions">
+                    <button
+                      className="btn btn-small"
+                      onClick={() => setQrFullscreen(viewUrl)}
+                      title="Visa i helskärm"
+                    >
+                      ⛶
+                    </button>
+                    <button
+                      className="btn btn-small"
+                      data-testid="print-main-qr"
+                      onClick={printMainQr}
+                      title="Ladda ner PDF"
+                    >
+                      Skriv ut
+                    </button>
+                  </div>
+                  <div className="live-tab-link-row">
+                    <span className="live-tab-link-label">Länk:</span>
+                    <code className="live-tab-url">{viewUrl}</code>
+                    <button
+                      className="btn btn-small btn-icon"
+                      onClick={() => copyToClipboard(viewUrl, 'viewUrl')}
+                      title="Kopiera"
+                    >
+                      {copied === 'viewUrl' ? '✓' : '📋'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

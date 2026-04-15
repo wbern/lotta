@@ -4,12 +4,6 @@ function getSpectatorUrl(roomCode: string): string {
   return url.toString()
 }
 
-export function getKioskUrl(roomCode: string): string {
-  const url = new URL(getSpectatorUrl(roomCode))
-  url.searchParams.set('kiosk', 'true')
-  return url.toString()
-}
-
 export function getShareUrl(roomCode: string, token: string): string {
   const url = new URL(getSpectatorUrl(roomCode))
   url.searchParams.set('share', 'full')

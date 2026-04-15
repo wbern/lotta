@@ -859,4 +859,28 @@ describe('LivePage kiosk mode', () => {
     expect(document.querySelector('iframe')?.getAttribute('srcdoc')).toContain('only pairings')
     vi.useRealTimers()
   })
+
+  it('exposes a toggle button that enters kiosk mode from the normal viewer', () => {
+    render(<LivePage roomCode="test" />)
+
+    // Not in kiosk mode on initial render
+    expect(document.querySelector('.live-page--kiosk')).toBeNull()
+
+    // A toggle button is available for spectators to switch into kiosk/projector mode
+    const toggle = screen.getByTestId('kiosk-toggle')
+    expect(toggle).toBeTruthy()
+
+    act(() => {
+      toggle.click()
+    })
+
+    // After clicking, the viewer enters kiosk mode (class applied, behaviors kick in)
+    expect(document.querySelector('.live-page--kiosk')).toBeTruthy()
+
+    // Clicking again leaves kiosk mode
+    act(() => {
+      screen.getByTestId('kiosk-toggle').click()
+    })
+    expect(document.querySelector('.live-page--kiosk')).toBeNull()
+  })
 })

@@ -1626,6 +1626,16 @@ button.btn-danger {
   border-bottom: 1px solid var(--color-border);
 }
 
+.live-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-page--kiosk .live-kiosk-toggle {
+  opacity: 0.6;
+}
+
 .live-title {
   font-weight: 600;
   font-size: 1rem;
@@ -1987,37 +1997,49 @@ button.btn-danger {
   font-size: 1rem;
 }
 
-.live-tab-qr {
-  text-align: center;
-  margin-bottom: 16px;
+.live-tab-share-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
   padding: 16px;
+  margin-bottom: 20px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  display: inline-block;
+}
+
+.live-tab-share-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-tab-share-main {
+  flex: 1 1 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
 }
 
 .live-tab-tournament-label {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: 1rem;
   color: var(--color-text-muted);
-}
-
-.live-tab-links {
-  margin-bottom: 16px;
 }
 
 .live-tab-link-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  min-width: 0;
 }
 
 .live-tab-link-label {
   font-weight: 600;
   font-size: var(--font-size-base);
-  min-width: 80px;
 }
 
 .live-tab-link-row code {
@@ -2028,11 +2050,11 @@ button.btn-danger {
 }
 
 .live-tab-url {
-  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: min(280px, 50vw);
 }
 
 .btn-icon {
@@ -2049,6 +2071,11 @@ button.btn-danger {
   font-size: 18px;
   line-height: 1;
   padding: 4px 12px;
+}
+
+.live-tab-qr-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .live-tab-peer-summary {

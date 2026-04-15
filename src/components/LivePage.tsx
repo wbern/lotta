@@ -220,11 +220,18 @@ export function LivePage({
 
 const KIOSK_ROTATE_MS = 15_000
 
-function LivePageInner({ roomCode, refereeName, refereeToken, kiosk, hostVersion }: LivePageProps) {
+function LivePageInner({
+  roomCode,
+  refereeName,
+  refereeToken,
+  kiosk: kioskFromUrl,
+  hostVersion,
+}: LivePageProps) {
   const normalizedRoom = roomCode.toLowerCase()
   const isReferee = !!refereeToken
   const versionMismatch = !!(hostVersion && __COMMIT_HASH__ && hostVersion !== __COMMIT_HASH__)
   const [mismatchDismissed, setMismatchDismissed] = useState(false)
+  const [kiosk, setKiosk] = useState(!!kioskFromUrl)
   const serviceRef = useRef<P2PService | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const [nameInput, setNameInput] = useState(() => localStorage.getItem('lotta-live-name') ?? '')
@@ -572,16 +579,28 @@ function LivePageInner({ roomCode, refereeName, refereeToken, kiosk, hostVersion
             </select>
           )}
         </div>
-        <button
-          className={`live-status live-status--${connectionState}`}
-          onClick={() => setShowDiagnostics((prev) => !prev)}
-          title="Visa anslutningsdiagnostik"
-        >
-          <span className="live-status-dot" />
-          {getConnectionLabel(connectionState)}
-          {peerCount && <span className="live-peer-count">{peerCount.total} anslutna</span>}
-          {__COMMIT_HASH__ && <span className="live-version-label">{__COMMIT_HASH__}</span>}
-        </button>
+        <div className="live-header-actions">
+          <button
+            type="button"
+            className="btn btn-small live-kiosk-toggle"
+            data-testid="kiosk-toggle"
+            onClick={() => setKiosk((prev) => !prev)}
+            title={kiosk ? 'Avsluta projektorläge' : 'Projektorläge'}
+            aria-pressed={kiosk}
+          >
+            ⛶
+          </button>
+          <button
+            className={`live-status live-status--${connectionState}`}
+            onClick={() => setShowDiagnostics((prev) => !prev)}
+            title="Visa anslutningsdiagnostik"
+          >
+            <span className="live-status-dot" />
+            {getConnectionLabel(connectionState)}
+            {peerCount && <span className="live-peer-count">{peerCount.total} anslutna</span>}
+            {__COMMIT_HASH__ && <span className="live-version-label">{__COMMIT_HASH__}</span>}
+          </button>
+        </div>
       </header>
 
       {showDiagnostics && (
