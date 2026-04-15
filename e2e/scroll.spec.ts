@@ -65,10 +65,12 @@ async function assertScrollable(page: Page) {
 
   const result = await scrollContainer.evaluate((el) => {
     const style = getComputedStyle(el)
+    el.scrollTop = el.scrollHeight
     return {
       overflowY: style.overflowY,
       clientHeight: el.clientHeight,
       scrollHeight: el.scrollHeight,
+      scrolledTo: el.scrollTop,
     }
   })
 
@@ -79,13 +81,7 @@ async function assertScrollable(page: Page) {
   expect(result.scrollHeight, 'content must overflow so we can verify scrolling').toBeGreaterThan(
     result.clientHeight + 1,
   )
-
-  // Scroll programmatically and confirm the scroll position actually moves.
-  const scrolledTo = await scrollContainer.evaluate((el) => {
-    el.scrollTop = el.scrollHeight
-    return el.scrollTop
-  })
-  expect(scrolledTo, 'scrollTop should increase after setting it').toBeGreaterThan(0)
+  expect(result.scrolledTo, 'scrollTop should increase after setting it').toBeGreaterThan(0)
 }
 
 async function openTab(page: Page, tid: number, tab: string) {
@@ -94,55 +90,25 @@ async function openTab(page: Page, tid: number, tab: string) {
 
 // ── Tests ───────────────────────────────────────────────────────────────
 
+const TABLE_TABS: Array<{ tab: string; overflows: string; chess4?: boolean }> = [
+  { tab: 'pairings', overflows: 'games' },
+  { tab: 'standings', overflows: 'players' },
+  { tab: 'players', overflows: 'players' },
+  { tab: 'alphabetical', overflows: 'players' },
+  { tab: 'club-standings', overflows: 'clubs' },
+  { tab: 'chess4-setup', overflows: 'clubs', chess4: true },
+  { tab: 'chess4-standings', overflows: 'clubs', chess4: true },
+]
+
 test.describe('Scrolling behavior when content overflows viewport', () => {
-  test('pairings tab scrolls when games exceed viewport', async ({ page }) => {
-    const tid = await seedTournament(page)
-    await openTab(page, tid, 'pairings')
-    await expect(page.getByTestId('data-table')).toBeVisible()
-    await assertScrollable(page)
-  })
-
-  test('standings tab scrolls when players exceed viewport', async ({ page }) => {
-    const tid = await seedTournament(page)
-    await openTab(page, tid, 'standings')
-    await expect(page.getByTestId('data-table')).toBeVisible()
-    await assertScrollable(page)
-  })
-
-  test('players tab scrolls when players exceed viewport', async ({ page }) => {
-    const tid = await seedTournament(page)
-    await openTab(page, tid, 'players')
-    await expect(page.getByTestId('data-table')).toBeVisible()
-    await assertScrollable(page)
-  })
-
-  test('alphabetical tab scrolls when players exceed viewport', async ({ page }) => {
-    const tid = await seedTournament(page)
-    await openTab(page, tid, 'alphabetical')
-    await expect(page.getByTestId('data-table')).toBeVisible()
-    await assertScrollable(page)
-  })
-
-  test('club-standings tab scrolls when clubs exceed viewport', async ({ page }) => {
-    const tid = await seedTournament(page)
-    await openTab(page, tid, 'club-standings')
-    await expect(page.getByTestId('data-table')).toBeVisible()
-    await assertScrollable(page)
-  })
-
-  test('chess4-setup tab scrolls when clubs exceed viewport', async ({ page }) => {
-    const tid = await seedTournament(page, { chess4: true })
-    await openTab(page, tid, 'chess4-setup')
-    await expect(page.getByTestId('data-table')).toBeVisible()
-    await assertScrollable(page)
-  })
-
-  test('chess4-standings tab scrolls when clubs exceed viewport', async ({ page }) => {
-    const tid = await seedTournament(page, { chess4: true })
-    await openTab(page, tid, 'chess4-standings')
-    await expect(page.getByTestId('data-table')).toBeVisible()
-    await assertScrollable(page)
-  })
+  for (const { tab, overflows, chess4 } of TABLE_TABS) {
+    test(`${tab} tab scrolls when ${overflows} exceed viewport`, async ({ page }) => {
+      const tid = await seedTournament(page, { chess4 })
+      await openTab(page, tid, tab)
+      await expect(page.getByTestId('data-table')).toBeVisible()
+      await assertScrollable(page)
+    })
+  }
 
   test('live tab scrolls when intro content exceeds viewport', async ({ page }) => {
     // Live intro is compact; shrink further so it definitely overflows.
