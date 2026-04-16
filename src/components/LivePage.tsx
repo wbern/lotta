@@ -265,6 +265,7 @@ function LivePageInner({
     role: '',
     strategy: '',
     reconnects: 0,
+    hostId: '',
   })
   const chatOpenRef = useRef(false)
   const chatEnabledRef = useRef(true)
@@ -442,6 +443,7 @@ function LivePageInner({
           role: svc.role,
           strategy: svc.strategy,
           reconnects: svc.reconnectAttempts,
+          hostId: svc.getObservedHostId() ?? '',
         })
       }
     }

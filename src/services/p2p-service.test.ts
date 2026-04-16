@@ -748,6 +748,97 @@ describe('P2PService', () => {
     })
   })
 
+  describe('hostId propagation', () => {
+    it('organizer includes hostId in role announcement to joining peer', async () => {
+      const mockRoom = createMockRoom()
+      mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)
+      const service = new P2PService('organizer', undefined, undefined, 'host-uuid-123')
+      service.startHosting('test-room')
+      await flush()
+
+      mockRoom._simulatePeerJoin('viewer-peer')
+      const sendRoleAnnounce = mockRoom._getSendFn('role-announce')
+      expect(sendRoleAnnounce).toHaveBeenCalledWith(
+        { role: 'organizer', hostId: 'host-uuid-123' },
+        'viewer-peer',
+      )
+    })
+
+    it('viewer records hostId on peer when organizer announces', async () => {
+      const mockRoom = createMockRoom()
+      mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)
+      const service = new P2PService('viewer')
+      service.joinRoom('test-room')
+      await flush()
+
+      mockRoom._simulatePeerJoin('host-peer')
+      mockRoom._simulateReceive(
+        'role-announce',
+        { role: 'organizer', hostId: 'host-uuid-abc' },
+        'host-peer',
+      )
+
+      const peer = service.getPeers()[0]
+      expect(peer.hostId).toBe('host-uuid-abc')
+    })
+
+    it('getObservedHostId returns own hostId for organizer', () => {
+      const service = new P2PService('organizer', undefined, undefined, 'my-host-id')
+      expect(service.getObservedHostId()).toBe('my-host-id')
+    })
+
+    it('getObservedHostId returns organizer peer hostId for viewer', async () => {
+      const mockRoom = createMockRoom()
+      mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)
+      const service = new P2PService('viewer')
+      service.joinRoom('test-room')
+      await flush()
+
+      expect(service.getObservedHostId()).toBeUndefined()
+
+      mockRoom._simulatePeerJoin('host-peer')
+      mockRoom._simulateReceive(
+        'role-announce',
+        { role: 'organizer', hostId: 'observed-host' },
+        'host-peer',
+      )
+
+      expect(service.getObservedHostId()).toBe('observed-host')
+    })
+
+    it('logs Host ID to diagnostic log when organizer peer announces it', async () => {
+      const mockRoom = createMockRoom()
+      mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)
+      const service = new P2PService('viewer')
+      service.joinRoom('test-room')
+      await flush()
+
+      mockRoom._simulatePeerJoin('host-peer')
+      mockRoom._simulateReceive(
+        'role-announce',
+        { role: 'organizer', hostId: 'logged-host-id' },
+        'host-peer',
+      )
+
+      const hasHostIdLog = service
+        .getDiagnosticLog()
+        .some((entry) => entry.message.includes('Host ID: logged-host-id'))
+      expect(hasHostIdLog).toBe(true)
+    })
+
+    it('omits hostId from role announcement when not set (viewer)', async () => {
+      const mockRoom = createMockRoom()
+      mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)
+      const service = new P2PService('viewer')
+      service.joinRoom('test-room')
+      await flush()
+
+      mockRoom._simulatePeerJoin('host-peer')
+      const sendRoleAnnounce = mockRoom._getSendFn('role-announce')
+      expect(sendRoleAnnounce).toHaveBeenCalledWith({ role: 'viewer' }, 'host-peer')
+    })
+  })
+
   it('broadcasts a chat message to all peers', async () => {
     const mockRoom = createMockRoom()
     mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)

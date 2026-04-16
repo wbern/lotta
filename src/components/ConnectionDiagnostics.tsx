@@ -6,7 +6,7 @@ interface RtcPeerState {
 }
 
 interface ConnectionDiagnosticsProps {
-  diagInfo: { roomId: string; selfId: string; role: string; strategy?: string }
+  diagInfo: { roomId: string; selfId: string; role: string; strategy?: string; hostId?: string }
   relayStatus: RelaySocketInfo[]
   diagnosticLog: DiagnosticEntry[]
   peerCount?: number
@@ -55,6 +55,14 @@ export function ConnectionDiagnostics({
                 <code>{diagInfo.selfId || '—'}</code>
               </td>
             </tr>
+            {diagInfo.hostId && (
+              <tr>
+                <td>Host-ID</td>
+                <td>
+                  <code>{diagInfo.hostId}</code>
+                </td>
+              </tr>
+            )}
             <tr>
               <td>Roll</td>
               <td>{diagInfo.role || '—'}</td>

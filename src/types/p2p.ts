@@ -17,6 +17,7 @@ export interface P2PPeer {
   connectedAt: number
   label?: string
   verified: boolean
+  hostId?: string
 }
 
 export type PageUpdateMessage = {

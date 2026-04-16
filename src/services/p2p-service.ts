@@ -239,6 +239,7 @@ type RoleAnnounceMessage = {
   role: P2PRole
   token?: string
   label?: string
+  hostId?: string
 }
 
 type RpcRequest = {
@@ -309,11 +310,13 @@ export class P2PService {
   private manualLeave = false
   private refereeToken: string | null = null
   readonly label: string | undefined
+  readonly hostId: string | undefined
 
-  constructor(role: P2PRole, refereeToken?: string, label?: string) {
+  constructor(role: P2PRole, refereeToken?: string, label?: string, hostId?: string) {
     this.role = role
     this.refereeToken = refereeToken ?? null
     this.label = label
+    this.hostId = hostId
     this.connectionState = 'disconnected'
     // Kick off TURN fetch and ICE probe early — connectToRoom waits briefly for results
     void prefetchTurnServers()
@@ -441,6 +444,14 @@ export class P2PService {
 
   getSelfId(): string {
     return selfId
+  }
+
+  getObservedHostId(): string | undefined {
+    if (this.role === 'organizer') return this.hostId
+    for (const peer of this.peers.values()) {
+      if (peer.role === 'organizer' && peer.hostId) return peer.hostId
+    }
+    return undefined
   }
 
   getRelayStatus(): RelaySocketInfo[] {
@@ -633,7 +644,9 @@ export class P2PService {
       this.setConnectionState(this.role === 'organizer' ? 'connected' : 'connecting')
     }
     this.logDiagnostic(
-      `Joining room "${normalizedId}" as ${this.role} [${P2P_STRATEGY}] (selfId: ${selfId})`,
+      `Joining room "${normalizedId}" as ${this.role} [${P2P_STRATEGY}] (selfId: ${selfId}${
+        this.hostId ? `, hostId: ${this.hostId}` : ''
+      })`,
     )
     // Wait for both TURN servers and ICE probe, but don't block longer than 500ms.
     // Both start in the constructor (and route-level prefetch for TURN), so they've
@@ -674,6 +687,13 @@ export class P2PService {
         peer.label = data.label
       }
 
+      if (data.hostId && peer.hostId !== data.hostId) {
+        peer.hostId = data.hostId
+        if (data.role === 'organizer') {
+          this.logDiagnostic(`Host ID: ${data.hostId}`)
+        }
+      }
+
       // Organizer validates referee token
       if (this.role === 'organizer' && data.role === 'referee') {
         peer.verified = this.refereeToken != null && data.token === this.refereeToken
@@ -692,12 +712,13 @@ export class P2PService {
     this.room.onPeerJoin((peerId: string) => {
       this.logDiagnostic(`Peer joined: ${peerId.slice(0, 8)}...`)
       this.addPeer(peerId, 'viewer')
-      // Announce our role, token, and label to the new peer
+      // Announce our role, token, label, and hostId to the new peer
       sendRoleAnnounce(
         {
           role: this.role,
           ...(this.refereeToken ? { token: this.refereeToken } : {}),
           ...(this.label ? { label: this.label } : {}),
+          ...(this.hostId ? { hostId: this.hostId } : {}),
         },
         peerId,
       )

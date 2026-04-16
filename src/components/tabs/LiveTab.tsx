@@ -56,6 +56,7 @@ const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 interface SavedSession {
   roomCode: string
   refereeToken: string
+  hostId: string
   grants?: Grant[]
 }
 
@@ -69,8 +70,13 @@ function getSavedSession(): SavedSession | null {
   }
 }
 
-function saveSession(roomCode: string, refereeToken: string, grants: Grant[]): void {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, refereeToken, grants }))
+function saveSession(
+  roomCode: string,
+  refereeToken: string,
+  hostId: string,
+  grants: Grant[],
+): void {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode, refereeToken, hostId, grants }))
 }
 
 function clearSession(): void {
@@ -162,7 +168,13 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const [diagnosticLog, setDiagnosticLog] = useState<DiagnosticEntry[]>([])
   const [relayStatus, setRelayStatus] = useState<RelaySocketInfo[]>([])
   const [rtcPeerStates, setRtcPeerStates] = useState<{ peerId: string; state: string }[]>([])
-  const [diagInfo, setDiagInfo] = useState({ roomId: '', selfId: '', role: '', strategy: '' })
+  const [diagInfo, setDiagInfo] = useState({
+    roomId: '',
+    selfId: '',
+    role: '',
+    strategy: '',
+    hostId: '',
+  })
   const { scrollRef: chatScrollRef, bottomRef: chatBottomRef } = useChatAutoScroll(chatMessages)
   const { data: tournamentPlayersData } = useTournamentPlayers(tournamentId)
   const clubPlayerCounts = useMemo(() => {
@@ -211,6 +223,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     if (serviceRef.current) return // Prevent double-start
     const code = saved?.roomCode ?? generateRoomCode()
     const token = saved?.refereeToken ?? generateRefereeToken()
+    const hostId = saved?.hostId ?? crypto.randomUUID()
     const vToken = crypto.randomUUID()
     const secret = crypto.randomUUID()
     const restoredGrants: Grant[] =
@@ -226,9 +239,9 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
             },
           ]
         : [])
-    saveSession(code, token, restoredGrants)
+    saveSession(code, token, hostId, restoredGrants)
     setGrants(restoredGrants)
-    const service = new P2PService('organizer', token)
+    const service = new P2PService('organizer', token, undefined, hostId)
     serviceRef.current = service
     setP2PService(service)
     setClubCodeSecret(secret)
@@ -405,6 +418,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
           selfId: svc.getSelfId(),
           role: svc.role,
           strategy: svc.strategy,
+          hostId: svc.getObservedHostId() ?? '',
         })
       }
     }
@@ -490,7 +504,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const persistGrants = useCallback((nextGrants: Grant[]) => {
     const existing = getSavedSession()
     if (!existing) return
-    saveSession(existing.roomCode, existing.refereeToken, nextGrants)
+    saveSession(existing.roomCode, existing.refereeToken, existing.hostId, nextGrants)
   }, [])
 
   const addGrant = useCallback(() => {

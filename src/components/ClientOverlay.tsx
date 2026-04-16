@@ -25,7 +25,13 @@ export function ClientOverlay() {
   const [chatInput, setChatInput] = useState('')
   const [relayStatus, setRelayStatus] = useState<RelaySocketInfo[]>([])
   const [rtcPeerStates, setRtcPeerStates] = useState<{ peerId: string; state: string }[]>([])
-  const [diagInfo, setDiagInfo] = useState({ roomId: '', selfId: '', role: '', strategy: '' })
+  const [diagInfo, setDiagInfo] = useState({
+    roomId: '',
+    selfId: '',
+    role: '',
+    strategy: '',
+    hostId: '',
+  })
   const { scrollRef: chatScrollRef, bottomRef: chatBottomRef } = useChatAutoScroll(
     store.chatMessages,
   )
@@ -44,6 +50,7 @@ export function ClientOverlay() {
           selfId: svc.getSelfId(),
           role: svc.role,
           strategy: svc.strategy,
+          hostId: svc.getObservedHostId() ?? '',
         })
       } catch {
         // Service may not be available

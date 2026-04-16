@@ -1192,6 +1192,38 @@ describe('LiveTab', () => {
     const parsed = JSON.parse(saved!)
     expect(parsed.roomCode).toMatch(/^[A-HJ-NP-Z2-9]{6}$/)
     expect(parsed.refereeToken).toBeTruthy()
+    expect(parsed.hostId).toBeTruthy()
+  })
+
+  it('passes a stable hostId to P2PService when resuming a saved session', () => {
+    sessionStorage.setItem(
+      'lotta-live-session',
+      JSON.stringify({ roomCode: 'ABC123', refereeToken: 'tok-stable', hostId: 'stable-host-id' }),
+    )
+
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Återuppta Live'))
+
+    // P2PService is constructed as (role, refereeToken, label, hostId) — the 4th arg is hostId
+    expect(mockConstructorArgs[3]).toBe('stable-host-id')
+
+    // The persisted session still carries the same hostId after resume
+    const saved = JSON.parse(sessionStorage.getItem('lotta-live-session')!)
+    expect(saved.hostId).toBe('stable-host-id')
+  })
+
+  it('generates a hostId for legacy saved sessions missing one', () => {
+    sessionStorage.setItem(
+      'lotta-live-session',
+      JSON.stringify({ roomCode: 'LGC999', refereeToken: 'tok-legacy' }),
+    )
+
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Återuppta Live'))
+
+    expect(mockConstructorArgs[3]).toBeTruthy()
+    const saved = JSON.parse(sessionStorage.getItem('lotta-live-session')!)
+    expect(saved.hostId).toBe(mockConstructorArgs[3])
   })
 
   it('clears session from sessionStorage when hosting stops', () => {
