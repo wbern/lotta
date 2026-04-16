@@ -6,6 +6,9 @@ export class WorkerPairingExecutor implements PairingExecutor {
   private worker: Worker | null = null
 
   run(req: PairingRequest): Promise<PairingResult> {
+    if (this.worker) {
+      return Promise.reject(new Error('Pairing already in flight'))
+    }
     return new Promise<PairingResult>((resolve, reject) => {
       const worker = new Worker(new URL('../domain/pairing.worker.ts', import.meta.url), {
         type: 'module',

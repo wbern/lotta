@@ -135,6 +135,29 @@ describe('MenuBar pairing progress', () => {
       vi.useRealTimers()
     }
   })
+
+  it('hides the dialog and resets the counter when pairing completes', () => {
+    vi.useFakeTimers()
+    try {
+      mockPair.isPending = true
+      const { rerender } = render(<MenuBar tournamentId={1} roundNr={undefined} />)
+
+      act(() => {
+        vi.advanceTimersByTime(2000)
+      })
+      expect(screen.getByTestId('pair-progress-elapsed').textContent).toBe('(2 s)')
+
+      mockPair.isPending = false
+      rerender(<MenuBar tournamentId={1} roundNr={undefined} />)
+      expect(screen.queryByText('Lottar...')).toBeNull()
+
+      mockPair.isPending = true
+      rerender(<MenuBar tournamentId={1} roundNr={undefined} />)
+      expect(screen.getByTestId('pair-progress-elapsed').textContent).toBe('(0 s)')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 describe('MenuBar pairing error', () => {

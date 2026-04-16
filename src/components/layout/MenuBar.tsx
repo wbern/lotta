@@ -411,7 +411,7 @@ function PairProgressDialog({ open }: { open: boolean }) {
 
   return (
     <Dialog title="Lottar..." open={open} onClose={() => {}} isDirty={true} width={360}>
-      <div className="pair-progress">
+      <div className="pair-progress" role="status" aria-live="polite">
         <span className="pair-progress-spinner" aria-hidden="true" />
         <span data-testid="pair-progress-elapsed">({elapsed} s)</span>
       </div>

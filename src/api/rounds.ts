@@ -77,6 +77,10 @@ function sortByScoreAndLotNr(players: PairingPlayerInfo[]): void {
   })
 }
 
+// Reads tournament state, awaits pairing (up to PAIRING_TIMEOUT_MS), then writes.
+// Safe because pairing is triggered by a single TD per client; there's no local
+// UI path to mutate the tournament mid-await. P2P replication only applies
+// inbound changes between explicit user actions, not during this function.
 export async function pairNextRound(tournamentId: number): Promise<RoundDto> {
   const p = getActiveDataProvider()
   if (p) return p.rounds.pairNext(tournamentId)
