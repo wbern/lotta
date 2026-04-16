@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePairNextRound } from '../../hooks/useRounds'
 import { Dialog } from '../dialogs/Dialog'
+import { WhatsNewDialog } from '../dialogs/WhatsNewDialog'
 
 interface Props {
   tournamentId: number | undefined
@@ -61,6 +62,7 @@ export function MenuBar({
 }: Props) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAbout, setShowAbout] = useState(false)
+  const [showWhatsNew, setShowWhatsNew] = useState(false)
   const [pairError, setPairError] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
   const pairMutation = usePairNextRound(tournamentId)
@@ -314,6 +316,14 @@ export function MenuBar({
             <button
               onClick={() => {
                 setOpenMenu(null)
+                setShowWhatsNew(true)
+              }}
+            >
+              Vad är nytt
+            </button>
+            <button
+              onClick={() => {
+                setOpenMenu(null)
                 setShowAbout(true)
               }}
             >
@@ -375,6 +385,8 @@ export function MenuBar({
           </p>
         )}
       </Dialog>
+
+      <WhatsNewDialog open={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
     </div>
   )
 }

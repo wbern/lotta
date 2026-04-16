@@ -36,6 +36,64 @@ function generateVersionJson(): Plugin {
   }
 }
 
+type ChangelogEntry = {
+  sha: string
+  date: string
+  type: string
+  scope: string | null
+  breaking: boolean
+  message: string
+}
+
+const USER_FACING_TYPES: Record<string, string> = {
+  feat: 'Nyheter',
+  fix: 'Buggfixar',
+  perf: 'Förbättringar',
+}
+
+const COMMIT_REGEX = /^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$/
+
+function buildChangelog(): ChangelogEntry[] {
+  const raw = git('log --format=%h%x1f%cI%x1f%s%x1e')
+  if (!raw) return []
+  return raw
+    .split('\x1e')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .flatMap((line) => {
+      const [sha, iso, subject] = line.split('\x1f')
+      const match = subject?.match(COMMIT_REGEX)
+      if (!match) return []
+      const [, type, scope, breaking, message] = match
+      if (!USER_FACING_TYPES[type]) return []
+      return [
+        {
+          sha,
+          date: iso.slice(0, 10),
+          type,
+          scope: scope || null,
+          breaking: !!breaking,
+          message,
+        },
+      ]
+    })
+}
+
+function generateChangelogJson(): Plugin {
+  const data = JSON.stringify(buildChangelog())
+  return {
+    name: 'generate-changelog-json',
+    buildStart() {
+      writeFileSync(join(__dirname, 'public', 'changelog.json'), data)
+    },
+    writeBundle(options) {
+      const outDir = options.dir || join(__dirname, 'dist')
+      mkdirSync(outDir, { recursive: true })
+      writeFileSync(join(outDir, 'changelog.json'), data)
+    },
+  }
+}
+
 const certPath = join(__dirname, 'e2e', 'certs', 'cert.pem')
 const keyPath = join(__dirname, 'e2e', 'certs', 'key.pem')
 const useHttps = process.env.VITE_HTTPS === '1' && existsSync(certPath) && existsSync(keyPath)
@@ -53,6 +111,7 @@ export default defineConfig({
   },
   plugins: [
     generateVersionJson(),
+    generateChangelogJson(),
     react(),
     viteStaticCopy({
       targets: [
@@ -67,7 +126,7 @@ export default defineConfig({
       registerType: 'prompt',
       workbox: {
         globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg,ico}'],
-        globIgnores: ['version.json'],
+        globIgnores: ['version.json', 'changelog.json'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       manifest: {

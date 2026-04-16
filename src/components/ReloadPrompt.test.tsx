@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 let mockNeedRefresh = false
 let mockOfflineReady = false
@@ -24,6 +24,8 @@ describe('ReloadPrompt', () => {
     mockNeedRefresh = false
     mockOfflineReady = false
   })
+
+  afterEach(cleanup)
 
   it('does not show update button when offline ready', () => {
     mockOfflineReady = true

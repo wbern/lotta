@@ -26,6 +26,7 @@ package-lock.json
 
 # Generated at build time
 public/version.json
+public/changelog.json
 
 # E2E test artifacts
 .e2e-state.json
@@ -34,6 +35,7 @@ test-results/
 playwright-report/
 showcase.mp4
 showcase-stress.mp4
+keybind-demo.mp4
 e2e/certs/
 
 # Infrastructure (secrets, IPs, deploy scripts)
