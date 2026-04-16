@@ -2064,11 +2064,14 @@ button.btn-danger {
 }
 
 .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 2px 6px;
   font-size: 16px;
   line-height: 1;
   min-width: 28px;
-  text-align: center;
+  min-height: 28px;
 }
 
 .live-tab-qr-actions {
