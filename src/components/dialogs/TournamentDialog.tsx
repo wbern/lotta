@@ -325,7 +325,7 @@ export function TournamentDialog({
           />
           <button
             type="button"
-            className="btn btn-small"
+            className="btn btn-small btn-icon"
             data-testid="randomize-name"
             onClick={() => update({ name: generateRandomName() })}
             title="Slumpa namn"
@@ -349,7 +349,7 @@ export function TournamentDialog({
           />
           <button
             type="button"
-            className="btn btn-small"
+            className="btn btn-small btn-icon"
             data-testid="randomize-group"
             onClick={() => update({ group: generateRandomName({ includeYear: false }) })}
             title="Slumpa grupp"
