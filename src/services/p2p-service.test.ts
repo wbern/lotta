@@ -839,6 +839,116 @@ describe('P2PService', () => {
     })
   })
 
+  describe('host-refresh grace', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    async function setupViewerWithHost(hostId = 'host-uuid-1'): Promise<{
+      mockRoom: ReturnType<typeof createMockRoom>
+      service: P2PService
+    }> {
+      const mockRoom = createMockRoom()
+      mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)
+      const service = new P2PService('viewer')
+      service.joinRoom('test-room')
+      await flush()
+      mockRoom._simulatePeerJoin('host-peer-1')
+      mockRoom._simulateReceive('role-announce', { role: 'organizer', hostId }, 'host-peer-1')
+      mockRoom._simulateReceive('heartbeat', { ts: Date.now() }, 'host-peer-1')
+      return { mockRoom, service }
+    }
+
+    it('defers host-offline during grace window when organizer peer leaves', async () => {
+      const { mockRoom, service } = await setupViewerWithHost()
+      expect(service.connectionState).toBe('connected')
+
+      mockRoom._simulatePeerLeave('host-peer-1')
+
+      // Stale peer kept in map during grace so connection UI stays stable.
+      expect(service.getPeers().some((p) => p.id === 'host-peer-1')).toBe(true)
+      // Just under grace window: still connected (not host-offline).
+      vi.advanceTimersByTime(19_000)
+      expect(service.connectionState).toBe('connected')
+    })
+
+    it('silently rebinds when new organizer peer announces matching hostId', async () => {
+      const { mockRoom, service } = await setupViewerWithHost('host-uuid-shared')
+      mockRoom._simulatePeerLeave('host-peer-1')
+
+      // Part-way through grace, a new peer joins with the same hostId.
+      vi.advanceTimersByTime(5_000)
+      mockRoom._simulatePeerJoin('host-peer-2')
+      mockRoom._simulateReceive(
+        'role-announce',
+        { role: 'organizer', hostId: 'host-uuid-shared' },
+        'host-peer-2',
+      )
+
+      expect(service.connectionState).toBe('connected')
+      const peers = service.getPeers()
+      expect(peers.some((p) => p.id === 'host-peer-1')).toBe(false)
+      const rebound = peers.find((p) => p.id === 'host-peer-2')
+      expect(rebound?.role).toBe('organizer')
+      expect(rebound?.hostId).toBe('host-uuid-shared')
+
+      // Advancing past the original grace window must not trip host-offline now.
+      vi.advanceTimersByTime(30_000)
+      // New heartbeat arrives to keep the connection alive (normal behavior).
+      mockRoom._simulateReceive('heartbeat', { ts: Date.now() }, 'host-peer-2')
+      expect(service.connectionState).toBe('connected')
+    })
+
+    it('logs a diagnostic entry when rebind succeeds', async () => {
+      const { mockRoom, service } = await setupViewerWithHost('host-uuid-rb')
+      mockRoom._simulatePeerLeave('host-peer-1')
+      mockRoom._simulatePeerJoin('host-peer-2')
+      mockRoom._simulateReceive(
+        'role-announce',
+        { role: 'organizer', hostId: 'host-uuid-rb' },
+        'host-peer-2',
+      )
+
+      const reboundLog = service
+        .getDiagnosticLog()
+        .some((e) => e.message.startsWith('Host rebound:'))
+      expect(reboundLog).toBe(true)
+    })
+
+    it('falls through to host-offline after grace expires without rebind', async () => {
+      const { mockRoom, service } = await setupViewerWithHost()
+      mockRoom._simulatePeerLeave('host-peer-1')
+
+      vi.advanceTimersByTime(20_000)
+      expect(service.connectionState).toBe('host-offline')
+      expect(service.getPeers().some((p) => p.id === 'host-peer-1')).toBe(false)
+    })
+
+    it('heartbeat timeout firing during grace does not transition to host-offline', async () => {
+      const { mockRoom, service } = await setupViewerWithHost()
+      // Consume most of the heartbeat-timeout budget before the peer leaves,
+      // so heartbeat-timeout (25s) would fire inside the 20s grace window.
+      vi.advanceTimersByTime(24_000)
+      mockRoom._simulatePeerLeave('host-peer-1')
+
+      // Heartbeat-timeout fires 1s into grace — should be suppressed.
+      vi.advanceTimersByTime(2_000)
+      expect(service.connectionState).toBe('connected')
+    })
+
+    it('leave() clears host-refresh grace state', async () => {
+      const { mockRoom, service } = await setupViewerWithHost()
+      mockRoom._simulatePeerLeave('host-peer-1')
+
+      service.leave()
+      vi.advanceTimersByTime(60_000)
+      expect(service.connectionState).toBe('disconnected')
+    })
+  })
+
   it('broadcasts a chat message to all peers', async () => {
     const mockRoom = createMockRoom()
     mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)

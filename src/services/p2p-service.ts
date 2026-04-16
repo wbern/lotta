@@ -228,6 +228,9 @@ const RECONNECT_BACKOFF_BASE_MS = 2000
 const RECONNECT_BACKOFF_CAP_MS = 30_000
 const RELAY_CHECK_INTERVAL_MS = 10_000
 const RELAY_DEAD_THRESHOLD = 2
+// Grace window for a host peer to rebind after refresh. Kept below the
+// heartbeat timeout so we only defer, never truly mask, a real host outage.
+const HOST_REFRESH_GRACE_MS = 20_000
 
 type ActionSender<T> = (data: T, targetPeers?: string | string[] | null) => void
 
@@ -308,6 +311,9 @@ export class P2PService {
   private relayDeadCount = 0
   private receivedFirstHeartbeat = false
   private manualLeave = false
+  private hostRefreshGraceTimer: ReturnType<typeof setTimeout> | null = null
+  private hostRefreshPeerId: string | null = null
+  private hostRefreshHostId: string | null = null
   private refereeToken: string | null = null
   readonly label: string | undefined
   readonly hostId: string | undefined
@@ -359,9 +365,19 @@ export class P2PService {
     this.clearHeartbeatTimers()
     this.clearReconnectTimer()
     this.clearRelayHealthCheck()
+    this.clearHostRefreshGrace()
     this._reconnectAttempts = 0
     this.receivedFirstHeartbeat = false
     this.setConnectionState('disconnected')
+  }
+
+  private clearHostRefreshGrace(): void {
+    if (this.hostRefreshGraceTimer) {
+      clearTimeout(this.hostRefreshGraceTimer)
+      this.hostRefreshGraceTimer = null
+    }
+    this.hostRefreshPeerId = null
+    this.hostRefreshHostId = null
   }
 
   broadcastPageUpdate(message: PageUpdateMessage): void {
@@ -532,6 +548,8 @@ export class P2PService {
       ? HEARTBEAT_TIMEOUT_MS
       : HEARTBEAT_INITIAL_TIMEOUT_MS
     this.heartbeatTimeout = setTimeout(() => {
+      // Host-refresh grace defers host-offline so a refreshing host rebinds silently.
+      if (this.hostRefreshGraceTimer !== null) return
       this.setConnectionState('host-offline')
       this.scheduleReconnect()
     }, timeout)
@@ -616,6 +634,7 @@ export class P2PService {
     }
     this.clearHeartbeatTimers()
     this.clearRelayHealthCheck()
+    this.clearHostRefreshGrace()
     this.sendPageUpdate = null
     this.sendResultSubmit = null
     this._sendResultAck = null
@@ -694,6 +713,30 @@ export class P2PService {
         }
       }
 
+      // If we're in a host-refresh grace window and this role-announce is from
+      // a different peerId with the matching hostId, silently rebind: drop the
+      // stale peer entry and clear the timer. The new entry (under peerId) is
+      // already in place from addPeer() and now has role=organizer.
+      if (
+        data.role === 'organizer' &&
+        data.hostId &&
+        this.hostRefreshHostId === data.hostId &&
+        this.hostRefreshPeerId !== null &&
+        this.hostRefreshPeerId !== peerId
+      ) {
+        this.logDiagnostic(
+          `Host rebound: ${this.hostRefreshPeerId.slice(0, 8)}... → ${peerId.slice(0, 8)}...`,
+        )
+        this.peers.delete(this.hostRefreshPeerId)
+        if (this.hostRefreshGraceTimer) {
+          clearTimeout(this.hostRefreshGraceTimer)
+          this.hostRefreshGraceTimer = null
+        }
+        this.hostRefreshPeerId = null
+        this.hostRefreshHostId = null
+        this.onPeersChange?.()
+      }
+
       // Organizer validates referee token
       if (this.role === 'organizer' && data.role === 'referee') {
         peer.verified = this.refereeToken != null && data.token === this.refereeToken
@@ -731,6 +774,31 @@ export class P2PService {
 
     this.room.onPeerLeave((peerId: string) => {
       this.logDiagnostic(`Peer left: ${peerId.slice(0, 8)}...`)
+      const peer = this.peers.get(peerId)
+      if (
+        this.role !== 'organizer' &&
+        peer?.role === 'organizer' &&
+        peer.hostId &&
+        this.hostRefreshGraceTimer === null
+      ) {
+        this.hostRefreshPeerId = peerId
+        this.hostRefreshHostId = peer.hostId
+        this.logDiagnostic(
+          `Host peer left — awaiting rebind for hostId ${peer.hostId.slice(0, 8)}...`,
+        )
+        this.onPeersChange?.()
+        this.hostRefreshGraceTimer = setTimeout(() => {
+          this.logDiagnostic('Host refresh grace expired — host-offline')
+          this.hostRefreshGraceTimer = null
+          const waitingPeerId = this.hostRefreshPeerId
+          this.hostRefreshPeerId = null
+          this.hostRefreshHostId = null
+          if (waitingPeerId) this.removePeer(waitingPeerId)
+          this.setConnectionState('host-offline')
+          this.scheduleReconnect()
+        }, HOST_REFRESH_GRACE_MS)
+        return
+      }
       this.removePeer(peerId)
     })
 
