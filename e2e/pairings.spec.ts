@@ -212,6 +212,75 @@ test.describe('All draws: single score group', () => {
   })
 })
 
+test.describe('Keyboard navigation in pairings table', () => {
+  async function seedAndOpen(page: import('@playwright/test').Page) {
+    await page.goto('/')
+    await waitForApi(page)
+    const $ = apiClient(page)
+    const { tid } = await createTournament(
+      $,
+      {
+        name: `kbnav-${Date.now()}`,
+        pairingSystem: 'Monrad',
+        nrOfRounds: 3,
+      },
+      PLAYERS_8,
+    )
+    await $.post(`/api/tournaments/${tid}/pair?confirm=true`)
+    await page.goto(`/?tournamentId=${tid}&tab=pairings`)
+    await expect(page.getByTestId('data-table')).toBeVisible()
+    return page.getByTestId('data-table').locator('tbody tr')
+  }
+
+  test('ArrowDown moves selection to the next row', async ({ page }) => {
+    const rows = await seedAndOpen(page)
+    await rows.nth(0).click()
+    await expect(rows.nth(0)).toHaveClass(/selected/)
+    await page.keyboard.press('ArrowDown')
+    await expect(rows.nth(1)).toHaveClass(/selected/)
+    await expect(rows.nth(0)).not.toHaveClass(/selected/)
+  })
+
+  test('ArrowUp moves selection to the previous row', async ({ page }) => {
+    const rows = await seedAndOpen(page)
+    await rows.nth(2).click()
+    await expect(rows.nth(2)).toHaveClass(/selected/)
+    await page.keyboard.press('ArrowUp')
+    await expect(rows.nth(1)).toHaveClass(/selected/)
+  })
+
+  test('v auto-advances and the next v hits the next board, not the previous one', async ({
+    page,
+  }) => {
+    const rows = await seedAndOpen(page)
+
+    await rows.nth(0).click()
+    await expect(rows.nth(0)).toHaveClass(/selected/)
+
+    // First v: white wins board 1, auto-advance to board 2
+    await page.keyboard.press('v')
+    await expect(page.getByTestId('result-dropdown-1')).toContainText('1-0')
+    await expect(rows.nth(1)).toHaveClass(/selected/)
+
+    // Second v: must hit board 2 (the new selection), NOT re-set board 1
+    await page.keyboard.press('v')
+    await expect(page.getByTestId('result-dropdown-2')).toContainText('1-0')
+    await expect(rows.nth(2)).toHaveClass(/selected/)
+  })
+
+  test('ArrowDown then v sets the result on the row that was navigated to', async ({ page }) => {
+    const rows = await seedAndOpen(page)
+    await rows.nth(0).click()
+    await page.keyboard.press('ArrowDown')
+    await expect(rows.nth(1)).toHaveClass(/selected/)
+
+    await page.keyboard.press('v')
+    await expect(page.getByTestId('result-dropdown-2')).toContainText('1-0')
+    // Board 1 must remain blank — focus moved before v was pressed
+    await expect(page.getByTestId('result-dropdown-1')).not.toContainText('1-0')
+  })
+})
+
 test.describe('Withdrawal: player drops after round 2', () => {
   test('Nordisk Schweizer (3 rounds — algorithm limit)', async ({ page }) => {
     await runSnapshot(page, {

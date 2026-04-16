@@ -115,6 +115,102 @@ describe('PairingsTab multi-select', () => {
   })
 })
 
+describe('PairingsTab arrow key navigation', () => {
+  afterEach(() => {
+    cleanup()
+    mockMutate.mockClear()
+  })
+
+  it('moves selection to the next row when ArrowDown is pressed on a focused row', () => {
+    renderTab()
+    const rowA = screen.getByText('White A').closest('tr') as HTMLTableRowElement
+    const rowB = screen.getByText('White B').closest('tr') as HTMLTableRowElement
+
+    fireEvent.click(rowA)
+    expect(rowA.className).toContain('selected')
+
+    fireEvent.keyDown(rowA, { key: 'ArrowDown' })
+
+    expect(rowA.className).not.toContain('selected')
+    expect(rowB.className).toContain('selected')
+  })
+
+  it('moves selection to the previous row when ArrowUp is pressed on a focused row', () => {
+    renderTab()
+    const rowA = screen.getByText('White A').closest('tr') as HTMLTableRowElement
+    const rowB = screen.getByText('White B').closest('tr') as HTMLTableRowElement
+
+    fireEvent.click(rowB)
+    expect(rowB.className).toContain('selected')
+
+    fireEvent.keyDown(rowB, { key: 'ArrowUp' })
+
+    expect(rowB.className).not.toContain('selected')
+    expect(rowA.className).toContain('selected')
+  })
+
+  it('clamps at the first and last row instead of wrapping', () => {
+    renderTab()
+    const rowA = screen.getByText('White A').closest('tr') as HTMLTableRowElement
+    const rowC = screen.getByText('White C').closest('tr') as HTMLTableRowElement
+
+    fireEvent.click(rowA)
+    fireEvent.keyDown(rowA, { key: 'ArrowUp' })
+    expect(rowA.className).toContain('selected')
+    expect(rowC.className).not.toContain('selected')
+
+    fireEvent.click(rowC)
+    fireEvent.keyDown(rowC, { key: 'ArrowDown' })
+    expect(rowC.className).toContain('selected')
+    expect(rowA.className).not.toContain('selected')
+  })
+
+  it('moves focus to the new row so result-entry keys continue to work', () => {
+    renderTab()
+    const rowA = screen.getByText('White A').closest('tr') as HTMLTableRowElement
+    const rowB = screen.getByText('White B').closest('tr') as HTMLTableRowElement
+
+    rowA.focus()
+    fireEvent.click(rowA)
+    expect(document.activeElement).toBe(rowA)
+
+    fireEvent.keyDown(rowA, { key: 'ArrowDown' })
+
+    expect(document.activeElement).toBe(rowB)
+  })
+
+  it('ignores arrow keys when focus is outside the table', () => {
+    renderTab()
+    const rowA = screen.getByText('White A').closest('tr') as HTMLTableRowElement
+    const rowB = screen.getByText('White B').closest('tr') as HTMLTableRowElement
+
+    fireEvent.click(rowA)
+    expect(rowA.className).toContain('selected')
+
+    // Arrow key dispatched on document (focus elsewhere) should not move selection
+    fireEvent.keyDown(document, { key: 'ArrowDown' })
+
+    expect(rowA.className).toContain('selected')
+    expect(rowB.className).not.toContain('selected')
+  })
+
+  it('focuses the next row after a finished result auto-advances selection', () => {
+    renderTab()
+    const rowB = screen.getByText('White B').closest('tr') as HTMLTableRowElement
+    const rowC = screen.getByText('White C').closest('tr') as HTMLTableRowElement
+
+    rowB.focus()
+    fireEvent.click(rowB)
+    expect(document.activeElement).toBe(rowB)
+
+    // 'v' with default ppg=1 sets WHITE_WIN, sum=1 → finished → auto-advance
+    fireEvent.keyDown(document, { key: 'v' })
+
+    expect(rowC.className).toContain('selected')
+    expect(document.activeElement).toBe(rowC)
+  })
+})
+
 describe('PairingsTab keyboard score entry', () => {
   afterEach(() => {
     cleanup()

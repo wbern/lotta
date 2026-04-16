@@ -216,7 +216,12 @@ export function PairingsTab({
         if (isFinished) {
           const idx = games.findIndex((g) => g.boardNr === singleSelected)
           if (idx >= 0 && idx < games.length - 1) {
-            selectBoard(games[idx + 1].boardNr)
+            const nextBoardNr = games[idx + 1].boardNr
+            selectBoard(nextBoardNr)
+            const nextRow = document.querySelector<HTMLElement>(
+              `tr[data-board-nr="${nextBoardNr}"]`,
+            )
+            nextRow?.focus()
           }
         }
       }
@@ -291,10 +296,29 @@ export function PairingsTab({
             {games.map((game) => (
               <tr
                 key={game.boardNr}
+                data-board-nr={game.boardNr}
                 className={selectedBoards.has(game.boardNr) ? 'selected' : ''}
-                onClick={(e) => toggleBoard(game.boardNr, e)}
+                onClick={(e) => {
+                  toggleBoard(game.boardNr, e)
+                  e.currentTarget.focus()
+                }}
                 onDoubleClick={() => handleDoubleClick(game)}
                 onContextMenu={(e) => contextMenu.open(e, game.boardNr)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return
+                  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault()
+                    const idx = games.findIndex((g) => g.boardNr === game.boardNr)
+                    const nextIdx = e.key === 'ArrowDown' ? idx + 1 : idx - 1
+                    if (nextIdx < 0 || nextIdx >= games.length) return
+                    selectBoard(games[nextIdx].boardNr)
+                    const sibling =
+                      e.key === 'ArrowDown'
+                        ? e.currentTarget.nextElementSibling
+                        : e.currentTarget.previousElementSibling
+                    if (sibling instanceof HTMLElement) sibling.focus()
+                  }
+                }}
                 tabIndex={0}
               >
                 <td className="place-cell">{game.boardNr}</td>
