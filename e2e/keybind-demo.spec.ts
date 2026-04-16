@@ -22,7 +22,7 @@ async function setup(page: Page, opts: { name: string; pointsPerGame?: number; c
     $,
     {
       name: opts.name,
-      pairingSystem: opts.chess4 ? 'Monrad' : 'Monrad',
+      pairingSystem: 'Monrad',
       nrOfRounds: 3,
       pointsPerGame: opts.pointsPerGame,
       chess4: opts.chess4,
@@ -35,6 +35,9 @@ async function setup(page: Page, opts: { name: string; pointsPerGame?: number; c
   return { rows: page.getByTestId('data-table').locator('tbody tr') }
 }
 
+// Timeouts here are deliberate: this spec doubles as a screen-recording demo,
+// so each step needs to be readable on playback. They can be tightened if the
+// spec is ever retargeted as a pure regression guard.
 async function pressAndVerify(page: Page, board: number, key: string, expected: string) {
   await page
     .getByTestId('data-table')
@@ -47,6 +50,23 @@ async function pressAndVerify(page: Page, board: number, key: string, expected: 
   await page.waitForTimeout(500)
 }
 
+async function pressAndExpectUnchanged(
+  page: Page,
+  board: number,
+  key: string,
+  currentLabel: string,
+) {
+  await page
+    .getByTestId('data-table')
+    .locator('tbody tr')
+    .nth(board - 1)
+    .click()
+  await page.keyboard.press(key)
+  // Give the handler a chance to (incorrectly) fire before we re-check.
+  await page.waitForTimeout(200)
+  await expect(page.getByTestId(`result-dropdown-${board}`)).toContainText(currentLabel)
+}
+
 test.describe('Result keybind adaptation (lt-4aa)', () => {
   test('Standard 1-½-0: numeric 1 and 0, semantic R for draw', async ({ page }) => {
     await setup(page, { name: 'demo-standard' })
@@ -57,6 +77,10 @@ test.describe('Result keybind adaptation (lt-4aa)', () => {
     await pressAndVerify(page, 2, '0', '0-1')
     // Board 3: press "r" → ½-½ (draw; no numeric key exists in 1-½-0).
     await pressAndVerify(page, 3, 'r', '½-½')
+    // Board 4: a numeric key outside the bound set must be a no-op. In the
+    // old gated behavior this is where a stray "2" would silently fill in.
+    const board4Before = await page.getByTestId('result-dropdown-4').textContent()
+    await pressAndExpectUnchanged(page, 4, '2', board4Before ?? '')
 
     // Open the context menu on board 4 to show the adaptive hint labels.
     await page.getByTestId('result-dropdown-4').click()
@@ -75,6 +99,9 @@ test.describe('Result keybind adaptation (lt-4aa)', () => {
     await pressAndVerify(page, 2, '2', '2-2')
     // Board 3: press "1" → 1-3 (black win).
     await pressAndVerify(page, 3, '1', '1-3')
+    // Board 4: out-of-range numeric key (Schack4an tops out at 3) is ignored.
+    const board4Before = await page.getByTestId('result-dropdown-4').textContent()
+    await pressAndExpectUnchanged(page, 4, '9', board4Before ?? '')
 
     // Open the context menu on board 4 to show the adaptive hint labels.
     await page.getByTestId('result-dropdown-4').click()
@@ -97,6 +124,10 @@ test.describe('Result keybind adaptation (lt-4aa)', () => {
     await pressAndVerify(page, 2, '1', '1-1')
     // Board 3: press "0" → 0-2 (black win).
     await pressAndVerify(page, 3, '0', '0-2')
+    // Board 4: Skollags-DM tops out at 2, so "3" is out of range and must not
+    // scale up (regression check for the old "Sätt maxpoäng" gating logic).
+    const board4Before = await page.getByTestId('result-dropdown-4').textContent()
+    await pressAndExpectUnchanged(page, 4, '3', board4Before ?? '')
 
     // Open the context menu on board 4 to show the adaptive hint labels.
     await page.getByTestId('result-dropdown-4').click()

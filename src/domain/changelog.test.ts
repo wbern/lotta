@@ -21,12 +21,39 @@ describe('entriesSince', () => {
     expect(entriesSince(entries, 'a', '2026-04-10 00:00 +0000')).toEqual([entries[0], entries[1]])
   })
 
+  it('returns empty when the current SHA is already the newest entry', () => {
+    const entries = [
+      entry({ sha: 'c', date: '2026-04-12' }),
+      entry({ sha: 'b', date: '2026-04-11' }),
+    ]
+    expect(entriesSince(entries, 'c', '2026-04-12 00:00 +0000')).toEqual([])
+  })
+
   it('falls back to date comparison when SHA is not in the list', () => {
     const entries = [
       entry({ sha: 'c', date: '2026-04-12' }),
       entry({ sha: 'b', date: '2026-04-11' }),
     ]
-    expect(entriesSince(entries, 'unknown', '2026-04-11 12:00 +0000')).toEqual([entries[0]])
+    // Without a matching SHA we surface anything >= the running day so
+    // same-day commits aren't silently dropped.
+    expect(entriesSince(entries, 'unknown', '2026-04-11 12:00 +0000')).toEqual([
+      entries[0],
+      entries[1],
+    ])
+  })
+
+  it('includes same-day commits in the date fallback, except the current one', () => {
+    const entries = [
+      entry({ sha: 'c', date: '2026-04-12' }),
+      entry({ sha: 'b', date: '2026-04-12' }),
+      entry({ sha: 'a', date: '2026-04-11' }),
+    ]
+    // Running SHA `b` isn't in the post-rebase list we fetched, but the date
+    // branch must still surface sibling commit `c` from the same day.
+    expect(entriesSince(entries, 'unknown-but-b', '2026-04-12 09:00 +0000')).toEqual([
+      entries[0],
+      entries[1],
+    ])
   })
 
   it('returns everything when both SHA and date are missing', () => {

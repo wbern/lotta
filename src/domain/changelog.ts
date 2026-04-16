@@ -23,6 +23,13 @@ export const GROUP_LABELS: Record<ChangelogType, string> = {
 
 const GROUP_ORDER: ChangelogType[] = ['feat', 'fix', 'perf']
 
+/**
+ * Entries newer than the running build. `entries` must be in newest-first
+ * order (as produced by `git log`); the SHA path relies on that ordering.
+ * Falls back to a date cutoff when the running SHA isn't in the list (e.g.
+ * rebased history); same-day commits are kept on the date path because
+ * `git log` only gives us day granularity.
+ */
 export function entriesSince(
   entries: ChangelogEntry[],
   currentSha: string,
@@ -35,11 +42,15 @@ export function entriesSince(
   }
   if (currentDate) {
     const cutoff = currentDate.slice(0, 10)
-    return entries.filter((e) => e.date > cutoff)
+    return entries.filter((e) => e.date >= cutoff && e.sha !== currentSha)
   }
   return entries
 }
 
+/**
+ * Groups entries by conventional-commit type in feat → fix → perf order.
+ * Within each group the original (newest-first) ordering is preserved.
+ */
 export function groupByType(entries: ChangelogEntry[]): ChangelogGroup[] {
   const byType = new Map<ChangelogType, ChangelogEntry[]>()
   for (const entry of entries) {
