@@ -1,6 +1,6 @@
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useEffect, useState } from 'react'
-import { type ChangelogEntry, entriesSince, fetchChangelog, groupByType } from '../domain/changelog'
+import { WhatsNewDialog } from './dialogs/WhatsNewDialog'
 
 const UPDATE_INTERVAL = 60 * 60 * 1000
 
@@ -30,7 +30,7 @@ export function ReloadPrompt() {
   })
 
   const [newVersion, setNewVersion] = useState<VersionInfo | null>(null)
-  const [changes, setChanges] = useState<ChangelogEntry[]>([])
+  const [showWhatsNew, setShowWhatsNew] = useState(false)
 
   useEffect(() => {
     if (!needRefresh) return
@@ -46,17 +46,6 @@ export function ReloadPrompt() {
     }
   }, [needRefresh])
 
-  useEffect(() => {
-    if (!needRefresh) return
-    let cancelled = false
-    fetchChangelog(import.meta.env.BASE_URL).then((entries) => {
-      if (!cancelled) setChanges(entriesSince(entries, __COMMIT_HASH__, __COMMIT_DATE__))
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [needRefresh])
-
   function close() {
     setOfflineReady(false)
     setNeedRefresh(false)
@@ -66,65 +55,55 @@ export function ReloadPrompt() {
 
   const currentHash = __COMMIT_HASH__
   const currentDate = formatDate(__COMMIT_DATE__)
-  const groups = groupByType(changes)
 
   return (
-    <div className="pwa-toast" role="alert">
-      <button
-        type="button"
-        className="pwa-toast-dismiss"
-        onClick={close}
-        aria-label="Stäng"
-        title="Stäng"
-      >
-        ×
-      </button>
-      {offlineReady ? (
-        <p>Appen är redo offline</p>
-      ) : (
-        <div className="pwa-toast-versions">
-          <p>Ny version tillgänglig</p>
-          {newVersion && currentHash && (
-            <div className="pwa-toast-version-details">
-              <span>
-                Nuvarande: {currentHash}
-                {currentDate && ` (${currentDate})`}
-              </span>
-              <span>
-                Ny: {newVersion.hash}
-                {newVersion.date && ` (${formatDate(newVersion.date)})`}
-              </span>
-            </div>
-          )}
-          {groups.length > 0 && (
-            <div className="pwa-toast-changes">
-              {groups.map((group) => (
-                <section key={group.type} className="pwa-toast-change-group">
-                  <h4>{group.label}</h4>
-                  <ul>
-                    {group.entries.map((entry) => (
-                      <li key={entry.sha}>
-                        {entry.breaking && <strong>Brytande ändring: </strong>}
-                        {entry.message}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      <div className="pwa-toast-actions">
-        {needRefresh && !offlineReady && (
-          <button className="btn btn-primary" onClick={() => updateServiceWorker(true)}>
-            Uppdatera
-          </button>
-        )}
-        <button className="btn" onClick={close}>
-          Stäng
+    <>
+      <div className="pwa-toast" role="alert">
+        <button
+          type="button"
+          className="pwa-toast-dismiss"
+          onClick={close}
+          aria-label="Stäng"
+          title="Stäng"
+        >
+          ×
         </button>
+        {offlineReady ? (
+          <p>Appen är redo offline</p>
+        ) : (
+          <div className="pwa-toast-versions">
+            <p>Ny version tillgänglig</p>
+            {newVersion && currentHash && (
+              <div className="pwa-toast-version-details">
+                <span>
+                  Nuvarande: {currentHash}
+                  {currentDate && ` (${currentDate})`}
+                </span>
+                <span>
+                  Ny: {newVersion.hash}
+                  {newVersion.date && ` (${formatDate(newVersion.date)})`}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        <div className="pwa-toast-actions">
+          {needRefresh && !offlineReady && (
+            <>
+              <button className="btn btn-primary" onClick={() => updateServiceWorker(true)}>
+                Uppdatera
+              </button>
+              <button className="btn" onClick={() => setShowWhatsNew(true)}>
+                Visa ändringar
+              </button>
+            </>
+          )}
+          <button className="btn" onClick={close}>
+            Stäng
+          </button>
+        </div>
       </div>
-    </div>
+      <WhatsNewDialog open={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
+    </>
   )
 }

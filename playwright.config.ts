@@ -70,6 +70,7 @@ export default defineConfig({
     { name: 'scroll', testMatch: 'scroll.spec.ts' },
     { name: 'fix-screenshots', testMatch: 'fix-screenshots.spec.ts' },
     { name: 'keybind-demo', testMatch: 'keybind-demo.spec.ts' },
+    { name: 'whats-new', testMatch: 'whats-new.spec.ts' },
     ...(runningP2P
       ? [
           {

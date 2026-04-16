@@ -41,4 +41,10 @@ describe('ReloadPrompt', () => {
     expect(screen.getByText('Ny version tillgänglig')).toBeTruthy()
     expect(screen.getByText('Uppdatera')).toBeTruthy()
   })
+
+  it('shows "Visa ändringar" button instead of rendering the changelog inline', () => {
+    mockNeedRefresh = true
+    render(<ReloadPrompt />)
+    expect(screen.getByText('Visa ändringar')).toBeTruthy()
+  })
 })

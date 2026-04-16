@@ -22,6 +22,7 @@ import { AddGroupDialog } from '../dialogs/AddGroupDialog'
 import { BackupExportDialog } from '../dialogs/BackupExportDialog'
 import { BackupRestoreDialog } from '../dialogs/BackupRestoreDialog'
 import { ConfirmDialog } from '../dialogs/ConfirmDialog'
+import { Dialog } from '../dialogs/Dialog'
 import { EditBoardDialog } from '../dialogs/EditBoardDialog'
 import { PlayerPoolDialog } from '../dialogs/PlayerPoolDialog'
 import { SeedPlayersDialog } from '../dialogs/SeedPlayersDialog'
@@ -106,6 +107,7 @@ export function AppLayout() {
   const [showSeedPlayers, setShowSeedPlayers] = useState(false)
   const [restoreError, setRestoreError] = useState('')
   const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null)
+  const [updateCheckStatus, setUpdateCheckStatus] = useState<string | null>(null)
   const importFileRef = useRef<HTMLInputElement>(null)
 
   // Selected board for edit/delete operations
@@ -258,6 +260,29 @@ export function AppLayout() {
     importFileRef.current?.click()
   }
 
+  const handleCheckUpdates = useCallback(async () => {
+    if (!('serviceWorker' in navigator)) {
+      setUpdateCheckStatus('Den här webbläsaren stöder inte uppdateringar.')
+      return
+    }
+    setUpdateCheckStatus('Söker efter uppdateringar…')
+    try {
+      const reg = await navigator.serviceWorker.getRegistration()
+      if (!reg) {
+        setUpdateCheckStatus('Ingen uppdateringstjänst registrerad ännu.')
+        return
+      }
+      await reg.update()
+      if (reg.installing || reg.waiting) {
+        setUpdateCheckStatus('Ny version hittades. Uppdateringen visas strax.')
+      } else {
+        setUpdateCheckStatus('Appen är redan uppdaterad.')
+      }
+    } catch {
+      setUpdateCheckStatus('Kunde inte söka efter uppdateringar.')
+    }
+  }, [])
+
   const backupFileRef = useRef<HTMLInputElement>(null)
 
   const handleBackup = () => {
@@ -374,6 +399,7 @@ export function AppLayout() {
         onSeedPlayers={() => setShowSeedPlayers(true)}
         onPublish={handlePublish}
         onUnpair={() => setShowUnpairConfirm(true)}
+        onCheckUpdates={handleCheckUpdates}
       />
       {actionError && (
         <div
@@ -514,6 +540,19 @@ export function AppLayout() {
         onClose={() => setShowSeedPlayers(false)}
         tournamentId={tournamentId}
       />
+      <Dialog
+        title="Sök efter uppdateringar"
+        open={updateCheckStatus !== null}
+        onClose={() => setUpdateCheckStatus(null)}
+        width={400}
+        footer={
+          <button className="btn" onClick={() => setUpdateCheckStatus(null)}>
+            Stäng
+          </button>
+        }
+      >
+        <p data-testid="update-check-status">{updateCheckStatus}</p>
+      </Dialog>
       <input
         ref={importFileRef}
         type="file"

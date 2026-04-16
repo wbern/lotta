@@ -36,6 +36,7 @@ playwright-report/
 showcase.mp4
 showcase-stress.mp4
 keybind-demo.mp4
+whats-new-demo.mp4
 e2e/certs/
 
 # Infrastructure (secrets, IPs, deploy scripts)

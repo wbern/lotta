@@ -30,6 +30,7 @@ interface Props {
   onSeedPlayers?: () => void
   onPublish?: (what: string) => void
   onUnpair?: () => void
+  onCheckUpdates?: () => void
 }
 
 export function MenuBar({
@@ -59,6 +60,7 @@ export function MenuBar({
   onSeedPlayers,
   onPublish,
   onUnpair,
+  onCheckUpdates,
 }: Props) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAbout, setShowAbout] = useState(false)
@@ -312,7 +314,9 @@ export function MenuBar({
         </button>
         {openMenu === 'help' && (
           <div className="menu-dropdown" data-testid="menu-dropdown">
-            <button disabled>Sök efter uppdateringar</button>
+            <button onClick={() => action(onCheckUpdates)} disabled={!onCheckUpdates}>
+              Sök efter uppdateringar
+            </button>
             <button
               onClick={() => {
                 setOpenMenu(null)

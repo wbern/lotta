@@ -35,6 +35,7 @@ export function WhatsNewDialog({ open, onClose }: Props) {
       open={open}
       onClose={onClose}
       width={520}
+      height={480}
       footer={
         <button className="btn" onClick={onClose}>
           Stäng
@@ -51,7 +52,10 @@ export function WhatsNewDialog({ open, onClose }: Props) {
               <ul>
                 {day.entries.map((entry) => (
                   <li key={entry.sha}>
-                    <span className={`changelog-pill changelog-pill--${entry.type}`}>
+                    <span
+                      className={`changelog-pill changelog-pill--${entry.type}`}
+                      data-testid="changelog-pill"
+                    >
                       {GROUP_LABELS[entry.type]}
                     </span>
                     {entry.breaking && <strong> Brytande ändring: </strong>}

@@ -96,6 +96,25 @@ describe('MenuBar about dialog', () => {
   })
 })
 
+describe('MenuBar check-updates item', () => {
+  it('fires onCheckUpdates when clicking "Sök efter uppdateringar" under Hjälp', () => {
+    const onCheckUpdates = vi.fn()
+    render(<MenuBar tournamentId={undefined} roundNr={undefined} onCheckUpdates={onCheckUpdates} />)
+
+    openMenu('Hjälp')
+    fireEvent.click(screen.getByText('Sök efter uppdateringar'))
+
+    expect(onCheckUpdates).toHaveBeenCalled()
+  })
+
+  it('disables "Sök efter uppdateringar" when no handler is provided', () => {
+    renderMenuBar()
+
+    openMenu('Hjälp')
+    expect(screen.getByText('Sök efter uppdateringar').closest('button')!.disabled).toBe(true)
+  })
+})
+
 describe('MenuBar pairing error', () => {
   it('shows error dialog when pairing fails', () => {
     setupPairError('Inga spelare registrerade')
