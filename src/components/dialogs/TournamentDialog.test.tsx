@@ -307,6 +307,54 @@ describe('TournamentDialog point system preset', () => {
   })
 })
 
+describe('TournamentDialog scoring lock', () => {
+  it('allows scoring changes on a tournament with no recorded results', () => {
+    mockExisting.value = {
+      ...baseTournament,
+      hasRecordedResults: false,
+    } as unknown as TournamentDto
+
+    render(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    const select = screen.getByTestId('tournament-point-system-select') as HTMLSelectElement
+    const checkbox = screen.getByTestId('tournament-chess4-checkbox') as HTMLInputElement
+
+    expect(select.disabled).toBe(false)
+    expect(checkbox.disabled).toBe(false)
+    expect(screen.queryByTestId('scoring-locked-hint')).toBeNull()
+  })
+
+  it('disables scoring controls and shows a hint once results are recorded', () => {
+    mockExisting.value = {
+      ...baseTournament,
+      hasRecordedResults: true,
+    } as unknown as TournamentDto
+
+    render(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    const select = screen.getByTestId('tournament-point-system-select') as HTMLSelectElement
+    const checkbox = screen.getByTestId('tournament-chess4-checkbox') as HTMLInputElement
+
+    expect(select.disabled).toBe(true)
+    expect(checkbox.disabled).toBe(true)
+    expect(screen.getByTestId('scoring-locked-hint').textContent).toMatch(/poängsystem/i)
+  })
+
+  it('locks the Anpassad pointsPerGame input when results are recorded', () => {
+    mockExisting.value = {
+      ...baseTournament,
+      chess4: false,
+      pointsPerGame: 3,
+      hasRecordedResults: true,
+    } as unknown as TournamentDto
+
+    render(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    const ppg = screen.getByTestId('tournament-points-per-game-input') as HTMLInputElement
+    expect(ppg.disabled).toBe(true)
+  })
+})
+
 describe('TournamentDialog overlay close', () => {
   it('closes when clicking overlay with empty form', () => {
     const onClose = vi.fn()

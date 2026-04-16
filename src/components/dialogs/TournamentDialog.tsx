@@ -92,6 +92,7 @@ export function TournamentDialog({
   const [saveError, setSaveError] = useState('')
 
   const isEdit = tournamentId != null
+  const scoringLocked = isEdit && existing?.hasRecordedResults === true
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -385,6 +386,7 @@ export function TournamentDialog({
               type="checkbox"
               checked={form.chess4}
               onChange={(e) => handleChess4Toggle(e.target.checked)}
+              disabled={scoringLocked}
             />
             {sv.tournament.chess4}
           </label>
@@ -394,12 +396,25 @@ export function TournamentDialog({
               data-testid="tournament-point-system-select"
               value={currentPreset}
               onChange={(e) => handlePresetChange(e.target.value as PointSystemPreset)}
+              disabled={scoringLocked}
             >
               <option value="standard">Standard (1-½-0)</option>
               <option value="schack4an">Schack4an (3-2-1)</option>
               <option value="skollags">Skollags-DM (2-1-0)</option>
               <option value="manual">Anpassad</option>
             </select>
+            {scoringLocked && (
+              <div
+                data-testid="scoring-locked-hint"
+                style={{
+                  color: 'var(--color-text-muted)',
+                  fontSize: 'var(--font-size-small)',
+                  marginTop: 4,
+                }}
+              >
+                Kan inte ändra poängsystem efter att resultat har registrerats.
+              </div>
+            )}
           </div>
 
           <div className="form-group">
@@ -598,7 +613,7 @@ export function TournamentDialog({
                 value={form.pointsPerGame}
                 min={1}
                 onChange={(e) => update({ pointsPerGame: Number(e.target.value) })}
-                disabled={form.chess4}
+                disabled={form.chess4 || scoringLocked}
                 style={{ width: 80 }}
               />
             </div>

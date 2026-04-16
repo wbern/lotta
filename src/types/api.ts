@@ -49,6 +49,7 @@ export interface TournamentDto {
   roundsPlayed: number
   playerCount: number
   finished: boolean
+  hasRecordedResults: boolean
   selectedTiebreaks: string[]
   roundDates: { round: number; date: string }[]
 }

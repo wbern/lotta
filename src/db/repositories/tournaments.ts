@@ -107,6 +107,14 @@ export class TournamentRepository {
   }
 
   update(id: number, req: CreateTournamentRequest): TournamentDto {
+    const current = this.get(id)
+    if (
+      current?.hasRecordedResults &&
+      (current.chess4 !== req.chess4 || current.pointsPerGame !== req.pointsPerGame)
+    ) {
+      throw new Error('Kan inte ändra poängsystem efter att resultat har registrerats.')
+    }
+
     this.db.run(
       `UPDATE tournaments SET
         tournament = ?, tournamentgroup = ?, pairingsystem = ?, initialpairing = ?,
@@ -160,7 +168,8 @@ export class TournamentRepository {
         t.timecontrol, t.federation, t.resultspage, t.standingspage,
         t.playerlistpage, t.roundforroundpage, t.clubstandingspage,
         (SELECT COUNT(DISTINCT g.round) FROM tournamentgames g WHERE g.tournament = t."index") as roundsPlayed,
-        (SELECT COUNT(*) FROM tournamentplayers p WHERE p.tournamentindex = t."index") as playerCount
+        (SELECT COUNT(*) FROM tournamentplayers p WHERE p.tournamentindex = t."index") as playerCount,
+        (SELECT COUNT(*) FROM tournamentgames g WHERE g.tournament = t."index" AND g.resulttype != 0) as resultCount
       FROM tournaments t
       WHERE t."index" = ?`,
       [id],
@@ -188,6 +197,7 @@ export class TournamentRepository {
         : []
 
     const roundsPlayed = row[25] as number
+    const resultCount = row[27] as number
     const nrOfRounds = row[5] as number
 
     return {
@@ -219,6 +229,7 @@ export class TournamentRepository {
       roundsPlayed,
       playerCount: row[26] as number,
       finished: roundsPlayed >= nrOfRounds && nrOfRounds > 0,
+      hasRecordedResults: resultCount > 0,
       selectedTiebreaks,
       roundDates,
     }
