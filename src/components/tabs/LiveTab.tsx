@@ -405,6 +405,14 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     }
   }, [])
 
+  // Auto-resume hosting from saved session (e.g. after page refresh)
+  useEffect(() => {
+    const saved = getSavedSession()
+    if (saved) {
+      startHosting(saved)
+    }
+  }, [startHosting])
+
   // Poll relay status and diagnostic info while panel is visible
   useEffect(() => {
     if (!isHosting || !showDiagnostics) return

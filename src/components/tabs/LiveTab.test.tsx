@@ -757,7 +757,6 @@ describe('LiveTab', () => {
     )
 
     renderLiveTab()
-    fireEvent.click(screen.getByText('Återuppta Live'))
     fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
 
     const rows = screen
@@ -798,7 +797,6 @@ describe('LiveTab', () => {
     mockRoomId = null
 
     renderLiveTab()
-    fireEvent.click(screen.getByText('Återuppta Live'))
 
     mockSet.mockClear()
     act(() => {
@@ -824,7 +822,6 @@ describe('LiveTab', () => {
     mockRoomId = null
 
     renderLiveTab()
-    fireEvent.click(screen.getByText('Återuppta Live'))
     fireEvent.click(screen.getByRole('tab', { name: 'Domarstyrning' }))
 
     const rows = screen
@@ -1195,19 +1192,15 @@ describe('LiveTab', () => {
     expect(parsed.hostId).toBeTruthy()
   })
 
-  it('passes a stable hostId to P2PService when resuming a saved session', () => {
+  it('passes a stable hostId to P2PService when auto-resuming a saved session', () => {
     sessionStorage.setItem(
       'lotta-live-session',
       JSON.stringify({ roomCode: 'ABC123', refereeToken: 'tok-stable', hostId: 'stable-host-id' }),
     )
 
     renderLiveTab()
-    fireEvent.click(screen.getByText('Återuppta Live'))
 
-    // P2PService is constructed as (role, refereeToken, label, hostId) — the 4th arg is hostId
     expect(mockConstructorArgs[3]).toBe('stable-host-id')
-
-    // The persisted session still carries the same hostId after resume
     const saved = JSON.parse(sessionStorage.getItem('lotta-live-session')!)
     expect(saved.hostId).toBe('stable-host-id')
   })
@@ -1219,7 +1212,6 @@ describe('LiveTab', () => {
     )
 
     renderLiveTab()
-    fireEvent.click(screen.getByText('Återuppta Live'))
 
     expect(mockConstructorArgs[3]).toBeTruthy()
     const saved = JSON.parse(sessionStorage.getItem('lotta-live-session')!)
@@ -1235,42 +1227,18 @@ describe('LiveTab', () => {
     expect(sessionStorage.getItem('lotta-live-session')).toBeNull()
   })
 
-  it('shows resume button when a saved session exists', () => {
+  it('auto-resumes hosting on mount when a saved session exists', () => {
     sessionStorage.setItem(
       'lotta-live-session',
-      JSON.stringify({ roomCode: 'ABC123', refereeToken: 'tok-123' }),
+      JSON.stringify({ roomCode: 'ABC123', refereeToken: 'tok-123', hostId: 'host-abc' }),
     )
 
     renderLiveTab()
-    expect(screen.getByText('Återuppta Live')).toBeTruthy()
-    expect(screen.getByText(/ABC123/)).toBeTruthy()
-  })
-
-  it('resumes with saved room code and token', () => {
-    sessionStorage.setItem(
-      'lotta-live-session',
-      JSON.stringify({ roomCode: 'XYZ789', refereeToken: 'tok-456' }),
-    )
-
-    renderLiveTab()
-    fireEvent.click(screen.getByText('Återuppta Live'))
-
-    expect(mockStartHostingCalls).toContain('XYZ789')
-    expect(mockConstructorArgs[1]).toBe('tok-456')
-  })
-
-  it('can start fresh instead of resuming', () => {
-    sessionStorage.setItem(
-      'lotta-live-session',
-      JSON.stringify({ roomCode: 'OLD123', refereeToken: 'tok-old' }),
-    )
-
-    renderLiveTab()
-    fireEvent.click(screen.getByText('Starta ny'))
-
-    // Should use a NEW room code, not the saved one
-    expect(mockStartHostingCalls[0]).not.toBe('OLD123')
-    expect(mockStartHostingCalls[0]).toMatch(/^[A-HJ-NP-Z2-9]{6}$/)
+    // Should be in hosting mode immediately — no "Återuppta Live" button
+    expect(screen.queryByText('Återuppta Live')).toBeNull()
+    expect(screen.getByText('Stoppa Live')).toBeTruthy()
+    expect(mockStartHostingCalls).toContain('ABC123')
+    expect(mockConstructorArgs[1]).toBe('tok-123')
   })
 
   it('sends recent chat history to newly joined peer', () => {
