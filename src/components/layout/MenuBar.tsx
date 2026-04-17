@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePairNextRound } from '../../hooks/useRounds'
 import { Dialog } from '../dialogs/Dialog'
+import { PrintDialog } from '../dialogs/PrintDialog'
+import { PublishDialog } from '../dialogs/PublishDialog'
 import { WhatsNewDialog } from '../dialogs/WhatsNewDialog'
 
 interface Props {
@@ -65,6 +67,10 @@ export function MenuBar({
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAbout, setShowAbout] = useState(false)
   const [showWhatsNew, setShowWhatsNew] = useState(false)
+  const [showLottaPublish, setShowLottaPublish] = useState(false)
+  const [showLottaPrint, setShowLottaPrint] = useState(false)
+  const [showStandingsPublish, setShowStandingsPublish] = useState(false)
+  const [showStandingsPrint, setShowStandingsPrint] = useState(false)
   const [pairError, setPairError] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
   const pairMutation = usePairNextRound(tournamentId)
@@ -161,29 +167,24 @@ export function MenuBar({
               Lotta nästa rond
             </button>
             <div className="menu-separator" />
-            <button onClick={() => action(() => onPrint?.('pairings'))} disabled={!hasRound}>
-              Skriv ut lottning
+            <button
+              onClick={() => {
+                setOpenMenu(null)
+                setShowLottaPrint(true)
+              }}
+              disabled={!hasRound}
+            >
+              Skriv ut...
             </button>
-            <button onClick={() => action(() => onPublish?.('pairings'))} disabled={!hasRound}>
-              Publicera lottning
+            <button
+              onClick={() => {
+                setOpenMenu(null)
+                setShowLottaPublish(true)
+              }}
+              disabled={!hasRound}
+            >
+              Publicera...
             </button>
-            <button onClick={() => action(() => onPrint?.('alphabetical'))} disabled={!hasRound}>
-              Skriv ut alfabetisk lottning
-            </button>
-            <div className="menu-submenu">
-              <button disabled={!hasRound}>Publicera alfabetisk lottning ▸</button>
-              <div className="menu-submenu-items">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => action(() => onPublish?.(`alphabetical?columns=${n}`))}
-                    disabled={!hasRound}
-                  >
-                    {n} {n === 1 ? 'kolumn' : 'kolumner'}
-                  </button>
-                ))}
-              </div>
-            </div>
             <div className="menu-separator" />
             <button onClick={() => action(onUnpair)} disabled={!hasTournament}>
               Ångra lottning
@@ -213,52 +214,22 @@ export function MenuBar({
         </button>
         {openMenu === 'standings' && (
           <div className="menu-dropdown" data-testid="menu-dropdown">
-            <button onClick={() => action(() => onPrint?.('standings'))} disabled={!hasTournament}>
-              Skriv ut ställning
+            <button
+              onClick={() => {
+                setOpenMenu(null)
+                setShowStandingsPrint(true)
+              }}
+            >
+              Skriv ut...
             </button>
             <button
-              onClick={() => action(() => onPublish?.('standings'))}
-              disabled={!hasTournament}
+              onClick={() => {
+                setOpenMenu(null)
+                setShowStandingsPublish(true)
+              }}
             >
-              Publicera ställning
+              Publicera...
             </button>
-            <div className="menu-separator" />
-            <button onClick={() => action(() => onPublish?.('cross-table'))} disabled={!hasRound}>
-              Publicera korstabell
-            </button>
-            {chess4 ? (
-              <>
-                <div className="menu-separator" />
-                <button
-                  onClick={() => action(() => onPrint?.('chess4-standings'))}
-                  disabled={!hasTournament}
-                >
-                  Skriv ut Schack4an-ställning
-                </button>
-                <button
-                  onClick={() => action(() => onPublish?.('chess4-standings'))}
-                  disabled={!hasTournament}
-                >
-                  Publicera Schack4an-ställning
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="menu-separator" />
-                <button
-                  onClick={() => action(() => onPrint?.('club-standings'))}
-                  disabled={!hasTournament}
-                >
-                  Skriv ut klubbställning
-                </button>
-                <button
-                  onClick={() => action(() => onPublish?.('club-standings'))}
-                  disabled={!hasTournament}
-                >
-                  Publicera klubbställning
-                </button>
-              </>
-            )}
           </div>
         )}
       </div>
@@ -393,6 +364,43 @@ export function MenuBar({
       </Dialog>
 
       <WhatsNewDialog open={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
+
+      <PublishDialog
+        open={showLottaPublish}
+        hasRound={hasRound}
+        hasTournament={hasTournament}
+        chess4={!!chess4}
+        category="lotta"
+        onClose={() => setShowLottaPublish(false)}
+        onPublish={(what) => onPublish?.(what)}
+      />
+      <PublishDialog
+        open={showStandingsPublish}
+        hasRound={hasRound}
+        hasTournament={hasTournament}
+        chess4={!!chess4}
+        category="standings"
+        onClose={() => setShowStandingsPublish(false)}
+        onPublish={(what) => onPublish?.(what)}
+      />
+      <PrintDialog
+        open={showLottaPrint}
+        hasRound={hasRound}
+        hasTournament={hasTournament}
+        chess4={!!chess4}
+        category="lotta"
+        onClose={() => setShowLottaPrint(false)}
+        onPrint={(what) => onPrint?.(what)}
+      />
+      <PrintDialog
+        open={showStandingsPrint}
+        hasRound={hasRound}
+        hasTournament={hasTournament}
+        chess4={!!chess4}
+        category="standings"
+        onClose={() => setShowStandingsPrint(false)}
+        onPrint={(what) => onPrint?.(what)}
+      />
     </div>
   )
 }

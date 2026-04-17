@@ -160,6 +160,68 @@ describe('MenuBar pairing progress', () => {
   })
 })
 
+describe('MenuBar publish and print dialogs', () => {
+  it('opens pairing publish dialog from Lotta > Publicera...', () => {
+    renderMenuBar({ tournamentId: 1, roundNr: 1 })
+
+    openMenu('Lotta')
+    fireEvent.click(screen.getByText('Publicera...'))
+
+    expect(screen.getByTestId('publish-pairings')).toBeTruthy()
+    expect(screen.getByTestId('publish-alphabetical')).toBeTruthy()
+    expect(screen.queryByTestId('publish-standings')).toBeNull()
+  })
+
+  it('opens pairing print dialog from Lotta > Skriv ut...', () => {
+    renderMenuBar({ tournamentId: 1, roundNr: 1 })
+
+    openMenu('Lotta')
+    fireEvent.click(screen.getByText('Skriv ut...'))
+
+    expect(screen.getByTestId('print-pairings')).toBeTruthy()
+    expect(screen.getByTestId('print-alphabetical')).toBeTruthy()
+  })
+
+  it('opens standings publish dialog from Ställning > Publicera...', () => {
+    renderMenuBar({ tournamentId: 1, roundNr: 1 })
+
+    openMenu('Ställning')
+    fireEvent.click(screen.getByText('Publicera...'))
+
+    expect(screen.getByTestId('publish-standings')).toBeTruthy()
+    expect(screen.queryByTestId('publish-pairings')).toBeNull()
+  })
+
+  it('opens standings print dialog from Ställning > Skriv ut...', () => {
+    renderMenuBar({ tournamentId: 1, roundNr: 1 })
+
+    openMenu('Ställning')
+    fireEvent.click(screen.getByText('Skriv ut...'))
+
+    expect(screen.getByTestId('print-standings')).toBeTruthy()
+  })
+
+  it('disables Lotta dialog launchers when there is no round', () => {
+    renderMenuBar({ tournamentId: 1 })
+
+    openMenu('Lotta')
+
+    const skrivUt = screen.getByText('Skriv ut...')
+    const publicera = screen.getByText('Publicera...')
+    expect((skrivUt as HTMLButtonElement).disabled).toBe(true)
+    expect((publicera as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('has no top-level Publicera button', () => {
+    renderMenuBar({ tournamentId: 1, roundNr: 1 })
+
+    const menuBar = screen.getByTestId('menu-bar')
+    const topButtons = Array.from(menuBar.querySelectorAll(':scope > .menu-item > button'))
+    const labels = topButtons.map((b) => b.textContent)
+    expect(labels).not.toContain('Publicera')
+  })
+})
+
 describe('MenuBar pairing error', () => {
   it('shows error dialog when pairing fails', () => {
     setupPairError('Inga spelare registrerade')

@@ -8,7 +8,7 @@ test.describe('Menu structure', () => {
     await page.goto('/')
   })
 
-  test('all 6 menu buttons are visible', async ({ page }) => {
+  test('all menu buttons are visible', async ({ page }) => {
     const menuBar = page.getByTestId('menu-bar')
     await expect(menuBar.getByRole('button', { name: 'Turnering' })).toBeVisible()
     await expect(menuBar.getByRole('button', { name: 'Lotta' })).toBeVisible()
@@ -39,10 +39,8 @@ test.describe('Menu structure', () => {
     await expect(dropdown).toBeVisible()
 
     await expect(dropdown.getByText('Lotta nästa rond')).toBeVisible()
-    await expect(dropdown.getByText('Skriv ut lottning')).toBeVisible()
-    await expect(dropdown.getByText('Publicera lottning')).toBeVisible()
-    await expect(dropdown.getByText('Skriv ut alfabetisk lottning')).toBeVisible()
-    await expect(dropdown.getByText('Publicera alfabetisk lottning')).toBeVisible()
+    await expect(dropdown.getByText('Skriv ut...')).toBeVisible()
+    await expect(dropdown.getByText('Publicera...')).toBeVisible()
     await expect(dropdown.getByText('Ångra lottning')).toBeVisible()
     await expect(dropdown.getByText('Exportera till LiveChess')).toBeVisible()
     await expect(dropdown.getByText('Lägg till bord')).toBeVisible()
@@ -58,11 +56,8 @@ test.describe('Menu structure', () => {
     const dropdown = page.getByTestId('menu-dropdown')
     await expect(dropdown).toBeVisible()
 
-    await expect(dropdown.getByText('Skriv ut ställning', { exact: true })).toBeVisible()
-    await expect(dropdown.getByText('Publicera ställning', { exact: true })).toBeVisible()
-    await expect(dropdown.getByText('Publicera korstabell')).toBeVisible()
-    await expect(dropdown.getByText('Skriv ut klubbställning')).toBeVisible()
-    await expect(dropdown.getByText('Publicera klubbställning')).toBeVisible()
+    await expect(dropdown.getByText('Skriv ut...')).toBeVisible()
+    await expect(dropdown.getByText('Publicera...')).toBeVisible()
   })
 
   test('Spelare dropdown contains expected items', async ({ page }) => {
@@ -84,6 +79,40 @@ test.describe('Menu structure', () => {
     await expect(dropdown).toBeVisible()
 
     await expect(dropdown.getByText('Inställningar')).toBeVisible()
+  })
+
+  test('Lotta > Publicera... opens pairing publish dialog', async ({ page }) => {
+    const tournamentSelect = page.getByTestId('tournament-selector').locator('select').first()
+    await tournamentSelect.selectOption('Hjälteturneringen 2025')
+    await expect(page.getByTestId('data-table')).toBeVisible()
+
+    await page.getByTestId('menu-bar').getByRole('button', { name: 'Lotta' }).click()
+    await page.getByText('Publicera...').click()
+
+    const dialog = page.getByTestId('dialog-title')
+    await expect(dialog).toHaveText('Publicera')
+    await expect(page.getByTestId('publish-pairings')).toBeVisible()
+    await expect(page.getByTestId('publish-alphabetical')).toBeVisible()
+    await expect(page.getByTestId('publish-alphabetical-columns')).toBeVisible()
+    await page.getByTestId('publish-alphabetical-columns').selectOption('4')
+    await page.waitForTimeout(800)
+  })
+
+  test('Ställning > Skriv ut... opens standings print dialog', async ({ page }) => {
+    const tournamentSelect = page.getByTestId('tournament-selector').locator('select').first()
+    await tournamentSelect.selectOption('Hjälteturneringen 2025')
+    await expect(page.getByTestId('data-table')).toBeVisible()
+
+    await page
+      .getByTestId('menu-bar')
+      .getByRole('button', { name: 'Ställning', exact: true })
+      .click()
+    await page.getByText('Skriv ut...').click()
+
+    const dialog = page.getByTestId('dialog-title')
+    await expect(dialog).toHaveText('Skriv ut')
+    await expect(page.getByTestId('print-standings')).toBeVisible()
+    await expect(page.getByTestId('print-club-standings')).toBeVisible()
   })
 
   test('Hjälp dropdown contains expected items', async ({ page }) => {
