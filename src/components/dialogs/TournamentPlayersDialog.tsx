@@ -350,7 +350,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                 >
                   <td className="number-cell">{i + 1}</td>
                   <td>
-                    {p.lastName}, {p.firstName}
+                    {p.firstName} {p.lastName}
                     {p.withdrawnFromRound >= 0 ? ` (utgått r${p.withdrawnFromRound})` : ''}
                   </td>
                   <td>{p.playerGroup || ''}</td>
@@ -405,7 +405,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                 >
                   <td className="number-cell">{i + 1}</td>
                   <td>
-                    {p.lastName}, {p.firstName}
+                    {p.firstName} {p.lastName}
                   </td>
                   <td>{p.playerGroup || ''}</td>
                   <td>{p.club || ''}</td>

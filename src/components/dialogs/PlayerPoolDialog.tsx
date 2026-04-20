@@ -267,7 +267,7 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
               >
                 <td className="number-cell">{i + 1}</td>
                 <td>
-                  {p.lastName}, {p.firstName}
+                  {p.firstName} {p.lastName}
                 </td>
                 <td>{p.playerGroup || ''}</td>
                 <td>{p.club || ''}</td>

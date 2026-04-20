@@ -89,8 +89,8 @@ describe('TournamentPlayersDialog default sort', () => {
     fireEvent.click(screen.getByText('Spelarpool'))
 
     const rows = screen.getByTestId('data-table').querySelectorAll('tbody tr')
-    expect(rows[0].textContent).toContain('Svensson, Anna')
-    expect(rows[1].textContent).toContain('Nilsson, Karl')
+    expect(rows[0].textContent).toContain('Anna Svensson')
+    expect(rows[1].textContent).toContain('Karl Nilsson')
   })
 })
 
@@ -109,7 +109,7 @@ describe('TournamentPlayersDialog update validation', () => {
     renderDialog()
 
     // Select the tournament player
-    fireEvent.click(screen.getByText('Johansson, Erik'))
+    fireEvent.click(screen.getByText('Erik Johansson'))
 
     // Switch to edit tab
     fireEvent.click(screen.getByText('Skapa eller editera spelare'))
@@ -149,8 +149,8 @@ describe('TournamentPlayersDialog pool multi-select', () => {
     renderDialog()
     fireEvent.click(screen.getByText('Spelarpool'))
 
-    const rowA = screen.getByText('Svensson, Anna').closest('tr')!
-    const rowB = screen.getByText('Nilsson, Karl').closest('tr')!
+    const rowA = screen.getByText('Anna Svensson').closest('tr')!
+    const rowB = screen.getByText('Karl Nilsson').closest('tr')!
 
     fireEvent.click(rowA)
     expect(rowA.className).toContain('selected')
@@ -166,8 +166,8 @@ describe('TournamentPlayersDialog pool multi-select', () => {
     renderDialog()
     fireEvent.click(screen.getByText('Spelarpool'))
 
-    fireEvent.click(screen.getByText('Svensson, Anna'))
-    fireEvent.click(screen.getByText('Nilsson, Karl'), { shiftKey: true })
+    fireEvent.click(screen.getByText('Anna Svensson'))
+    fireEvent.click(screen.getByText('Karl Nilsson'), { shiftKey: true })
     fireEvent.click(screen.getByTestId('add-from-pool'))
 
     expect(mockBatchMutate).toHaveBeenCalledTimes(1)
@@ -184,7 +184,7 @@ describe('TournamentPlayersDialog withdrawn players', () => {
   it('shows (utgått rN) marker next to withdrawn player in tournament tab', () => {
     renderDialog()
 
-    expect(screen.getByText('Åberg, Siv (utgått r2)')).toBeTruthy()
+    expect(screen.getByText('Siv Åberg (utgått r2)')).toBeTruthy()
   })
 })
 
@@ -192,8 +192,8 @@ describe('TournamentPlayersDialog tournament multi-select', () => {
   it('plain click selects only that tournament player', () => {
     renderDialog()
 
-    const rowA = screen.getByText('Johansson, Erik').closest('tr')!
-    const rowB = screen.getByText('Persson, Lisa').closest('tr')!
+    const rowA = screen.getByText('Erik Johansson').closest('tr')!
+    const rowB = screen.getByText('Lisa Persson').closest('tr')!
 
     fireEvent.click(rowA)
     expect(rowA.className).toContain('selected')
@@ -207,8 +207,8 @@ describe('TournamentPlayersDialog tournament multi-select', () => {
   it('calls batch remove with all selected tournament players', () => {
     renderDialog()
 
-    fireEvent.click(screen.getByText('Johansson, Erik'))
-    fireEvent.click(screen.getByText('Persson, Lisa'), { shiftKey: true })
+    fireEvent.click(screen.getByText('Erik Johansson'))
+    fireEvent.click(screen.getByText('Lisa Persson'), { shiftKey: true })
     fireEvent.click(screen.getByTestId('remove-player'))
 
     expect(mockBatchRemoveMutate).toHaveBeenCalledTimes(1)

@@ -40,9 +40,9 @@ function renderDialog() {
 describe('PlayerPoolDialog default sort', () => {
   it('sorts pool players by first name, not last name', () => {
     renderDialog()
-    const rows = screen.getAllByTestId('data-table')[0].querySelectorAll('tbody tr')
-    expect(rows[0].textContent).toContain('Svensson, Anna')
-    expect(rows[1].textContent).toContain('Nilsson, Karl')
+    const rows = screen.getByTestId('data-table').querySelectorAll('tbody tr')
+    expect(rows[0].textContent).toContain('Anna Svensson')
+    expect(rows[1].textContent).toContain('Karl Nilsson')
   })
 })
 
@@ -61,7 +61,7 @@ describe('PlayerPoolDialog update validation', () => {
     renderDialog()
 
     // Select the existing player in the pool table
-    fireEvent.click(screen.getByText('Svensson, Anna'))
+    fireEvent.click(screen.getByText('Anna Svensson'))
 
     // Switch to edit tab
     fireEvent.click(screen.getByText('Skapa eller editera spelare'))
@@ -96,8 +96,8 @@ describe('PlayerPoolDialog multi-select', () => {
   it('plain click selects only that pool player', () => {
     renderDialog()
 
-    const rowA = screen.getByText('Svensson, Anna').closest('tr')!
-    const rowB = screen.getByText('Nilsson, Karl').closest('tr')!
+    const rowA = screen.getByText('Anna Svensson').closest('tr')!
+    const rowB = screen.getByText('Karl Nilsson').closest('tr')!
 
     fireEvent.click(rowA)
     expect(rowA.className).toContain('selected')
@@ -112,8 +112,8 @@ describe('PlayerPoolDialog multi-select', () => {
   it('calls batch delete with all selected pool players', () => {
     renderDialog()
 
-    fireEvent.click(screen.getByText('Svensson, Anna'))
-    fireEvent.click(screen.getByText('Nilsson, Karl'), { shiftKey: true })
+    fireEvent.click(screen.getByText('Anna Svensson'))
+    fireEvent.click(screen.getByText('Karl Nilsson'), { shiftKey: true })
     fireEvent.click(screen.getByTestId('delete-from-pool'))
 
     expect(mockBatchDeleteMutate).toHaveBeenCalledTimes(1)

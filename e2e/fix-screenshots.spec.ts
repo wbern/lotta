@@ -139,7 +139,7 @@ test.describe('Fix screenshots', () => {
 
     const overlay = page.getByTestId('dialog-overlay')
     await expect(overlay).toBeVisible()
-    await expect(overlay.getByText('Åberg, Siv (utgått r3)')).toBeVisible()
+    await expect(overlay.getByText('Siv Åberg (utgått r3)')).toBeVisible()
 
     // The inner dialog box is the parent of the dialog-title element;
     // screenshot it directly to avoid the semi-transparent overlay bleeding
@@ -152,7 +152,7 @@ test.describe('Fix screenshots', () => {
       title: 'Withdrawn player marker — Tournament Players dialog',
       subtitle: 'src/components/dialogs/TournamentPlayersDialog.tsx',
       description:
-        'Same suffix appears on the "I turneringen" tab of the Tournament Players dialog, with names in "Efternamn, Förnamn" order.',
+        'Same suffix appears on the "I turneringen" tab of the Tournament Players dialog.',
     })
   })
 
