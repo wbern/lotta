@@ -169,6 +169,7 @@ vi.mock('../../api/p2p-data-provider', async () => {
     startP2pRpcServer: vi.fn(),
     setPeerPermissions: vi.fn(),
     clearPeerPermissions: vi.fn(),
+    resetClubCodeRateLimit: vi.fn(),
   }
 })
 
@@ -1688,6 +1689,32 @@ describe('LiveTab', () => {
     fireEvent.click(screen.getByText('Koppla från'))
 
     expect(mockDisconnect).toHaveBeenCalled()
+  })
+
+  it('shows a rate-limit banner with reset button when the server fires onClubCodeRateLimit', async () => {
+    const mod = await import('../../api/p2p-data-provider')
+    const startMock = vi.mocked(mod.startP2pRpcServer)
+    const resetMock = vi.mocked(mod.resetClubCodeRateLimit)
+
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+
+    const latestCall = startMock.mock.calls.at(-1)!
+    const options = latestCall[2] as { onClubCodeRateLimit?: () => void }
+    expect(options.onClubCodeRateLimit).toBeTypeOf('function')
+
+    act(() => {
+      options.onClubCodeRateLimit?.()
+    })
+
+    const banner = await screen.findByTestId('club-code-rate-limit-banner')
+    expect(banner.textContent).toMatch(/för många|spärr/i)
+
+    const resetButton = screen.getByTestId('club-code-rate-limit-reset')
+    fireEvent.click(resetButton)
+
+    expect(resetMock).toHaveBeenCalledTimes(1)
+    expect(screen.queryByTestId('club-code-rate-limit-banner')).toBeNull()
   })
 
   it('clears live status when hosting stops', async () => {

@@ -34,9 +34,12 @@ export type RpcPermissions = Partial<Record<string, boolean>>
 
 const peerPermissions = new Map<string, RpcPermissions>()
 const peerAuthorizedClubs = new Map<string, string[]>()
-const peerClubCodeFailures = new Map<string, number>()
+let clubCodeFailures = 0
+let clubCodeLockoutUntil = 0
+let clubCodeLockoutTier = 0
 
 const CLUB_CODE_FAILURE_LIMIT = 20
+const CLUB_CODE_LOCKOUT_TIERS_MS = [60_000, 300_000, 1_800_000, 7_200_000, 43_200_000]
 const CLUB_AUTHORIZATION_LIMIT = 2
 
 export function setPeerPermissions(peerId: string, perms: RpcPermissions): void {
@@ -47,16 +50,21 @@ export function setPeerAuthorizedClubs(peerId: string, clubs: string[]): void {
   peerAuthorizedClubs.set(peerId, clubs)
 }
 
+export function resetClubCodeRateLimit(): void {
+  clubCodeFailures = 0
+  clubCodeLockoutUntil = 0
+  clubCodeLockoutTier = 0
+}
+
 export function clearAllPeerPermissions(): void {
   peerPermissions.clear()
   peerAuthorizedClubs.clear()
-  peerClubCodeFailures.clear()
+  resetClubCodeRateLimit()
 }
 
 export function clearPeerPermissions(peerId: string): void {
   peerPermissions.delete(peerId)
   peerAuthorizedClubs.delete(peerId)
-  peerClubCodeFailures.delete(peerId)
 }
 
 export function createFullPermissions(): RpcPermissions {
@@ -108,6 +116,7 @@ interface RpcServerOptions {
   getAllClubEntries?: () => string[]
   clubFilterEnabled?: boolean
   getPeerLabel?: (peerId: string) => string | undefined
+  onClubCodeRateLimit?: () => void
 }
 
 const ADMIN_ONLY_PERMISSIONS = ['tournamentPlayers.update', 'rounds.pairNext']
@@ -164,14 +173,24 @@ export function startP2pRpcServer(
         const clubs = options?.getAllClubEntries?.()
         if (!secret || !clubs) {
           result = { status: 'error', reason: 'not-configured' }
-        } else if ((peerClubCodeFailures.get(peerId) ?? 0) >= CLUB_CODE_FAILURE_LIMIT) {
+        } else if (Date.now() < clubCodeLockoutUntil) {
           result = { status: 'error', reason: 'rate-limited' }
         } else {
+          if (clubCodeLockoutUntil !== 0) {
+            clubCodeFailures = 0
+            clubCodeLockoutUntil = 0
+          }
           const map = generateClubCodeMap(clubs, secret)
           const matchedClub = Object.entries(map).find(([, c]) => c === rawCode)?.[0]
           const matched = matchedClub ? [matchedClub] : null
           if (!matched) {
-            peerClubCodeFailures.set(peerId, (peerClubCodeFailures.get(peerId) ?? 0) + 1)
+            clubCodeFailures += 1
+            if (clubCodeFailures >= CLUB_CODE_FAILURE_LIMIT) {
+              const tierIdx = Math.min(clubCodeLockoutTier, CLUB_CODE_LOCKOUT_TIERS_MS.length - 1)
+              clubCodeLockoutUntil = Date.now() + CLUB_CODE_LOCKOUT_TIERS_MS[tierIdx]
+              clubCodeLockoutTier += 1
+              options?.onClubCodeRateLimit?.()
+            }
             result = { status: 'error', reason: 'invalid-code' }
           } else {
             const existing = peerAuthorizedClubs.get(peerId) ?? []
@@ -181,6 +200,8 @@ export function startP2pRpcServer(
             } else {
               const merged = [...mergedSet].sort()
               setPeerAuthorizedClubs(peerId, merged)
+              clubCodeFailures = 0
+              clubCodeLockoutTier = 0
               result = { status: 'ok', clubs: merged }
             }
           }

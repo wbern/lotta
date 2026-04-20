@@ -9,6 +9,7 @@ import {
   clearPeerPermissions,
   createFullPermissions,
   createViewPermissions,
+  resetClubCodeRateLimit,
   setPeerPermissions,
   startP2pRpcServer,
 } from '../../api/p2p-data-provider'
@@ -202,6 +203,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const [clubFilterEnabled, setClubFilterEnabled] = useState(false)
   const clubFilterEnabledRef = useRef(false)
   const [shareClubDialog, setShareClubDialog] = useState<string | null>(null)
+  const [clubCodeRateLimited, setClubCodeRateLimited] = useState(false)
   const [showDiagnostics, setShowDiagnostics] = useState(false)
   const [diagnosticLog, setDiagnosticLog] = useState<DiagnosticEntry[]>([])
   const [relayStatus, setRelayStatus] = useState<RelaySocketInfo[]>([])
@@ -387,6 +389,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
         const t = peerTokensRef.current.get(peerId)
         return t ? tokenLabelsRef.current.get(t) : undefined
       },
+      onClubCodeRateLimit: () => setClubCodeRateLimited(true),
     })
 
     mutationUnsubRef.current = subscribeMutationBroadcast(queryClient, () =>
@@ -808,6 +811,29 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
             </div>
 
             <div className="live-tab-peers">
+              {clubCodeRateLimited && (
+                <div
+                  className="live-tab-rate-limit-banner"
+                  data-testid="club-code-rate-limit-banner"
+                  role="alert"
+                >
+                  <p>
+                    För många felaktiga klubbkoder — koderna är spärrade. Återställ spärren när
+                    åskådarna får rätt kod.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-small"
+                    data-testid="club-code-rate-limit-reset"
+                    onClick={() => {
+                      resetClubCodeRateLimit()
+                      setClubCodeRateLimited(false)
+                    }}
+                  >
+                    Återställ klubbkodsspärr
+                  </button>
+                </div>
+              )}
               {clubs.length > 0 && !clubFilterEnabled && (
                 <div className="live-tab-club-codes" data-testid="club-codes">
                   <h4>Klubbkoder</h4>

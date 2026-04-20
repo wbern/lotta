@@ -6,6 +6,7 @@ import {
   createFullPermissions,
   createP2pClientProvider,
   createViewPermissions,
+  resetClubCodeRateLimit,
   setPeerAuthorizedClubs,
   setPeerPermissions,
   startP2pRpcServer,
@@ -1332,32 +1333,34 @@ describe('auth.redeemClubCode rate limiting', () => {
     clearAllPeerPermissions()
   })
 
-  it('clearPeerPermissions resets the failure counter for that peer', async () => {
+  it('accumulates failures across different peers toward a host-wide limit', async () => {
     const service = createMockServerService()
     const provider = createMockProvider()
     startP2pRpcServer(service, provider, {
       clubCodeSecret: 'secret',
       getAllClubEntries: () => ['Club A'],
     })
-    setPeerPermissions('peer-1', createViewPermissions())
 
     for (let i = 0; i < 20; i++) {
-      service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+      const peerId = `peer-${i}`
+      setPeerPermissions(peerId, createViewPermissions())
+      service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, peerId)
     }
     await vi.waitFor(() => {
       expect(service.sendRpcResponse).toHaveBeenCalledTimes(20)
     })
 
-    clearPeerPermissions('peer-1')
-    setPeerPermissions('peer-1', createViewPermissions())
-
-    service._simulateRequest({ id: 500, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+    setPeerPermissions('fresh-peer', createViewPermissions())
+    service._simulateRequest(
+      { id: 999, method: 'auth.redeemClubCode', args: ['0000'] },
+      'fresh-peer',
+    )
     await vi.waitFor(() => {
       expect(service.sendRpcResponse).toHaveBeenCalledTimes(21)
     })
     expect(service.sendRpcResponse.mock.calls[20][0]).toEqual({
-      id: 500,
-      result: { status: 'error', reason: 'invalid-code' },
+      id: 999,
+      result: { status: 'error', reason: 'rate-limited' },
     })
   })
 
@@ -1388,6 +1391,213 @@ describe('auth.redeemClubCode rate limiting', () => {
       id: 999,
       result: { status: 'error', reason: 'rate-limited' },
     })
+  })
+
+  it('lifts the rate-limit after the lockout window expires', async () => {
+    vi.useFakeTimers()
+    try {
+      const service = createMockServerService()
+      const provider = createMockProvider()
+      startP2pRpcServer(service, provider, {
+        clubCodeSecret: 'secret',
+        getAllClubEntries: () => ['Club A'],
+      })
+      setPeerPermissions('peer-1', createViewPermissions())
+
+      for (let i = 0; i < 21; i++) {
+        service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+      }
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(21)
+      })
+      expect(service.sendRpcResponse.mock.calls[20][0].result).toEqual({
+        status: 'error',
+        reason: 'rate-limited',
+      })
+
+      vi.advanceTimersByTime(60_000)
+
+      service._simulateRequest(
+        { id: 1000, method: 'auth.redeemClubCode', args: ['0000'] },
+        'peer-1',
+      )
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(22)
+      })
+      expect(service.sendRpcResponse.mock.calls[21][0]).toEqual({
+        id: 1000,
+        result: { status: 'error', reason: 'invalid-code' },
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('escalates lockout duration on repeated trips', async () => {
+    vi.useFakeTimers()
+    try {
+      const service = createMockServerService()
+      const provider = createMockProvider()
+      startP2pRpcServer(service, provider, {
+        clubCodeSecret: 'secret',
+        getAllClubEntries: () => ['Club A'],
+      })
+      setPeerPermissions('peer-1', createViewPermissions())
+
+      for (let i = 0; i < 20; i++) {
+        service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+      }
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(20)
+      })
+
+      vi.advanceTimersByTime(60_000)
+
+      for (let i = 100; i < 120; i++) {
+        service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+      }
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(40)
+      })
+
+      vi.advanceTimersByTime(60_000)
+
+      service._simulateRequest(
+        { id: 2000, method: 'auth.redeemClubCode', args: ['0000'] },
+        'peer-1',
+      )
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(41)
+      })
+      expect(service.sendRpcResponse.mock.calls[40][0]).toEqual({
+        id: 2000,
+        result: { status: 'error', reason: 'rate-limited' },
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('invokes onClubCodeRateLimit when the limit trips', async () => {
+    const service = createMockServerService()
+    const provider = createMockProvider()
+    const onRateLimit = vi.fn()
+    startP2pRpcServer(service, provider, {
+      clubCodeSecret: 'secret',
+      getAllClubEntries: () => ['Club A'],
+      onClubCodeRateLimit: onRateLimit,
+    })
+    setPeerPermissions('peer-1', createViewPermissions())
+
+    for (let i = 0; i < 19; i++) {
+      service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+    }
+    await vi.waitFor(() => {
+      expect(service.sendRpcResponse).toHaveBeenCalledTimes(19)
+    })
+    expect(onRateLimit).not.toHaveBeenCalled()
+
+    service._simulateRequest({ id: 20, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+    await vi.waitFor(() => {
+      expect(service.sendRpcResponse).toHaveBeenCalledTimes(20)
+    })
+    expect(onRateLimit).toHaveBeenCalledTimes(1)
+  })
+
+  it('resetClubCodeRateLimit clears lockout so requests resume immediately', async () => {
+    const service = createMockServerService()
+    const provider = createMockProvider()
+    startP2pRpcServer(service, provider, {
+      clubCodeSecret: 'secret',
+      getAllClubEntries: () => ['Club A'],
+    })
+    setPeerPermissions('peer-1', createViewPermissions())
+
+    for (let i = 0; i < 20; i++) {
+      service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+    }
+    await vi.waitFor(() => {
+      expect(service.sendRpcResponse).toHaveBeenCalledTimes(20)
+    })
+
+    service._simulateRequest({ id: 777, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+    await vi.waitFor(() => {
+      expect(service.sendRpcResponse).toHaveBeenCalledTimes(21)
+    })
+    expect(service.sendRpcResponse.mock.calls[20][0].result).toEqual({
+      status: 'error',
+      reason: 'rate-limited',
+    })
+
+    resetClubCodeRateLimit()
+
+    service._simulateRequest({ id: 888, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+    await vi.waitFor(() => {
+      expect(service.sendRpcResponse).toHaveBeenCalledTimes(22)
+    })
+    expect(service.sendRpcResponse.mock.calls[21][0]).toEqual({
+      id: 888,
+      result: { status: 'error', reason: 'invalid-code' },
+    })
+  })
+
+  it('resets failure counter and escalation after a successful redemption', async () => {
+    vi.useFakeTimers()
+    try {
+      const service = createMockServerService()
+      const provider = createMockProvider()
+      const validCode = generateClubCodeMap(['Club A'], 'secret')['Club A']
+      startP2pRpcServer(service, provider, {
+        clubCodeSecret: 'secret',
+        getAllClubEntries: () => ['Club A'],
+      })
+      setPeerPermissions('peer-1', createViewPermissions())
+
+      for (let i = 0; i < 20; i++) {
+        service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-1')
+      }
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(20)
+      })
+
+      vi.advanceTimersByTime(60_000)
+
+      service._simulateRequest(
+        { id: 500, method: 'auth.redeemClubCode', args: [validCode] },
+        'peer-1',
+      )
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(21)
+      })
+      expect(service.sendRpcResponse.mock.calls[20][0].result).toEqual({
+        status: 'ok',
+        clubs: ['Club A'],
+      })
+
+      setPeerPermissions('peer-2', createViewPermissions())
+      for (let i = 600; i < 620; i++) {
+        service._simulateRequest({ id: i, method: 'auth.redeemClubCode', args: ['0000'] }, 'peer-2')
+      }
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(41)
+      })
+
+      vi.advanceTimersByTime(60_000)
+
+      service._simulateRequest(
+        { id: 3000, method: 'auth.redeemClubCode', args: ['0000'] },
+        'peer-2',
+      )
+      await vi.waitFor(() => {
+        expect(service.sendRpcResponse).toHaveBeenCalledTimes(42)
+      })
+      expect(service.sendRpcResponse.mock.calls[41][0]).toEqual({
+        id: 3000,
+        result: { status: 'error', reason: 'invalid-code' },
+      })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
