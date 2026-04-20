@@ -106,7 +106,14 @@ const useMqtt = process.env.VITE_P2P_STRATEGY === 'mqtt'
 export default defineConfig({
   base: process.env.BASE_PATH || rollback?.base || '/',
   server: useHttps ? { https: { cert: readFileSync(certPath), key: readFileSync(keyPath) } } : {},
-  resolve: useMqtt ? { alias: { trystero: '@trystero-p2p/mqtt' } } : {},
+  resolve: {
+    alias: {
+      ...(useMqtt ? { trystero: '@trystero-p2p/mqtt' } : {}),
+      ...(rollback
+        ? { 'virtual:pwa-register/react': join(__dirname, 'src/build/pwa-register-stub.ts') }
+        : {}),
+    },
+  },
   define: {
     __COMMIT_HASH__: JSON.stringify(commitHash),
     __COMMIT_DATE__: JSON.stringify(commitDate),
@@ -126,36 +133,39 @@ export default defineConfig({
         },
       ],
     }),
-    VitePWA({
-      registerType: 'prompt',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg,ico}'],
-        globIgnores: ['version.json', 'changelog.json'],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-        ...(rollback ? { cacheId: rollback.cacheId } : {}),
-      },
-      manifest: {
-        name: 'Lotta - Schacklottning',
-        short_name: 'Lotta',
-        description: 'Hantera schackturneringar med lottning, ställning och publicering',
-        lang: 'sv',
-        start_url: '.',
-        theme_color: '#0066cc',
-        background_color: '#f0f0f0',
-        display: 'standalone',
-        icons: [
-          { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          {
-            src: 'maskable-icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-        ],
-      },
-    }),
+    ...(rollback
+      ? []
+      : [
+          VitePWA({
+            registerType: 'prompt',
+            workbox: {
+              globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg,ico}'],
+              globIgnores: ['version.json', 'changelog.json'],
+              maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+            },
+            manifest: {
+              name: 'Lotta - Schacklottning',
+              short_name: 'Lotta',
+              description: 'Hantera schackturneringar med lottning, ställning och publicering',
+              lang: 'sv',
+              start_url: '.',
+              theme_color: '#0066cc',
+              background_color: '#f0f0f0',
+              display: 'standalone',
+              icons: [
+                { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+                { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+                { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+                {
+                  src: 'maskable-icon-512x512.png',
+                  sizes: '512x512',
+                  type: 'image/png',
+                  purpose: 'maskable',
+                },
+              ],
+            },
+          }),
+        ]),
   ],
   test: {
     include: ['src/**/*.test.{ts,tsx}'],

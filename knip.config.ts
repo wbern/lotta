@@ -2,7 +2,7 @@ import type { KnipConfig } from 'knip'
 
 const config: KnipConfig = {
   project: ['src/**/*.{ts,tsx}'],
-  ignore: ['src/globals.d.ts'],
+  ignore: ['src/globals.d.ts', 'src/build/pwa-register-stub.ts'],
   ignoreDependencies: [
     '@commitlint/cli',
     '@secretlint/core',
