@@ -33,6 +33,7 @@ interface Props {
   onPublish?: (what: string) => void
   onUnpair?: () => void
   onCheckUpdates?: () => void
+  onRollback?: () => void
 }
 
 export function MenuBar({
@@ -63,6 +64,7 @@ export function MenuBar({
   onPublish,
   onUnpair,
   onCheckUpdates,
+  onRollback,
 }: Props) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAbout, setShowAbout] = useState(false)
@@ -274,6 +276,10 @@ export function MenuBar({
             <div className="menu-separator" />
             <button onClick={() => action(onBackup)}>Säkerhetskopiera databas</button>
             <button onClick={() => action(onRestore)}>Återställ databas</button>
+            <div className="menu-separator" />
+            <button onClick={() => action(onRollback)} disabled={!onRollback}>
+              Byt till tidigare version…
+            </button>
           </div>
         )}
       </div>

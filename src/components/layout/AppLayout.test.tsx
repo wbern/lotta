@@ -36,6 +36,7 @@ vi.mock('../dialogs/EditBoardDialog', () => ({ EditBoardDialog: () => null }))
 vi.mock('../dialogs/BackupExportDialog', () => ({ BackupExportDialog: () => null }))
 vi.mock('../dialogs/BackupRestoreDialog', () => ({ BackupRestoreDialog: () => null }))
 vi.mock('../dialogs/SeedPlayersDialog', () => ({ SeedPlayersDialog: () => null }))
+vi.mock('../dialogs/RollbackDialog', () => ({ RollbackDialog: () => null }))
 
 // Mock router
 const mockSearch: { tournamentId?: number; round?: number; tab?: string } = {

@@ -25,6 +25,7 @@ import { ConfirmDialog } from '../dialogs/ConfirmDialog'
 import { Dialog } from '../dialogs/Dialog'
 import { EditBoardDialog } from '../dialogs/EditBoardDialog'
 import { PlayerPoolDialog } from '../dialogs/PlayerPoolDialog'
+import { RollbackDialog } from '../dialogs/RollbackDialog'
 import { SeedPlayersDialog } from '../dialogs/SeedPlayersDialog'
 import { SettingsDialog } from '../dialogs/SettingsDialog'
 import { TournamentDialog } from '../dialogs/TournamentDialog'
@@ -105,6 +106,7 @@ export function AppLayout() {
   const [showBackupExport, setShowBackupExport] = useState(false)
   const [showBackupRestore, setShowBackupRestore] = useState(false)
   const [showSeedPlayers, setShowSeedPlayers] = useState(false)
+  const [showRollbackDialog, setShowRollbackDialog] = useState(false)
   const [restoreError, setRestoreError] = useState('')
   const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null)
   const [updateCheckStatus, setUpdateCheckStatus] = useState<string | null>(null)
@@ -307,6 +309,20 @@ export function AppLayout() {
     backupFileRef.current?.click()
   }
 
+  const handleRollbackExport = async () => {
+    const blob = await downloadBackup()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'lotta-backup.sqlite'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleRollbackSwitch = (version: string) => {
+    window.location.assign(`${import.meta.env.BASE_URL}v/${version}/`)
+  }
+
   const handleRestoreFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -400,6 +416,7 @@ export function AppLayout() {
         onPublish={handlePublish}
         onUnpair={() => setShowUnpairConfirm(true)}
         onCheckUpdates={handleCheckUpdates}
+        onRollback={() => setShowRollbackDialog(true)}
       />
       {actionError && (
         <div
@@ -539,6 +556,12 @@ export function AppLayout() {
         open={showSeedPlayers}
         onClose={() => setShowSeedPlayers(false)}
         tournamentId={tournamentId}
+      />
+      <RollbackDialog
+        open={showRollbackDialog}
+        onClose={() => setShowRollbackDialog(false)}
+        onExport={handleRollbackExport}
+        onSwitch={handleRollbackSwitch}
       />
       <Dialog
         title="Sök efter uppdateringar"
