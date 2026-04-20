@@ -39,6 +39,23 @@ function generateVersionJson(): Plugin {
   }
 }
 
+function generateVersionsJsonStub(): Plugin {
+  // Empty rollback-version list for dev and local builds; the real file is
+  // regenerated from the live gh-pages branch at deploy time.
+  const data = JSON.stringify({ versions: [] })
+  return {
+    name: 'generate-versions-json-stub',
+    buildStart() {
+      writeFileSync(join(__dirname, 'public', 'versions.json'), data)
+    },
+    writeBundle(options) {
+      const outDir = options.dir || join(__dirname, 'dist')
+      mkdirSync(outDir, { recursive: true })
+      writeFileSync(join(outDir, 'versions.json'), data)
+    },
+  }
+}
+
 type ChangelogEntry = {
   sha: string
   date: string
@@ -122,6 +139,7 @@ export default defineConfig({
   },
   plugins: [
     generateVersionJson(),
+    generateVersionsJsonStub(),
     generateChangelogJson(),
     react(),
     viteStaticCopy({
@@ -140,7 +158,7 @@ export default defineConfig({
             registerType: 'prompt',
             workbox: {
               globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg,ico}'],
-              globIgnores: ['version.json', 'changelog.json'],
+              globIgnores: ['version.json', 'changelog.json', 'versions.json'],
               maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
               // Runtime-cache older deployed versions under /v/<version>/ so
               // users can switch to a previous build and keep it available
@@ -181,7 +199,7 @@ export default defineConfig({
         ]),
   ],
   test: {
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
     setupFiles: ['src/test-setup.ts'],
   },
 })

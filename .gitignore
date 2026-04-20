@@ -28,6 +28,7 @@ package-lock.json
 # Generated at build time
 public/version.json
 public/changelog.json
+public/versions.json
 
 # E2E test artifacts
 .e2e-state.json
