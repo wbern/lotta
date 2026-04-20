@@ -135,9 +135,8 @@ export default defineConfig({
         ...(rollback ? { cacheId: rollback.cacheId } : {}),
       },
       manifest: {
-        ...(rollback ? { id: rollback.manifestId } : {}),
-        name: rollback?.manifestName ?? 'Lotta - Schacklottning',
-        short_name: rollback?.manifestShortName ?? 'Lotta',
+        name: 'Lotta - Schacklottning',
+        short_name: 'Lotta',
         description: 'Hantera schackturneringar med lottning, ställning och publicering',
         lang: 'sv',
         start_url: '.',
