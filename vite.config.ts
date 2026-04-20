@@ -142,6 +142,19 @@ export default defineConfig({
               globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg,ico}'],
               globIgnores: ['version.json', 'changelog.json'],
               maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+              // Runtime-cache older deployed versions under /v/<version>/ so
+              // users can switch to a previous build and keep it available
+              // offline. Cache name is stable across mainline releases so
+              // pinned rollbacks survive new deploys.
+              runtimeCaching: [
+                {
+                  urlPattern: ({ url }) => url.pathname.startsWith('/v/'),
+                  handler: 'NetworkFirst',
+                  options: {
+                    cacheName: 'lotta-rollback-bundles',
+                  },
+                },
+              ],
             },
             manifest: {
               name: 'Lotta - Schacklottning',
