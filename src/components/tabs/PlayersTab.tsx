@@ -16,7 +16,7 @@ export function PlayersTab({ tournamentId, showELO, showGroup }: Props) {
   const { data: players, isLoading } = useTournamentPlayers(tournamentId)
 
   const getValue = useCallback((p: PlayerDto, col: string): string | number | null => {
-    if (col === 'name') return `${p.lastName}, ${p.firstName}`
+    if (col === 'name') return `${p.firstName}, ${p.lastName}`
     if (col === 'group') return p.playerGroup
     if (col === 'club') return p.club
     if (col === 'rating') return p.ratingN

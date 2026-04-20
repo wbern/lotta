@@ -142,6 +142,43 @@ describe('publish-data builders', () => {
       expect(input).not.toBeNull()
       expect(input!.classes.map((c) => c.className)).toEqual(['4A', '4B'])
     })
+
+    it('sorts players within a class by first name, not last name', async () => {
+      const t = service.tournaments.create({
+        name: 'Schack4an',
+        group: 'A',
+        pairingSystem: 'Monrad',
+        initialPairing: 'Rating',
+        nrOfRounds: 4,
+        barredPairing: false,
+        compensateWeakPlayerPP: false,
+        pointsPerGame: 4,
+        chess4: true,
+        ratingChoice: 'ELO',
+        showELO: false,
+        showGroup: false,
+      })
+      const club = service.clubs.create({ name: '4A' })
+
+      service.tournamentPlayers.add(t.id, {
+        firstName: 'Björn',
+        lastName: 'Andersson',
+        clubIndex: club.id,
+        ratingI: 1000,
+      })
+      service.tournamentPlayers.add(t.id, {
+        firstName: 'Adam',
+        lastName: 'Öberg',
+        clubIndex: club.id,
+        ratingI: 1000,
+      })
+
+      await pairNextRound(t.id)
+
+      const input = buildAlphabeticalPairingsInput(t.id, 1)
+      const firstNames = input!.classes[0].players.map((p) => p.firstName)
+      expect(firstNames).toEqual(['Adam', 'Björn'])
+    })
   })
 
   describe('buildStandingsInput', () => {

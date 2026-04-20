@@ -37,6 +37,15 @@ function renderDialog() {
   render(<PlayerPoolDialog open onClose={vi.fn()} />)
 }
 
+describe('PlayerPoolDialog default sort', () => {
+  it('sorts pool players by first name, not last name', () => {
+    renderDialog()
+    const rows = screen.getAllByTestId('data-table')[0].querySelectorAll('tbody tr')
+    expect(rows[0].textContent).toContain('Svensson, Anna')
+    expect(rows[1].textContent).toContain('Nilsson, Karl')
+  })
+})
+
 describe('PlayerPoolDialog reset button', () => {
   it('shows "Återställ" button label instead of "Ny spelare"', () => {
     renderDialog()

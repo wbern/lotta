@@ -91,8 +91,8 @@ export function buildAlphabeticalPairingsInput(
       className,
       players: rows.sort(
         (a, b) =>
-          a.lastName.localeCompare(b.lastName, 'sv') ||
-          a.firstName.localeCompare(b.firstName, 'sv'),
+          a.firstName.localeCompare(b.firstName, 'sv') ||
+          a.lastName.localeCompare(b.lastName, 'sv'),
       ),
     }))
 

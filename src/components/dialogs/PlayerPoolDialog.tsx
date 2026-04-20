@@ -55,7 +55,7 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
   const [nameError, setNameError] = useState('')
 
   const getValue = useCallback((p: PlayerDto, col: string): string | number | null => {
-    if (col === 'name') return `${p.lastName}, ${p.firstName}`
+    if (col === 'name') return `${p.firstName}, ${p.lastName}`
     if (col === 'club') return p.club
     if (col === 'group') return p.playerGroup
     if (col === 'rating') return p.ratingI
