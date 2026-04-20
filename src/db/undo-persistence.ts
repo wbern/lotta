@@ -1,4 +1,9 @@
-const DB_NAME = 'lotta-undo'
+import { dbName } from './db-name'
+
+const DB_NAME = dbName(
+  'lotta-undo',
+  typeof __ROLLBACK_VERSION__ === 'string' ? __ROLLBACK_VERSION__ : null,
+)
 const SNAPSHOTS_STORE = 'snapshots'
 const AUDIT_STORE = 'audit'
 

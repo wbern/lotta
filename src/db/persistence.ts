@@ -1,4 +1,9 @@
-const DB_NAME = 'lotta-chess'
+import { dbName } from './db-name'
+
+const DB_NAME = dbName(
+  'lotta-chess',
+  typeof __ROLLBACK_VERSION__ === 'string' ? __ROLLBACK_VERSION__ : null,
+)
 const STORE_NAME = 'database'
 const KEY = 'main'
 

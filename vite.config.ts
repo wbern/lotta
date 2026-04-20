@@ -6,6 +6,7 @@ import type { Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { defineConfig } from 'vitest/config'
+import { rollbackBuildConfig } from './src/build/rollback-config'
 
 function git(cmd: string): string {
   try {
@@ -18,6 +19,8 @@ function git(cmd: string): string {
 const commitHash = git('rev-parse --short HEAD')
 const commitDate = git('log -1 --format=%ci')
 const gitTag = git('describe --tags --abbrev=0')
+const rollbackVersion = process.env.ROLLBACK_VERSION || null
+const rollback = rollbackBuildConfig(rollbackVersion)
 
 function generateVersionJson(): Plugin {
   const versionData = JSON.stringify({ hash: commitHash, date: commitDate, tag: gitTag })
@@ -101,13 +104,14 @@ const useMqtt = process.env.VITE_P2P_STRATEGY === 'mqtt'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.BASE_PATH || '/',
+  base: process.env.BASE_PATH || rollback?.base || '/',
   server: useHttps ? { https: { cert: readFileSync(certPath), key: readFileSync(keyPath) } } : {},
   resolve: useMqtt ? { alias: { trystero: '@trystero-p2p/mqtt' } } : {},
   define: {
     __COMMIT_HASH__: JSON.stringify(commitHash),
     __COMMIT_DATE__: JSON.stringify(commitDate),
     __GIT_TAG__: JSON.stringify(gitTag),
+    __ROLLBACK_VERSION__: JSON.stringify(rollbackVersion),
   },
   plugins: [
     generateVersionJson(),
@@ -128,10 +132,12 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg,ico}'],
         globIgnores: ['version.json', 'changelog.json'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        ...(rollback ? { cacheId: rollback.cacheId } : {}),
       },
       manifest: {
-        name: 'Lotta - Schacklottning',
-        short_name: 'Lotta',
+        ...(rollback ? { id: rollback.manifestId } : {}),
+        name: rollback?.manifestName ?? 'Lotta - Schacklottning',
+        short_name: rollback?.manifestShortName ?? 'Lotta',
         description: 'Hantera schackturneringar med lottning, ställning och publicering',
         lang: 'sv',
         start_url: '.',
