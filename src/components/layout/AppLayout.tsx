@@ -309,16 +309,6 @@ export function AppLayout() {
     backupFileRef.current?.click()
   }
 
-  const handleRollbackExport = async () => {
-    const blob = await downloadBackup()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'lotta-backup.sqlite'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   const handleRollbackSwitch = (version: string) => {
     window.location.assign(`${import.meta.env.BASE_URL}v/${version}/`)
   }
@@ -560,7 +550,6 @@ export function AppLayout() {
       <RollbackDialog
         open={showRollbackDialog}
         onClose={() => setShowRollbackDialog(false)}
-        onExport={handleRollbackExport}
         onSwitch={handleRollbackSwitch}
       />
       <Dialog

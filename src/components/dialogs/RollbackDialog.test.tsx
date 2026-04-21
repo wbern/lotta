@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RollbackDialog } from './RollbackDialog'
 
@@ -8,13 +8,7 @@ function renderDialog(props: Partial<React.ComponentProps<typeof RollbackDialog>
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={qc}>
-      <RollbackDialog
-        open
-        onClose={() => {}}
-        onExport={async () => {}}
-        onSwitch={() => {}}
-        {...props}
-      />
+      <RollbackDialog open onClose={() => {}} onSwitch={() => {}} {...props} />
     </QueryClientProvider>,
   )
 }
@@ -56,22 +50,17 @@ describe('RollbackDialog', () => {
     expect(screen.getByTestId('rollback-version-1.1.0')).toBeDefined()
   })
 
-  it('disables switch buttons until the user triggers a backup export', async () => {
+  it('renders a backup advisory warning when versions are available', async () => {
     vi.mocked(globalThis.fetch).mockResolvedValue(
       new Response(JSON.stringify({ versions: [{ version: '1.0.0', date: null, hash: null }] }), {
         status: 200,
       }),
     )
     renderDialog()
-    const switchBtn = (await screen.findByTestId('rollback-switch-1.0.0')) as HTMLButtonElement
-    expect(switchBtn.disabled).toBe(true)
-
-    const exportBtn = screen.getByTestId('rollback-export')
-    await act(async () => {
-      fireEvent.click(exportBtn)
-    })
-
-    await waitFor(() => expect(switchBtn.disabled).toBe(false))
+    const warning = await screen.findByTestId('rollback-warning')
+    expect(warning).toBeDefined()
+    expect(warning.textContent).toMatch(/säkerhetskopiera/i)
+    expect(warning.textContent).toMatch(/tom databas/i)
   })
 
   it('invokes onSwitch with the target version when the switch button is clicked', async () => {
@@ -84,35 +73,7 @@ describe('RollbackDialog', () => {
     renderDialog({ onSwitch })
     await screen.findByTestId('rollback-version-1.0.0')
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('rollback-export'))
-    })
-    await waitFor(() =>
-      expect((screen.getByTestId('rollback-switch-1.0.0') as HTMLButtonElement).disabled).toBe(
-        false,
-      ),
-    )
-
     fireEvent.click(screen.getByTestId('rollback-switch-1.0.0'))
     expect(onSwitch).toHaveBeenCalledWith('1.0.0')
-  })
-
-  it('invokes onExport and surfaces its errors without enabling switch', async () => {
-    vi.mocked(globalThis.fetch).mockResolvedValue(
-      new Response(JSON.stringify({ versions: [{ version: '1.0.0', date: null, hash: null }] }), {
-        status: 200,
-      }),
-    )
-    const onExport = vi.fn().mockRejectedValue(new Error('export failed'))
-    renderDialog({ onExport })
-    await screen.findByTestId('rollback-version-1.0.0')
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('rollback-export'))
-    })
-
-    expect(onExport).toHaveBeenCalledOnce()
-    expect((screen.getByTestId('rollback-switch-1.0.0') as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByTestId('rollback-export-error')).toBeDefined()
   })
 })
