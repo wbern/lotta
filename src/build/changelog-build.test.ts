@@ -88,13 +88,13 @@ describe('buildReleases', () => {
     expect(result.map((r) => r.version)).toEqual(['2.0.0', '1.1.0', '1.0.0'])
   })
 
-  it('attributes each commit to the earliest containing tag', () => {
-    // Tags listed oldest-first per the buildReleases contract. When the same
-    // sha appears in multiple tag ranges (shouldn't happen in practice, but
-    // guards against overlapping inputs), the earliest wins.
+  it('attributes each commit to the earliest containing tag, regardless of caller order', () => {
+    // Same sha appearing in multiple tags shouldn't happen in practice, but
+    // guards against overlapping inputs. The internal semver sort means the
+    // earliest release wins even if the caller passes newer-first.
     const tags: ReleaseTag[] = [
-      { version: '1.0.0', date: '2026-04-20', shas: ['a'] },
       { version: '1.1.0', date: '2026-04-21', shas: ['a', 'b'] },
+      { version: '1.0.0', date: '2026-04-20', shas: ['a'] },
     ]
     const result = buildReleases([commit('a', 'feat: one'), commit('b', 'feat: two')], tags)
     const v100 = result.find((r) => r.version === '1.0.0')

@@ -36,21 +36,20 @@ export function parseCommit(raw: RawCommit): ChangelogCommit | null {
 }
 
 /**
- * Group parsed commits into release buckets. Commits not claimed by any tag
- * go into a leading unreleased bucket; the rest are sorted newest-first.
- *
- * Contract: callers pass disjoint `shas` per tag (in practice, derived from
- * `prev..tag` ranges), so every commit belongs to at most one release. The
- * oldest-first tag order and the `!releaseBySha.has(sha)` guard are
- * belt-and-braces — if overlapping inputs ever do slip in, the earliest tag
- * wins rather than the latest silently clobbering it.
+ * Group parsed commits into release buckets. Tag order is not part of the
+ * contract: the function sorts by semver ascending internally so overlapping
+ * `shas` arrays (shouldn't happen in practice, but see the vite.config caller
+ * which derives them from `prev..tag` ranges) attribute each commit to its
+ * earliest release. Commits not claimed by any tag go into a leading
+ * unreleased bucket; releases are returned newest-first.
  */
 export function buildReleases(
   commits: readonly RawCommit[],
   tags: readonly ReleaseTag[],
 ): ChangelogRelease[] {
+  const sortedTags = [...tags].sort((a, b) => compareSemver(a.version, b.version))
   const releaseBySha = new Map<string, { version: string; date: string }>()
-  for (const tag of tags) {
+  for (const tag of sortedTags) {
     for (const sha of tag.shas) {
       if (!releaseBySha.has(sha)) {
         releaseBySha.set(sha, { version: tag.version, date: tag.date })
