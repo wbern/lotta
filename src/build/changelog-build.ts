@@ -36,9 +36,14 @@ export function parseCommit(raw: RawCommit): ChangelogCommit | null {
 }
 
 /**
- * Group parsed commits into release buckets. `tags` should be in chronological
- * (oldest-first) order so the earliest containing tag claims each commit.
- * Commits not claimed by any tag go into a leading unreleased bucket.
+ * Group parsed commits into release buckets. Commits not claimed by any tag
+ * go into a leading unreleased bucket; the rest are sorted newest-first.
+ *
+ * Contract: callers pass disjoint `shas` per tag (in practice, derived from
+ * `prev..tag` ranges), so every commit belongs to at most one release. The
+ * oldest-first tag order and the `!releaseBySha.has(sha)` guard are
+ * belt-and-braces — if overlapping inputs ever do slip in, the earliest tag
+ * wins rather than the latest silently clobbering it.
  */
 export function buildReleases(
   commits: readonly RawCommit[],
