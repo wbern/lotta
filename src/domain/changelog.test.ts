@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { type ChangelogEntry, entriesSince, groupByDate, groupByType } from './changelog'
+import {
+  type ChangelogCommit,
+  type ChangelogRelease,
+  compareSemver,
+  groupCommitsByType,
+  releasesSince,
+} from './changelog'
 
-const entry = (overrides: Partial<ChangelogEntry>): ChangelogEntry => ({
+const commit = (overrides: Partial<ChangelogCommit>): ChangelogCommit => ({
   sha: 'abc1234',
-  date: '2026-04-10',
   type: 'feat',
   scope: null,
   breaking: false,
@@ -11,90 +16,70 @@ const entry = (overrides: Partial<ChangelogEntry>): ChangelogEntry => ({
   ...overrides,
 })
 
-describe('entriesSince', () => {
-  it('returns entries newer than the matching SHA', () => {
-    const entries = [
-      entry({ sha: 'c', date: '2026-04-12' }),
-      entry({ sha: 'b', date: '2026-04-11' }),
-      entry({ sha: 'a', date: '2026-04-10' }),
-    ]
-    expect(entriesSince(entries, 'a', '2026-04-10 00:00 +0000')).toEqual([entries[0], entries[1]])
+const release = (overrides: Partial<ChangelogRelease>): ChangelogRelease => ({
+  version: '1.0.0',
+  date: '2026-04-20',
+  commits: [],
+  ...overrides,
+})
+
+describe('compareSemver', () => {
+  it('orders by major, minor, patch', () => {
+    expect(compareSemver('1.2.3', '1.2.4')).toBeLessThan(0)
+    expect(compareSemver('1.3.0', '1.2.99')).toBeGreaterThan(0)
+    expect(compareSemver('2.0.0', '1.99.99')).toBeGreaterThan(0)
+    expect(compareSemver('1.0.0', '1.0.0')).toBe(0)
   })
 
-  it('returns empty when the current SHA is already the newest entry', () => {
-    const entries = [
-      entry({ sha: 'c', date: '2026-04-12' }),
-      entry({ sha: 'b', date: '2026-04-11' }),
-    ]
-    expect(entriesSince(entries, 'c', '2026-04-12 00:00 +0000')).toEqual([])
+  it('strips leading v', () => {
+    expect(compareSemver('v1.0.0', '1.0.0')).toBe(0)
+    expect(compareSemver('v2.0.0', 'v1.0.0')).toBeGreaterThan(0)
   })
 
-  it('falls back to date comparison when SHA is not in the list', () => {
-    const entries = [
-      entry({ sha: 'c', date: '2026-04-12' }),
-      entry({ sha: 'b', date: '2026-04-11' }),
-    ]
-    // Without a matching SHA we surface anything >= the running day so
-    // same-day commits aren't silently dropped.
-    expect(entriesSince(entries, 'unknown', '2026-04-11 12:00 +0000')).toEqual([
-      entries[0],
-      entries[1],
-    ])
-  })
-
-  it('includes same-day commits in the date fallback, except the current one', () => {
-    const entries = [
-      entry({ sha: 'c', date: '2026-04-12' }),
-      entry({ sha: 'b', date: '2026-04-12' }),
-      entry({ sha: 'a', date: '2026-04-11' }),
-    ]
-    // Running SHA `b` isn't in the post-rebase list we fetched, but the date
-    // branch must still surface sibling commit `c` from the same day.
-    expect(entriesSince(entries, 'unknown-but-b', '2026-04-12 09:00 +0000')).toEqual([
-      entries[0],
-      entries[1],
-    ])
-  })
-
-  it('returns everything when both SHA and date are missing', () => {
-    const entries = [entry({ sha: 'c' })]
-    expect(entriesSince(entries, '', '')).toEqual(entries)
-  })
-
-  it('returns empty when no entries', () => {
-    expect(entriesSince([], 'abc', '2026-04-10')).toEqual([])
+  it('treats prereleases as lower than the release', () => {
+    expect(compareSemver('1.0.0-rc.1', '1.0.0')).toBeLessThan(0)
+    expect(compareSemver('1.0.0', '1.0.0-rc.1')).toBeGreaterThan(0)
+    expect(compareSemver('1.0.0-rc.1', '1.0.0-rc.2')).toBeLessThan(0)
   })
 })
 
-describe('groupByType', () => {
-  it('groups entries by type in feat/fix/perf order', () => {
-    const entries = [
-      entry({ type: 'fix', message: 'f1' }),
-      entry({ type: 'feat', message: 'n1' }),
-      entry({ type: 'perf', message: 'p1' }),
-      entry({ type: 'feat', message: 'n2' }),
+describe('releasesSince', () => {
+  it('returns releases with version higher than currentVersion', () => {
+    const releases = [
+      release({ version: '1.2.0' }),
+      release({ version: '1.1.0' }),
+      release({ version: '1.0.0' }),
     ]
-    const groups = groupByType(entries)
+    expect(releasesSince(releases, '1.1.0').map((r) => r.version)).toEqual(['1.2.0'])
+  })
+
+  it('always surfaces the unreleased bucket', () => {
+    const releases = [release({ version: null, date: null }), release({ version: '1.0.0' })]
+    expect(releasesSince(releases, '1.0.0').map((r) => r.version)).toEqual([null])
+  })
+
+  it('returns all releases when currentVersion is empty (e.g. untagged local build)', () => {
+    const releases = [release({ version: '1.0.0' })]
+    expect(releasesSince(releases, '')).toEqual(releases)
+  })
+})
+
+describe('groupCommitsByType', () => {
+  it('groups by type in feat/fix/perf order', () => {
+    const commits = [
+      commit({ type: 'fix', message: 'f1' }),
+      commit({ type: 'feat', message: 'n1' }),
+      commit({ type: 'perf', message: 'p1' }),
+      commit({ type: 'feat', message: 'n2' }),
+    ]
+    const groups = groupCommitsByType(commits)
     expect(groups.map((g) => g.type)).toEqual(['feat', 'fix', 'perf'])
-    expect(groups[0].entries.map((e) => e.message)).toEqual(['n1', 'n2'])
+    expect(groups[0].commits.map((c) => c.message)).toEqual(['n1', 'n2'])
     expect(groups[1].label).toBe('Buggfixar')
   })
 
-  it('omits empty groups', () => {
-    const groups = groupByType([entry({ type: 'feat' })])
+  it('omits empty type groups', () => {
+    const groups = groupCommitsByType([commit({ type: 'feat' })])
     expect(groups.map((g) => g.type)).toEqual(['feat'])
-  })
-})
-
-describe('groupByDate', () => {
-  it('groups by date in descending order', () => {
-    const entries = [
-      entry({ date: '2026-04-10', message: 'a' }),
-      entry({ date: '2026-04-12', message: 'b' }),
-      entry({ date: '2026-04-10', message: 'c' }),
-    ]
-    const groups = groupByDate(entries)
-    expect(groups.map((g) => g.date)).toEqual(['2026-04-12', '2026-04-10'])
-    expect(groups[1].entries.map((e) => e.message)).toEqual(['a', 'c'])
   })
 })

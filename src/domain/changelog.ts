@@ -1,18 +1,25 @@
 export type ChangelogType = 'feat' | 'fix' | 'perf'
 
-export interface ChangelogEntry {
+export interface ChangelogCommit {
   sha: string
-  date: string
   type: ChangelogType
   scope: string | null
   breaking: boolean
   message: string
 }
 
-interface ChangelogGroup {
+export interface ChangelogRelease {
+  /** `null` on the leading "unreleased" bucket for commits after the newest tag. */
+  version: string | null
+  /** ISO date (YYYY-MM-DD) of the tag. `null` when unreleased. */
+  date: string | null
+  commits: ChangelogCommit[]
+}
+
+interface ChangelogTypeGroup {
   type: ChangelogType
   label: string
-  entries: ChangelogEntry[]
+  commits: ChangelogCommit[]
 }
 
 const GROUP_LABELS: Record<ChangelogType, string> = {
@@ -23,66 +30,65 @@ const GROUP_LABELS: Record<ChangelogType, string> = {
 
 const GROUP_ORDER: ChangelogType[] = ['feat', 'fix', 'perf']
 
-/**
- * Entries newer than the running build. `entries` must be in newest-first
- * order (as produced by `git log`); the SHA path relies on that ordering.
- * Falls back to a date cutoff when the running SHA isn't in the list (e.g.
- * rebased history); same-day commits are kept on the date path because
- * `git log` only gives us day granularity.
- */
-export function entriesSince(
-  entries: ChangelogEntry[],
-  currentSha: string,
-  currentDate: string,
-): ChangelogEntry[] {
-  if (entries.length === 0) return []
-  if (currentSha) {
-    const idx = entries.findIndex((e) => e.sha === currentSha)
-    if (idx >= 0) return entries.slice(0, idx)
-  }
-  if (currentDate) {
-    const cutoff = currentDate.slice(0, 10)
-    return entries.filter((e) => e.date >= cutoff && e.sha !== currentSha)
-  }
-  return entries
+interface Semver {
+  major: number
+  minor: number
+  patch: number
+  pre: string | null
+}
+
+function parseSemver(s: string): Semver | null {
+  const m = s.replace(/^v/, '').match(/^(\d+)\.(\d+)\.(\d+)(?:-(.+))?$/)
+  if (!m) return null
+  return { major: +m[1], minor: +m[2], patch: +m[3], pre: m[4] ?? null }
+}
+
+/** Returns negative if a<b, positive if a>b, zero if equal. Handles prereleases. */
+export function compareSemver(a: string, b: string): number {
+  const pa = parseSemver(a)
+  const pb = parseSemver(b)
+  if (!pa || !pb) return a < b ? -1 : a > b ? 1 : 0
+  if (pa.major !== pb.major) return pa.major - pb.major
+  if (pa.minor !== pb.minor) return pa.minor - pb.minor
+  if (pa.patch !== pb.patch) return pa.patch - pb.patch
+  if (pa.pre === null && pb.pre === null) return 0
+  if (pa.pre === null) return 1
+  if (pb.pre === null) return -1
+  return pa.pre < pb.pre ? -1 : pa.pre > pb.pre ? 1 : 0
 }
 
 /**
- * Groups entries by conventional-commit type in feat → fix → perf order.
- * Within each group the original (newest-first) ordering is preserved.
+ * Releases newer than the running build. The unreleased bucket (version null)
+ * is always surfaced since it represents commits past the newest tag.
  */
-export function groupByType(entries: ChangelogEntry[]): ChangelogGroup[] {
-  const byType = new Map<ChangelogType, ChangelogEntry[]>()
-  for (const entry of entries) {
-    const bucket = byType.get(entry.type) ?? []
-    bucket.push(entry)
-    byType.set(entry.type, bucket)
+export function releasesSince(
+  releases: ChangelogRelease[],
+  currentVersion: string,
+): ChangelogRelease[] {
+  const cv = currentVersion.replace(/^v/, '')
+  if (!cv) return releases
+  return releases.filter((r) => r.version === null || compareSemver(r.version, cv) > 0)
+}
+
+/** Groups commits by conventional-commit type in feat → fix → perf order. */
+export function groupCommitsByType(commits: ChangelogCommit[]): ChangelogTypeGroup[] {
+  const byType = new Map<ChangelogType, ChangelogCommit[]>()
+  for (const commit of commits) {
+    const bucket = byType.get(commit.type) ?? []
+    bucket.push(commit)
+    byType.set(commit.type, bucket)
   }
   return GROUP_ORDER.flatMap((type) => {
-    const group = byType.get(type)
-    return group && group.length > 0 ? [{ type, label: GROUP_LABELS[type], entries: group }] : []
+    const bucket = byType.get(type)
+    return bucket && bucket.length > 0 ? [{ type, label: GROUP_LABELS[type], commits: bucket }] : []
   })
 }
 
-export function groupByDate(
-  entries: ChangelogEntry[],
-): { date: string; entries: ChangelogEntry[] }[] {
-  const byDate = new Map<string, ChangelogEntry[]>()
-  for (const entry of entries) {
-    const bucket = byDate.get(entry.date) ?? []
-    bucket.push(entry)
-    byDate.set(entry.date, bucket)
-  }
-  return [...byDate.entries()]
-    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-    .map(([date, items]) => ({ date, entries: items }))
-}
-
-export async function fetchChangelog(baseUrl: string): Promise<ChangelogEntry[]> {
+export async function fetchChangelog(baseUrl: string): Promise<ChangelogRelease[]> {
   try {
     const response = await fetch(`${baseUrl}changelog.json?t=${Date.now()}`)
     if (!response.ok) return []
-    const data = (await response.json()) as ChangelogEntry[]
+    const data = (await response.json()) as ChangelogRelease[]
     return Array.isArray(data) ? data : []
   } catch {
     return []

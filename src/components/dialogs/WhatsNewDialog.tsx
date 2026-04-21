@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  type ChangelogEntry,
+  type ChangelogRelease,
   type ChangelogType,
-  entriesSince,
   fetchChangelog,
-  groupByDate,
-  groupByType,
+  groupCommitsByType,
+  releasesSince,
 } from '../../domain/changelog'
 import { Dialog } from './Dialog'
 
@@ -20,30 +19,31 @@ const GROUP_ICONS: Record<ChangelogType, string> = {
   perf: '⚡',
 }
 
+function releaseHeading(release: ChangelogRelease): string {
+  if (release.version === null) return 'Kommande'
+  return release.date ? `v${release.version} (${release.date})` : `v${release.version}`
+}
+
 export function WhatsNewDialog({ open, onClose }: Props) {
-  const [entries, setEntries] = useState<ChangelogEntry[] | null>(null)
+  const [releases, setReleases] = useState<ChangelogRelease[] | null>(null)
   const [showOlder, setShowOlder] = useState(false)
 
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    setEntries(null)
+    setReleases(null)
     setShowOlder(false)
     fetchChangelog(import.meta.env.BASE_URL).then((data) => {
-      if (!cancelled) setEntries(data)
+      if (!cancelled) setReleases(data)
     })
     return () => {
       cancelled = true
     }
   }, [open])
 
-  const newer = useMemo(
-    () => (entries ? entriesSince(entries, __COMMIT_HASH__, __COMMIT_DATE__) : []),
-    [entries],
-  )
-  const hasOlder = entries !== null && entries.length > newer.length
-  const visible = showOlder ? (entries ?? []) : newer
-  const days = groupByDate(visible)
+  const newer = releases ? releasesSince(releases, __GIT_TAG__) : []
+  const hasOlder = releases !== null && releases.length > newer.length
+  const visible = showOlder ? (releases ?? []) : newer
 
   return (
     <Dialog
@@ -58,14 +58,18 @@ export function WhatsNewDialog({ open, onClose }: Props) {
         </button>
       }
     >
-      {entries === null && <p>Laddar ändringslogg…</p>}
-      {entries !== null && days.length === 0 && <p>Inga nya ändringar sedan din version.</p>}
-      {days.length > 0 && (
+      {releases === null && <p>Laddar ändringslogg…</p>}
+      {releases !== null && visible.length === 0 && <p>Inga nya ändringar sedan din version.</p>}
+      {visible.length > 0 && (
         <div className="changelog-archive">
-          {days.map((day) => (
-            <section key={day.date} className="changelog-day">
-              <h3>{day.date}</h3>
-              {groupByType(day.entries).map((group) => (
+          {visible.map((release) => (
+            <section
+              key={release.version ?? 'unreleased'}
+              className="changelog-release"
+              data-testid="changelog-release"
+            >
+              <h3>{releaseHeading(release)}</h3>
+              {groupCommitsByType(release.commits).map((group) => (
                 <div key={group.type} className="changelog-group" data-testid="changelog-group">
                   <h4>
                     <span className="changelog-group-icon" aria-hidden="true">
@@ -74,10 +78,10 @@ export function WhatsNewDialog({ open, onClose }: Props) {
                     {group.label}
                   </h4>
                   <ul>
-                    {group.entries.map((entry) => (
-                      <li key={entry.sha}>
-                        {entry.breaking && <strong>Brytande ändring: </strong>}
-                        {entry.message}
+                    {group.commits.map((commit) => (
+                      <li key={commit.sha}>
+                        {commit.breaking && <strong>Brytande ändring: </strong>}
+                        {commit.message}
                       </li>
                     ))}
                   </ul>

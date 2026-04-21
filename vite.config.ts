@@ -7,6 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { defineConfig } from 'vitest/config'
 import { rollbackBuildConfig } from './src/build/rollback-config'
+import { compareSemver } from './src/domain/changelog'
 
 function git(cmd: string): string {
   try {
@@ -56,47 +57,85 @@ function generateVersionsJsonStub(): Plugin {
   }
 }
 
-type ChangelogEntry = {
+type ChangelogCommit = {
   sha: string
-  date: string
   type: string
   scope: string | null
   breaking: boolean
   message: string
 }
 
-const USER_FACING_TYPES: Record<string, string> = {
-  feat: 'Nyheter',
-  fix: 'Buggfixar',
-  perf: 'Förbättringar',
+type ChangelogRelease = {
+  version: string | null
+  date: string | null
+  commits: ChangelogCommit[]
 }
+
+const USER_FACING_TYPES: Record<string, true> = { feat: true, fix: true, perf: true }
 
 const COMMIT_REGEX = /^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$/
 
-function buildChangelog(): ChangelogEntry[] {
+function buildChangelog(): ChangelogRelease[] {
+  // Semver tags newest first. semantic-release emits plain vMAJOR.MINOR.PATCH
+  // (and optional prerelease suffix); ignore anything else so we don't choke
+  // on stray legacy tags.
+  const tags = git("tag --list 'v*' --sort=creatordate")
+    .split('\n')
+    .map((t) => t.trim())
+    .filter((t) => /^v\d+\.\d+\.\d+/.test(t))
+
+  // sha -> containing release (earliest tag whose ..range includes the commit)
+  const releaseBySha = new Map<string, { version: string; date: string }>()
+  let prevTag = ''
+  for (const tag of tags) {
+    const range = prevTag ? `${prevTag}..${tag}` : tag
+    const shas = git(`log ${range} --format=%h`).split('\n').filter(Boolean)
+    const tagDate = git(`log -1 --format=%cI ${tag}`).slice(0, 10)
+    const version = tag.replace(/^v/, '')
+    for (const sha of shas) {
+      if (!releaseBySha.has(sha)) releaseBySha.set(sha, { version, date: tagDate })
+    }
+    prevTag = tag
+  }
+
   const raw = git('log --format=%h%x1f%cI%x1f%s%x1e')
   if (!raw) return []
-  return raw
+  const parsed: ChangelogCommit[] = raw
     .split('\x1e')
     .map((line) => line.trim())
     .filter(Boolean)
     .flatMap((line) => {
-      const [sha, iso, subject] = line.split('\x1f')
+      const [sha, _iso, subject] = line.split('\x1f')
       const match = subject?.match(COMMIT_REGEX)
       if (!match) return []
       const [, type, scope, breaking, message] = match
       if (!USER_FACING_TYPES[type]) return []
-      return [
-        {
-          sha,
-          date: iso.slice(0, 10),
-          type,
-          scope: scope || null,
-          breaking: !!breaking,
-          message,
-        },
-      ]
+      return [{ sha, type, scope: scope || null, breaking: !!breaking, message }]
     })
+
+  const releaseMap = new Map<string, ChangelogRelease>()
+  const unreleased: ChangelogCommit[] = []
+  for (const commit of parsed) {
+    const rel = releaseBySha.get(commit.sha)
+    if (!rel) {
+      unreleased.push(commit)
+      continue
+    }
+    let release = releaseMap.get(rel.version)
+    if (!release) {
+      release = { version: rel.version, date: rel.date, commits: [] }
+      releaseMap.set(rel.version, release)
+    }
+    release.commits.push(commit)
+  }
+
+  const sortedReleases = [...releaseMap.values()].sort((a, b) =>
+    // Newest-first. Both versions are non-null here.
+    compareSemver(b.version as string, a.version as string),
+  )
+  return unreleased.length > 0
+    ? [{ version: null, date: null, commits: unreleased }, ...sortedReleases]
+    : sortedReleases
 }
 
 function generateChangelogJson(): Plugin {
