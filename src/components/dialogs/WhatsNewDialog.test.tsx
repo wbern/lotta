@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { ChangelogRelease } from '../../domain/changelog'
 
 const mockReleases: ChangelogRelease[] = [
@@ -67,5 +67,24 @@ describe('WhatsNewDialog version filtering', () => {
 
     await waitFor(() => expect(screen.getByText('v1.2.0 (2026-05-01)')).toBeTruthy())
     expect(screen.getByText('v1.1.0 (2026-04-25)')).toBeTruthy()
+  })
+})
+
+describe('WhatsNewDialog without a known current version', () => {
+  // Simulates a dev server / untagged checkout where `git describe` had no
+  // tag to return. Without the fallback the dialog would label every past
+  // release as "new to you".
+  beforeAll(() => vi.stubGlobal('__GIT_TAG__', ''))
+  afterAll(() => vi.stubGlobal('__GIT_TAG__', 'v1.0.0'))
+
+  it('hides the release archive by default, exposes it via the toggle', async () => {
+    render(<WhatsNewDialog open onClose={() => {}} />)
+
+    await waitFor(() => expect(screen.getByText(/Inga nya ändringar/)).toBeTruthy())
+    expect(screen.queryByText('new-120')).toBeNull()
+
+    fireEvent.click(screen.getByText(/Visa tidigare versioner/))
+    expect(screen.getByText('new-120')).toBeTruthy()
+    expect(screen.getByText('new-110')).toBeTruthy()
   })
 })

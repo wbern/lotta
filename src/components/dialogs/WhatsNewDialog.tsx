@@ -43,7 +43,9 @@ export function WhatsNewDialog({ open, onClose }: Props) {
 
   const newer = releases ? releasesSince(releases, __GIT_TAG__) : []
   const hasOlder = releases !== null && releases.length > newer.length
-  const visible = showOlder ? (releases ?? []) : newer
+  const visible = (showOlder ? (releases ?? []) : newer).filter(
+    (release) => release.commits.length > 0,
+  )
 
   return (
     <Dialog

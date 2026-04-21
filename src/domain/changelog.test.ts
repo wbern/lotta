@@ -58,9 +58,18 @@ describe('releasesSince', () => {
     expect(releasesSince(releases, '1.0.0').map((r) => r.version)).toEqual([null])
   })
 
-  it('returns all releases when currentVersion is empty (e.g. untagged local build)', () => {
-    const releases = [release({ version: '1.0.0' })]
-    expect(releasesSince(releases, '')).toEqual(releases)
+  it('collapses to the unreleased bucket when currentVersion is empty', () => {
+    // Dev server / untagged checkout: we don't know where the user is, so
+    // showing every past release as "new" would be misleading.
+    const releases = [
+      release({ version: null, date: null, commits: [commit({})] }),
+      release({ version: '1.0.0' }),
+    ]
+    expect(releasesSince(releases, '').map((r) => r.version)).toEqual([null])
+  })
+
+  it('returns nothing when currentVersion is empty and there is no unreleased bucket', () => {
+    expect(releasesSince([release({ version: '1.0.0' })], '')).toEqual([])
   })
 
   it('hides a prerelease of the current stable version', () => {

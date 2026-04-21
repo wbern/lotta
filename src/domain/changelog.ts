@@ -59,14 +59,18 @@ export function compareSemver(a: string, b: string): number {
 
 /**
  * Releases newer than the running build. The unreleased bucket (version null)
- * is always surfaced since it represents commits past the newest tag.
+ * is always surfaced since it represents commits past the newest tag. Empty
+ * `currentVersion` (dev server, untagged checkout) collapses to the unreleased
+ * bucket only — we don't know where the user is, so labelling the archive as
+ * "new" would be misleading. Users can still click "Visa tidigare versioner"
+ * to expand the full history.
  */
 export function releasesSince(
   releases: ChangelogRelease[],
   currentVersion: string,
 ): ChangelogRelease[] {
   const cv = currentVersion.replace(/^v/, '')
-  if (!cv) return releases
+  if (!cv) return releases.filter((r) => r.version === null)
   return releases.filter((r) => r.version === null || compareSemver(r.version, cv) > 0)
 }
 
