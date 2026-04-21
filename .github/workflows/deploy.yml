@@ -129,33 +129,35 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Capture tag count before release
-        id: tags_before
-        run: echo "count=$(git tag -l 'v*' | wc -l | tr -d ' ')" >> "$GITHUB_OUTPUT"
+      - name: Capture tags before release
+        run: git tag -l 'v*' | sort > /tmp/tags-before.txt
 
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm exec semantic-release
 
-      - name: Dispatch rollback-deploy for the new tag
+      - name: Dispatch rollback-deploy for new tags
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # semantic-release pushes its tag via GITHUB_TOKEN, which does not
-          # trigger downstream workflows. Explicitly dispatch rollback-deploy
-          # if a new v-tag just appeared on the remote.
+          # trigger downstream workflows. Diff the tag set (not the count) so
+          # we dispatch against the exact new tag even if someone races us
+          # with a manual push.
           git fetch --tags --quiet
-          after=$(git tag -l 'v*' | wc -l | tr -d ' ')
-          before=${{ steps.tags_before.outputs.count }}
-          if [ "$after" -le "$before" ]; then
+          git tag -l 'v*' | sort > /tmp/tags-after.txt
+          new_tags=$(comm -13 /tmp/tags-before.txt /tmp/tags-after.txt)
+          if [ -z "$new_tags" ]; then
             echo "No new tag — nothing to snapshot."
             exit 0
           fi
-          new_tag=$(git describe --tags --abbrev=0)
-          new_version="${new_tag#v}"
-          echo "Dispatching rollback-deploy for $new_tag (version=$new_version)"
-          gh workflow run rollback-deploy.yml --ref "$new_tag" -f version="$new_version"
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            version="${tag#v}"
+            echo "Dispatching rollback-deploy for $tag (version=$version)"
+            gh workflow run rollback-deploy.yml --ref "$tag" -f version="$version"
+          done <<< "$new_tags"
 
   deploy:
     runs-on: ubuntu-latest

@@ -35,11 +35,18 @@ jobs:
         id: ver
         run: |
           if [ -n "${{ inputs.version }}" ]; then
-            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            value="${{ inputs.version }}"
           else
-            tag="${GITHUB_REF_NAME}"
-            echo "value=${tag#v}" >> "$GITHUB_OUTPUT"
+            value="${GITHUB_REF_NAME#v}"
           fi
+          # The push-trigger tag filter is loose (v[0-9]*), so also reject
+          # anything here that isn't strict semver with an optional prerelease
+          # suffix before we deploy it under /v/<version>/.
+          if ! [[ "$value" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo "Invalid version string: $value"
+            exit 1
+          fi
+          echo "value=$value" >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -81,21 +88,31 @@ jobs:
           path: gh-pages-checkout
           fetch-depth: 0
 
-      - name: Regenerate versions.json
+      - name: Regenerate and commit versions.json to gh-pages
         run: |
-          node scripts/build-versions-json.mjs \
-            --from-dir gh-pages-checkout \
-            --out gh-pages-checkout/versions.json
-
-      - name: Commit versions.json to gh-pages
-        run: |
-          cd gh-pages-checkout
-          if git diff --quiet versions.json; then
-            echo "versions.json unchanged"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add versions.json
-          git commit -m "chore: regenerate versions.json for v${{ steps.ver.outputs.value }}"
-          git push origin gh-pages
+          # Pages concurrency serialises workflow *runs*, but a manual push to
+          # gh-pages between our checkout and the git push below would still
+          # reject us. Resync + regenerate + push, up to a few attempts.
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3; do
+            (cd gh-pages-checkout && git fetch origin gh-pages && git reset --hard origin/gh-pages)
+            node scripts/build-versions-json.mjs \
+              --from-dir gh-pages-checkout \
+              --out gh-pages-checkout/versions.json
+            cd gh-pages-checkout
+            if git diff --quiet versions.json; then
+              echo "versions.json already up to date on attempt $attempt"
+              exit 0
+            fi
+            git add versions.json
+            git commit -m "chore: regenerate versions.json for v${{ steps.ver.outputs.value }}"
+            if git push origin gh-pages; then
+              echo "pushed versions.json on attempt $attempt"
+              exit 0
+            fi
+            echo "push attempt $attempt rejected; resyncing and retrying"
+            cd ..
+          done
+          echo "gave up after 3 attempts"
+          exit 1
