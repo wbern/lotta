@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/wbern/lotta/compare/v1.0.2...v1.0.3) (2026-04-21)
+
+
+### Bug Fixes
+
+* **rollback:** rephrase warning to describe per-version DB isolation ([0524e79](https://github.com/wbern/lotta/commit/0524e798fc30aba51e81615af445d04275f8c808))
+
 ## [1.0.2](https://github.com/wbern/lotta/compare/v1.0.1...v1.0.2) (2026-04-21)
 
 
