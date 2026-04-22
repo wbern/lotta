@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/wbern/lotta/compare/v1.1.0...v1.1.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **live:** send state to peers who miss the initial push ([d73a8d5](https://github.com/wbern/lotta/commit/d73a8d5d9b5481e3816f04116c9c17d0b8b42929))
+
 # [1.1.0](https://github.com/wbern/lotta/compare/v1.0.3...v1.1.0) (2026-04-21)
 
 
