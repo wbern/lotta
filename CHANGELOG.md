@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/wbern/lotta/compare/v1.1.2...v1.1.3) (2026-04-23)
+
+
+### Bug Fixes
+
+* **live:** stop club-scoping referees who never redeemed a club code ([63a4ace](https://github.com/wbern/lotta/commit/63a4ace85c828da9ac358eafc2adda0ba5185176))
+
 ## [1.1.2](https://github.com/wbern/lotta/compare/v1.1.1...v1.1.2) (2026-04-23)
 
 
