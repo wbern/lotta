@@ -180,6 +180,7 @@ export function AppLayout() {
   const [alphaPrintOptions, setAlphaPrintOptions] = useState({
     groupByClass: true,
     compact: false,
+    hideOpponentLastName: false,
   })
 
   const handlePrint = (what: string) => {
@@ -189,6 +190,7 @@ export function AppLayout() {
       setAlphaPrintOptions({
         groupByClass: params.get('groupByClass') !== '0',
         compact: params.get('compact') === '1',
+        hideOpponentLastName: params.get('hideOppLast') === '1',
       })
     }
 
@@ -473,6 +475,7 @@ export function AppLayout() {
         maxPointsImmediately={settings?.maxPointsImmediately}
         alphaPrintGroupByClass={alphaPrintOptions.groupByClass}
         alphaPrintCompact={alphaPrintOptions.compact}
+        alphaPrintHideOpponentLastName={alphaPrintOptions.hideOpponentLastName}
       />
       <StatusBar
         tournament={tournament}

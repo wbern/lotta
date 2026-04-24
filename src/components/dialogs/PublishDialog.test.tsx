@@ -52,7 +52,48 @@ describe('PublishDialog', () => {
       fireEvent.click(screen.getByTestId('publish-alphabetical-compact'))
       fireEvent.click(screen.getByTestId('publish-alphabetical'))
 
-      expect(onPublish).toHaveBeenCalledWith('alphabetical?columns=3&groupByClass=0&compact=1')
+      expect(onPublish).toHaveBeenCalledWith(
+        'alphabetical?columns=3&groupByClass=0&compact=1&hideOppLast=0',
+      )
+    })
+
+    it('forwards the hide-opponent-last-name choice', () => {
+      const onPublish = vi.fn()
+      render(
+        <PublishDialog
+          open
+          hasRound
+          hasTournament
+          chess4={false}
+          category="lotta"
+          onClose={vi.fn()}
+          onPublish={onPublish}
+        />,
+      )
+
+      fireEvent.click(screen.getByTestId('publish-alphabetical-hide-opp-last'))
+      fireEvent.click(screen.getByTestId('publish-alphabetical'))
+
+      expect(onPublish).toHaveBeenCalledWith(
+        'alphabetical?columns=2&groupByClass=1&compact=0&hideOppLast=1',
+      )
+    })
+
+    it('defaults hide-opponent-last-name to unchecked', () => {
+      render(
+        <PublishDialog
+          open
+          hasRound
+          hasTournament
+          chess4={false}
+          category="lotta"
+          onClose={vi.fn()}
+          onPublish={vi.fn()}
+        />,
+      )
+
+      const checkbox = screen.getByTestId('publish-alphabetical-hide-opp-last') as HTMLInputElement
+      expect(checkbox.checked).toBe(false)
     })
 
     it('disables the columns dropdown while grouping per class is on', () => {
@@ -92,7 +133,9 @@ describe('PublishDialog', () => {
 
       fireEvent.click(screen.getByTestId('publish-alphabetical'))
 
-      expect(onPublish).toHaveBeenCalledWith('alphabetical?columns=2&groupByClass=1&compact=0')
+      expect(onPublish).toHaveBeenCalledWith(
+        'alphabetical?columns=2&groupByClass=1&compact=0&hideOppLast=0',
+      )
     })
 
     it('closes the dialog after publishing', () => {

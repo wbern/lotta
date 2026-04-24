@@ -251,6 +251,59 @@ describe('publishAlphabeticalPairings', () => {
     expect(titleOccurrences).toHaveLength(1)
   })
 
+  it('renders opponents with first name only when hideOpponentLastName is true', () => {
+    const input: AlphabeticalPairingsPublishInput = {
+      tournamentName: 'Test',
+      roundNr: 1,
+      hideOpponentLastName: true,
+      classes: [
+        {
+          className: '',
+          players: [
+            {
+              firstName: 'Anna',
+              lastName: 'Andersson',
+              lotNr: 1,
+              color: 'V',
+              opponent: { firstName: 'Bo', lastName: 'Björk', lotNr: 2, color: 'S' },
+            },
+          ],
+        },
+      ],
+    }
+
+    const html = publishAlphabeticalPairings(input)
+    // Self name keeps both, only opponent loses the last name.
+    expect(html).toContain('<td class="CP_Player">Anna Andersson</td>')
+    expect(html).toContain('<td class="CP_Player">Bo</td>')
+    expect(html).not.toContain('Bo Björk')
+  })
+
+  it('still labels byes as "frirond" when hideOpponentLastName is true', () => {
+    const input: AlphabeticalPairingsPublishInput = {
+      tournamentName: 'Test',
+      roundNr: 1,
+      hideOpponentLastName: true,
+      classes: [
+        {
+          className: '',
+          players: [
+            {
+              firstName: 'Anna',
+              lastName: 'Andersson',
+              lotNr: 1,
+              color: 'V',
+              opponent: null,
+            },
+          ],
+        },
+      ],
+    }
+
+    const html = publishAlphabeticalPairings(input)
+    expect(html).toContain('frirond')
+  })
+
   it('emits a flat CSS-column layout when groupByClass is false', () => {
     const input: AlphabeticalPairingsPublishInput = {
       tournamentName: 'Test',

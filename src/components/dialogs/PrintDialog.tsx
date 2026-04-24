@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AlphabeticalOptionsCheckboxes } from './AlphabeticalOptionsCheckboxes'
 import { Dialog } from './Dialog'
 
 interface Props {
@@ -22,6 +23,7 @@ export function PrintDialog({
 }: Props) {
   const [alphaGroupByClass, setAlphaGroupByClass] = useState(true)
   const [alphaCompact, setAlphaCompact] = useState(false)
+  const [alphaHideOppLast, setAlphaHideOppLast] = useState(false)
 
   const print = (what: string) => {
     onPrint(what)
@@ -32,6 +34,7 @@ export function PrintDialog({
     const params = new URLSearchParams()
     params.set('groupByClass', alphaGroupByClass ? '1' : '0')
     params.set('compact', alphaCompact ? '1' : '0')
+    params.set('hideOppLast', alphaHideOppLast ? '1' : '0')
     print(`alphabetical?${params.toString()}`)
   }
 
@@ -69,29 +72,15 @@ export function PrintDialog({
               Alfabetisk lottning
             </button>
           </div>
-          <div
-            className="form-group"
-            style={{ flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}
-          >
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <input
-                type="checkbox"
-                data-testid="print-alphabetical-group-by-class"
-                checked={alphaGroupByClass}
-                onChange={(e) => setAlphaGroupByClass(e.target.checked)}
-              />
-              Gruppera per klubb på egen sida
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <input
-                type="checkbox"
-                data-testid="print-alphabetical-compact"
-                checked={alphaCompact}
-                onChange={(e) => setAlphaCompact(e.target.checked)}
-              />
-              Kompakt vy
-            </label>
-          </div>
+          <AlphabeticalOptionsCheckboxes
+            testIdPrefix="print-alphabetical"
+            groupByClass={alphaGroupByClass}
+            onGroupByClassChange={setAlphaGroupByClass}
+            compact={alphaCompact}
+            onCompactChange={setAlphaCompact}
+            hideOppLast={alphaHideOppLast}
+            onHideOppLastChange={setAlphaHideOppLast}
+          />
         </>
       )}
       {category === 'standings' && (

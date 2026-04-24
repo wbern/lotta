@@ -49,6 +49,7 @@ interface AlphabeticalPublishOptions {
   groupByClass?: boolean
   columns?: number
   compact?: boolean
+  hideOpponentLastName?: boolean
 }
 
 async function publishAlphabeticalPairingsHtml(
@@ -74,6 +75,8 @@ function parseAlphabeticalOptions(query: string): AlphabeticalPublishOptions {
   if (groupByClass != null) options.groupByClass = groupByClass === '1'
   const compact = params.get('compact')
   if (compact != null) options.compact = compact === '1'
+  const hideOppLast = params.get('hideOppLast')
+  if (hideOppLast != null) options.hideOpponentLastName = hideOppLast === '1'
   return options
 }
 

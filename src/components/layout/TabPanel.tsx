@@ -27,6 +27,7 @@ interface Props {
   maxPointsImmediately?: boolean
   alphaPrintGroupByClass?: boolean
   alphaPrintCompact?: boolean
+  alphaPrintHideOpponentLastName?: boolean
 }
 
 export function TabPanel({
@@ -45,6 +46,7 @@ export function TabPanel({
   maxPointsImmediately,
   alphaPrintGroupByClass,
   alphaPrintCompact,
+  alphaPrintHideOpponentLastName,
 }: Props) {
   const tabs = useMemo(() => {
     const base: { key: string; label: string }[] = [
@@ -117,6 +119,7 @@ export function TabPanel({
                 activeRound={round}
                 printGroupByClass={alphaPrintGroupByClass}
                 printCompact={alphaPrintCompact}
+                printHideOpponentLastName={alphaPrintHideOpponentLastName}
               />
             )}
             {activeTab === 'standings' && (

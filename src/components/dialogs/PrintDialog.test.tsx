@@ -85,7 +85,27 @@ describe('PrintDialog', () => {
     fireEvent.click(screen.getByTestId('print-alphabetical-compact'))
     fireEvent.click(screen.getByTestId('print-alphabetical'))
 
-    expect(onPrint).toHaveBeenCalledWith('alphabetical?groupByClass=0&compact=1')
+    expect(onPrint).toHaveBeenCalledWith('alphabetical?groupByClass=0&compact=1&hideOppLast=0')
+  })
+
+  it('forwards hide-opponent-last-name in the print URL', () => {
+    const onPrint = vi.fn()
+    render(
+      <PrintDialog
+        open
+        hasRound
+        hasTournament
+        chess4={false}
+        category="lotta"
+        onClose={vi.fn()}
+        onPrint={onPrint}
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('print-alphabetical-hide-opp-last'))
+    fireEvent.click(screen.getByTestId('print-alphabetical'))
+
+    expect(onPrint).toHaveBeenCalledWith('alphabetical?groupByClass=1&compact=0&hideOppLast=1')
   })
 
   it('shows pairing print options when category is lotta', () => {

@@ -197,6 +197,24 @@ describe('publish API (local)', () => {
     expect(html).toContain('column-count: 1')
   })
 
+  it('publishHtml alphabetical hides opponent last names when hideOppLast=1', async () => {
+    await pairNextRound(tournamentId)
+
+    const blob = await publishHtml(tournamentId, 'alphabetical?hideOppLast=1', 1)
+    const html = await blob.text()
+
+    // Anna's opponent in rating-desc pairing should be Bo Björk — with the
+    // flag on, only "Bo" should appear as her opponent cell. Players' own
+    // rows still keep their full names.
+    expect(html).toContain('<td class="CP_Player">Anna Andersson</td>')
+    expect(html).toContain('<td class="CP_Player">Bo Björk</td>')
+    // Only Bo's own row should contain "Bo Björk" — Anna's opponent cell
+    // should have been shortened to "Bo".
+    const boBjorkMatches = html.match(/<td class="CP_Player">Bo Björk<\/td>/g) ?? []
+    expect(boBjorkMatches).toHaveLength(1)
+    expect(html).toMatch(/<td class="CP_Player">Bo<\/td>/)
+  })
+
   it('publishHtml alphabetical applies CP_compact when compact=1', async () => {
     await pairNextRound(tournamentId)
 

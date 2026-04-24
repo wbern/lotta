@@ -311,6 +311,8 @@ export interface AlphabeticalPairingsPublishInput {
   columns?: number
   /** Smaller font/padding so large classes fit on fewer pages. */
   compact?: boolean
+  /** Render opponents as first name only, omitting the last name. */
+  hideOpponentLastName?: boolean
   classes: {
     className: string
     players: {
@@ -332,8 +334,15 @@ export function publishAlphabeticalPairings(input: AlphabeticalPairingsPublishIn
   const groupByClass = input.groupByClass !== false
   const columns = Math.max(1, Math.min(8, input.columns ?? 1))
   const compact = !!input.compact
+  const hideOppLast = !!input.hideOpponentLastName
 
   const title = `${esc(input.tournamentName)} - Alfabetisk lottning rond ${input.roundNr}`
+  const formatOpponent = (opponent: { firstName: string; lastName: string } | null): string => {
+    if (!opponent) return 'frirond'
+    return hideOppLast
+      ? esc(opponent.firstName)
+      : `${esc(opponent.firstName)} ${esc(opponent.lastName)}`
+  }
   let body = ''
 
   if (groupByClass) {
@@ -351,13 +360,10 @@ export function publishAlphabeticalPairings(input: AlphabeticalPairingsPublishIn
       for (const p of klass.players) {
         const selfName = `${esc(p.firstName)} ${esc(p.lastName)}`
         const selfBoard = `${p.lotNr} ${p.color}`
-        const oppName = p.opponent
-          ? `${esc(p.opponent.firstName)} ${esc(p.opponent.lastName)}`
-          : 'frirond'
         body += '<tr class="CP_Row">'
         body += `<td class="CP_Player">${selfName}</td>`
         body += `<td class="CP_Board">${selfBoard}</td>`
-        body += `<td class="CP_Player">${oppName}</td>`
+        body += `<td class="CP_Player">${formatOpponent(p.opponent)}</td>`
         body += '</tr>\n'
       }
       body += '</table>\n'
@@ -374,12 +380,9 @@ export function publishAlphabeticalPairings(input: AlphabeticalPairingsPublishIn
       for (const p of klass.players) {
         const selfName = `${esc(p.firstName)} ${esc(p.lastName)}`
         const selfBoard = `${p.lotNr} ${p.color}`
-        const oppName = p.opponent
-          ? `${esc(p.opponent.firstName)} ${esc(p.opponent.lastName)}`
-          : 'frirond'
         body += '<div class="CP_AlphabeticalRow">'
         body += `${selfName} <span class="CP_RowBoard">${selfBoard}</span>`
-        body += `, <span class="CP_RowOpp">${oppName}</span>`
+        body += `, <span class="CP_RowOpp">${formatOpponent(p.opponent)}</span>`
         body += '</div>\n'
       }
     }

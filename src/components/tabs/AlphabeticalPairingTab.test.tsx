@@ -123,6 +123,28 @@ describe('AlphabeticalPairingTab print view', () => {
     expect(heading?.textContent).toBe('Alfabetisk lottning rond 1')
   })
 
+  it('renders opponents with first name only when printHideOpponentLastName is true', () => {
+    const { container } = render(
+      <AlphabeticalPairingTab
+        tournamentId={1}
+        tournamentName="Höstturneringen"
+        rounds={rounds}
+        activeRound={1}
+        printHideOpponentLastName
+      />,
+    )
+
+    const opponentCells = container.querySelectorAll(
+      '.print-only .CP_AlphabeticalClass .CP_Row .CP_Player:last-child',
+    )
+    const texts = Array.from(opponentCells).map((c) => c.textContent)
+    // Anna's opponent is Bo (last name hidden); Cilla's opponent is Dan.
+    expect(texts).toContain('Bo')
+    expect(texts).toContain('Dan')
+    expect(texts.some((t) => t?.includes('Björk'))).toBe(false)
+    expect(texts.some((t) => t?.includes('Dahl'))).toBe(false)
+  })
+
   it('applies the CP_compact class when printCompact is true', () => {
     const { container } = render(
       <AlphabeticalPairingTab tournamentId={1} rounds={rounds} activeRound={1} printCompact />,

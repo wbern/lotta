@@ -15,6 +15,8 @@ interface Props {
   printGroupByClass?: boolean
   /** When true, apply compact typography/padding in the print view. */
   printCompact?: boolean
+  /** When true, render opponents in the print view with first name only. */
+  printHideOpponentLastName?: boolean
 }
 
 interface PlayerRow {
@@ -30,6 +32,7 @@ export function AlphabeticalPairingTab({
   activeRound,
   printGroupByClass = true,
   printCompact = false,
+  printHideOpponentLastName = false,
 }: Props) {
   // Use the active round, or latest round if not specified
   const roundNr = activeRound ?? (rounds.length > 0 ? rounds[rounds.length - 1].roundNr : undefined)
@@ -151,7 +154,9 @@ export function AlphabeticalPairingTab({
                   </tr>
                   {klass.players.map((p) => {
                     const oppName = p.opponent
-                      ? `${p.opponent.firstName} ${p.opponent.lastName}`
+                      ? printHideOpponentLastName
+                        ? p.opponent.firstName
+                        : `${p.opponent.firstName} ${p.opponent.lastName}`
                       : 'frirond'
                     return (
                       <tr key={`${p.firstName}-${p.lastName}-${p.lotNr}`} className="CP_Row">
@@ -180,7 +185,9 @@ export function AlphabeticalPairingTab({
                   {klass.className && <h3>{klass.className}</h3>}
                   {klass.players.map((p) => {
                     const oppName = p.opponent
-                      ? `${p.opponent.firstName} ${p.opponent.lastName}`
+                      ? printHideOpponentLastName
+                        ? p.opponent.firstName
+                        : `${p.opponent.firstName} ${p.opponent.lastName}`
                       : 'frirond'
                     return (
                       <div
