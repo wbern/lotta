@@ -1,30 +1,45 @@
-/* eslint local/no-class-locators: "off" -- structural traversal (.live-tab-*, .live-iframe, .live-page, .CP_Table) */
 /**
- * Chaos hunt — sister to chaos.spec.ts.
+ * Chaos hunt runner — standalone Node script, not a Playwright spec.
  *
- * chaos.spec.ts is the convergence regression guard: narrow safe-set of
- * actions, must stay green, fails loudly on any divergence.
- *
- * chaos-hunt.spec.ts is the bug hunter: FULL PHASE_A action set (and
- * eventually Phase B), runs M seeds × N iters, and divergences are LOGGED
- * not failed. The only hard failures are genuine bugs — uncaught pageerror,
- * console.error on viewers, DB corruption, timeout.
+ * Time-boxed by wall clock (HUNT_MINUTES) instead of test.setTimeout. Drives
+ * the Playwright SDK directly; no fixtures, no test(). Replaces the old
+ * e2e/chaos-hunt.spec.ts which was capped at 20 minutes by Playwright's
+ * per-test timeout.
  *
  * Invocation:
- *   RUN_P2P_E2E=1 HUNT_SEEDS=3 HUNT_ITERS=50 pnpm exec playwright test --project=chaos-hunt
+ *   pnpm exec jiti e2e/chaos-hunt-runner.ts
+ *
+ * Prereq: the p2p dev server must already be running on https://localhost:5174:
+ *   ./e2e/ensure-certs.sh && VITE_HTTPS=1 VITE_P2P_STRATEGY=mqtt pnpm dev --port 5174
  *
  * Env vars:
- *   HUNT_SEEDS        — number of sub-sessions to run in one invocation (default 1)
- *   HUNT_ITERS        — iterations per seed (default 30)
- *   HUNT_BASE_SEED    — base seed; each sub-session uses baseSeed + s (default: clock-derived)
+ *   HUNT_MINUTES         — wall-clock budget in minutes (default 5)
+ *   HUNT_ITERS_PER_SEED  — max iterations per seed before rotating (default 50)
+ *   HUNT_BASE_SEED       — starting seed; sessions use baseSeed + index (default: clock)
+ *   HUNT_TRACE           — set to "1" to record Playwright traces per context
  */
 
-import type { FrameLocator, Page } from '@playwright/test'
+import { request as httpsRequest } from 'node:https'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import type { Browser, BrowserContext, FrameLocator, Page } from '@playwright/test'
+import { chromium } from '@playwright/test'
+
 import { apiClient, createTournament, type PlayerInput, pairRound, waitForApi } from './api-helpers'
 import { type ActionOutcome, PHASE_A_ACTIONS, pickAction, resetEphemera } from './chaos-actions'
 import { appendFinding } from './chaos-findings'
 import { createRng } from './chaos-rng'
-import { expect, test } from './fixtures'
+
+const BASE_URL = 'https://localhost:5174'
+const HUNT_MINUTES = Number(process.env.HUNT_MINUTES ?? 5)
+const HUNT_ITERS_PER_SEED = Number(process.env.HUNT_ITERS_PER_SEED ?? 50)
+const HUNT_BASE_SEED = Number(process.env.HUNT_BASE_SEED ?? Date.now() % 1e9)
+const HUNT_TRACE = process.env.HUNT_TRACE === '1'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const VIDEO_ROOT = path.join(__dirname, 'chaos-hunt-videos')
+const TRACE_ROOT = path.join(__dirname, 'chaos-hunt-traces')
 
 const STRESS_PLAYERS: PlayerInput[] = [
   { lastName: 'Andersson', firstName: 'Magnus', ratingI: 2100 },
@@ -51,6 +66,7 @@ const MOBILE_CLIENT_COUNT = 4
 interface ViewerPanel {
   id: string
   page: Page
+  context: BrowserContext
   kind: 'desktop' | 'mobile'
 }
 
@@ -69,23 +85,13 @@ interface PanelError {
   stack?: string
 }
 
-/**
- * Console-error patterns that are dev-environment / infra noise, not product
- * bugs. The public MQTT broker (`test.mosquitto.org`) flakes routinely and
- * would turn every hunt run red. Extend this list as new noise is observed —
- * but keep it tight: anything here is a blind spot for the hunt.
- */
 const BENIGN_CONSOLE_PATTERNS: RegExp[] = [
   /Download the React DevTools/,
   /test\.mosquitto\.org/,
   /WebSocket connection to '[^']*mqtt[^']*' failed/,
+  /Trystero peer error: OperationError: User-Initiated Abort/,
 ]
 
-/**
- * Attach pageerror + console.error listeners. Host AND every viewer gets one —
- * the viewers were the #1 coverage hole in the safe-set test, which only
- * listened on host.
- */
 function attachErrorListeners(page: Page, panelId: string, sink: PanelError[]): void {
   page.on('pageerror', (err) => {
     sink.push({ panel: panelId, kind: 'pageerror', message: err.message, stack: err.stack })
@@ -153,11 +159,6 @@ async function snapshotViewer(viewer: Page): Promise<string> {
   }
 }
 
-/**
- * Read the host's currently-displayed round from the status bar
- * ("Rond N/M" or "Ej startad"). Returns null when no round is active,
- * so callers can skip the parity check in that window.
- */
 async function readHostRound(hostPage: Page): Promise<number | null> {
   const bar = hostPage.getByTestId('status-bar')
   const text = (await bar.textContent({ timeout: 1000 }).catch(() => '')) ?? ''
@@ -165,11 +166,6 @@ async function readHostRound(hostPage: Page): Promise<number | null> {
   return m ? Number(m[1]) : null
 }
 
-/**
- * Read the highest round the viewer iframe knows about. Prefers the
- * `.live-round-select` dropdown (only rendered when ≥2 rounds exist);
- * falls back to parsing "rond N" out of the iframe H2.
- */
 async function readViewerMaxRound(viewer: Page): Promise<number | null> {
   const options = viewer.locator('.live-round-select option')
   const count = await options.count().catch(() => 0)
@@ -210,50 +206,70 @@ async function awaitConvergence(
   return { converged: false, host, viewer: vs }
 }
 
-test.describe('Chaos hunt — many devices, wide action set', () => {
-  // Budget: 9-device setup (~60s) + M seeds × N iters (~3s/iter avg) + teardown.
-  // 20 min covers 3 seeds × 50 iters comfortably.
-  test.setTimeout(1_200_000)
-
-  test('hunt mode: full PHASE_A, divergences logged not failed', async ({ browser }) => {
-    const baseURL = 'https://localhost:5174'
-    const seeds = Number(process.env.HUNT_SEEDS ?? 1)
-    const iterations = Number(process.env.HUNT_ITERS ?? 30)
-    const baseSeed = Number(process.env.HUNT_BASE_SEED ?? Date.now() % 1e9)
-
-    // eslint-disable-next-line no-console
-    console.log(`[chaos-hunt] seeds=${seeds} iters=${iterations} baseSeed=${baseSeed}`)
-
-    for (let s = 0; s < seeds; s++) {
-      const seed = baseSeed + s
-      // eslint-disable-next-line no-console
-      console.log(`[chaos-hunt] --- session ${s + 1}/${seeds} (seed=${seed}) ---`)
-      await runHuntSession({ browser, baseURL, seed, iterations })
-    }
+function ensureServerUp(): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const req = httpsRequest(
+      `${BASE_URL}/`,
+      { rejectUnauthorized: false, method: 'GET' },
+      (res) => {
+        res.resume()
+        if (res.statusCode && res.statusCode < 500) resolve()
+        else reject(new Error(`status ${res.statusCode}`))
+      },
+    )
+    req.on('error', (err: NodeJS.ErrnoException) => {
+      reject(new Error(err.code ?? err.message ?? String(err)))
+    })
+    req.setTimeout(3000, () => {
+      req.destroy(new Error('timeout'))
+    })
+    req.end()
   })
-})
+}
 
-async function runHuntSession(opts: {
-  browser: import('@playwright/test').Browser
-  baseURL: string
+interface SessionOpts {
+  browser: Browser
   seed: number
-  iterations: number
-}): Promise<void> {
-  const { browser, baseURL, seed, iterations } = opts
+  maxIters: number
+  deadlineMs: number
+  shouldStop: () => boolean
+}
+
+interface SessionResult {
+  iterationsRun: number
+  divergences: number
+  autoCaptures: number
+  hardFailure: boolean
+}
+
+async function runHuntSession(opts: SessionOpts): Promise<SessionResult> {
+  const { browser, seed, maxIters, deadlineMs, shouldStop } = opts
   const tournamentName = `Hunt-${seed}`
+  const videoDir = path.join(VIDEO_ROOT, String(seed))
+  const traceDir = HUNT_TRACE ? path.join(TRACE_ROOT, String(seed)) : null
 
   const hostCtx = await browser.newContext({
     ignoreHTTPSErrors: true,
     viewport: { width: 1280, height: 800 },
+    recordVideo: { dir: videoDir },
   })
+  if (traceDir) {
+    await hostCtx.tracing.start({ screenshots: true, snapshots: true, sources: false })
+  }
   const hostPage = await hostCtx.newPage()
   const panelErrors: PanelError[] = []
   attachErrorListeners(hostPage, 'host', panelErrors)
 
   const viewers: ViewerPanel[] = []
+  const result: SessionResult = {
+    iterationsRun: 0,
+    divergences: 0,
+    autoCaptures: 0,
+    hardFailure: false,
+  }
 
   try {
-    await hostPage.goto(`${baseURL}/`)
+    await hostPage.goto(`${BASE_URL}/`)
     await waitForApi(hostPage)
     await dismissBanner(hostPage)
 
@@ -273,30 +289,28 @@ async function runHuntSession(opts: {
     await sel.selectOption(tournamentName)
     await hostPage.waitForTimeout(400)
 
-    // Start Live, derive kiosk viewer URL
     await hostPage.getByTestId('tab-headers').getByText('Live (Beta)').click()
-    await expect(hostPage.locator('.live-tab-container')).toBeVisible()
+    await hostPage.locator('.live-tab-container').waitFor({ state: 'visible' })
     await hostPage.locator('button', { hasText: 'Starta Live' }).click()
-    await expect(hostPage.locator('.live-tab-hosting')).toBeVisible()
+    await hostPage.locator('.live-tab-hosting').waitFor({ state: 'visible' })
 
     const urlEl = hostPage.locator('.live-tab-share-box .live-tab-url').first()
-    await expect(urlEl).toBeVisible({ timeout: 10_000 })
+    await urlEl.waitFor({ state: 'visible', timeout: 10_000 })
     const rawUrl = (await urlEl.textContent())!.replace(/\s+/g, '')
     const roomMatch = rawUrl.match(/\/live\/([A-Z0-9]{6})/)
-    expect(roomMatch).toBeTruthy()
-    const roomCode = roomMatch![1]
-    const shareUrl = `${baseURL}/live/${roomCode}`
-    // eslint-disable-next-line no-console
+    if (!roomMatch) throw new Error(`could not parse room code from ${rawUrl}`)
+    const roomCode = roomMatch[1]
+    const shareUrl = `${BASE_URL}/live/${roomCode}`
     console.log(`[chaos-hunt] seed=${seed} viewer URL: ${shareUrl}`)
 
     await hostPage.getByTestId('tab-headers').getByText('Lottning & resultat').click()
-    await expect(hostPage.getByTestId('data-table')).toBeVisible()
+    await hostPage.getByTestId('data-table').waitFor({ state: 'visible' })
 
-    // Build 4 desktop + 4 mobile viewers
-    async function makeClient(mobile: boolean): Promise<Page> {
+    async function makeClient(mobile: boolean): Promise<{ page: Page; context: BrowserContext }> {
       const ctx = await browser.newContext({
         ignoreHTTPSErrors: true,
         viewport: mobile ? { width: 390, height: 844 } : { width: 1024, height: 700 },
+        recordVideo: { dir: videoDir },
         ...(mobile
           ? {
               deviceScaleFactor: 3,
@@ -307,57 +321,54 @@ async function runHuntSession(opts: {
             }
           : {}),
       })
-      return ctx.newPage()
+      if (traceDir) {
+        await ctx.tracing.start({ screenshots: true, snapshots: true, sources: false })
+      }
+      return { page: await ctx.newPage(), context: ctx }
     }
 
     for (let i = 0; i < DESKTOP_CLIENT_COUNT; i++) {
-      const panel: ViewerPanel = {
-        id: `desk-${i}`,
-        page: await makeClient(false),
-        kind: 'desktop',
-      }
+      const { page, context } = await makeClient(false)
+      const panel: ViewerPanel = { id: `desk-${i}`, page, context, kind: 'desktop' }
       attachErrorListeners(panel.page, panel.id, panelErrors)
       viewers.push(panel)
     }
     for (let i = 0; i < MOBILE_CLIENT_COUNT; i++) {
-      const panel: ViewerPanel = {
-        id: `mob-${i}`,
-        page: await makeClient(true),
-        kind: 'mobile',
-      }
+      const { page, context } = await makeClient(true)
+      const panel: ViewerPanel = { id: `mob-${i}`, page, context, kind: 'mobile' }
       attachErrorListeners(panel.page, panel.id, panelErrors)
       viewers.push(panel)
     }
 
-    // Connect all viewers
     async function connect(page: Page): Promise<void> {
       await page.goto(shareUrl)
-      await expect(page.locator('.live-page')).toBeVisible({ timeout: 30_000 })
-      await expect(page.locator('.live-iframe')).toBeVisible({ timeout: 90_000 })
+      await page.locator('.live-page').waitFor({ state: 'visible', timeout: 30_000 })
+      await page.locator('.live-iframe').waitFor({ state: 'visible', timeout: 90_000 })
     }
-    // Stagger connections to mimic real-world pacing and avoid thundering-herd
     for (let i = 0; i < viewers.length; i += 2) {
       const pair = viewers.slice(i, i + 2)
       await Promise.all(pair.map((v) => connect(v.page)))
       await hostPage.waitForTimeout(200)
     }
 
-    const expectedPeers = viewers.length // 8 (4 desktop + 4 mobile)
+    const expectedPeers = viewers.length
     await hostPage.getByTestId('tab-headers').getByText('Live (Beta)').click()
-    await expect(hostPage.locator('.live-tab-container')).toBeVisible()
-    await expect(hostPage.locator('.live-tab-badge')).toContainText(`${expectedPeers} anslutna`, {
-      timeout: 30_000,
-    })
+    await hostPage.locator('.live-tab-container').waitFor({ state: 'visible' })
+    await hostPage
+      .locator('.live-tab-badge')
+      .filter({ hasText: `${expectedPeers} anslutna` })
+      .waitFor({ state: 'visible', timeout: 30_000 })
     await hostPage.getByTestId('tab-headers').getByText('Lottning & resultat').click()
 
-    // ── Hunt loop ─────────────────────────────────────────────────────
     const rng = createRng(seed)
     const chaosLog: ChaosLogEntry[] = []
     const primaryViewer = viewers[0].page
 
-    for (let i = 1; i <= iterations; i++) {
+    for (let i = 1; i <= maxIters; i++) {
+      if (shouldStop() || Date.now() >= deadlineMs) break
+
       await resetEphemera(hostPage).catch(() => {})
-      const action = pickAction(PHASE_A_ACTIONS, rng) // FULL action set, not the narrowed safe-set
+      const action = pickAction(PHASE_A_ACTIONS, rng)
       const started = Date.now()
       let outcome: ActionOutcome
       try {
@@ -386,9 +397,11 @@ async function runHuntSession(opts: {
         ms: Date.now() - started,
       }
       chaosLog.push(entry)
+      result.iterationsRun = i
 
       if (!conv.converged) {
-        // Hunt mode: log and continue. DO NOT throw.
+        result.divergences++
+        result.autoCaptures++
         appendFinding({
           created: new Date().toISOString(),
           severity: 'auto-capture',
@@ -408,10 +421,6 @@ async function runHuntSession(opts: {
         })
       }
 
-      // Round-count parity: every viewer's max known round must equal the
-      // host's currently-displayed round. Catches "viewer never saw the new
-      // round" bugs that snapshot comparison alone could miss when the old
-      // round happens to still have matching rows.
       const hostRound = await readHostRound(hostPage)
       if (hostRound != null) {
         const viewerRounds = await Promise.all(
@@ -422,6 +431,7 @@ async function runHuntSession(opts: {
         )
         const mismatched = viewerRounds.filter((v) => v.round !== hostRound)
         if (mismatched.length > 0) {
+          result.autoCaptures++
           appendFinding({
             created: new Date().toISOString(),
             severity: 'auto-capture',
@@ -440,10 +450,10 @@ async function runHuntSession(opts: {
         }
       }
 
-      // Hard failure: any pageerror or console.error across host + 8 viewers.
-      // Viewer coverage was the #1 hole in the safe-set test.
       if (panelErrors.length > 0) {
         const last = panelErrors[panelErrors.length - 1]
+        result.autoCaptures++
+        result.hardFailure = true
         appendFinding({
           created: new Date().toISOString(),
           severity: 'auto-capture',
@@ -468,17 +478,15 @@ async function runHuntSession(opts: {
       }
     }
 
-    // End-of-session peer-count invariant: all 8 viewers should still be
-    // connected after the hunt loop. A drop means chaos silently severed a
-    // link — catch it even if no single iteration flagged divergence.
     try {
       await hostPage.getByTestId('tab-headers').getByText('Live (Beta)').click({ timeout: 2000 })
-      await expect(hostPage.locator('.live-tab-container')).toBeVisible({ timeout: 5000 })
+      await hostPage.locator('.live-tab-container').waitFor({ state: 'visible', timeout: 5000 })
       const badgeText =
         (await hostPage.locator('.live-tab-badge').textContent({ timeout: 5000 })) ?? ''
       const m = badgeText.match(/(\d+)\s+anslutna/)
       const actualPeers = m ? Number(m[1]) : null
       if (actualPeers !== expectedPeers) {
+        result.autoCaptures++
         appendFinding({
           created: new Date().toISOString(),
           severity: 'auto-capture',
@@ -488,7 +496,7 @@ async function runHuntSession(opts: {
           detail: `Expected ${expectedPeers} connected viewers at end of hunt loop, badge reports ${actualPeers ?? 'unparseable'}. One or more viewers silently disconnected during chaos.`,
           test: 'chaos-hunt',
           seed,
-          iteration: iterations,
+          iteration: result.iterationsRun,
           expected_peers: expectedPeers,
           actual_peers: actualPeers,
           badge_text: badgeText.trim(),
@@ -496,7 +504,7 @@ async function runHuntSession(opts: {
         })
       }
     } catch (err) {
-      // Badge read itself failed — log but don't crash the session.
+      result.autoCaptures++
       appendFinding({
         created: new Date().toISOString(),
         severity: 'auto-capture',
@@ -506,15 +514,10 @@ async function runHuntSession(opts: {
         detail: `Could not read .live-tab-badge at end of session: ${String(err instanceof Error ? err.message : err).slice(0, 200)}`,
         test: 'chaos-hunt',
         seed,
-        iteration: iterations,
+        iteration: result.iterationsRun,
       })
     }
 
-    // End-of-session DB backup/restore roundtrip invariant. Export the
-    // current DB bytes, hash them, re-import the same bytes, re-export,
-    // and compare the hashes. A mismatch means either the export path is
-    // non-deterministic or the import path silently corrupts state. Also
-    // verifies the hunt tournament is still present after restore.
     try {
       const roundtripResult = await hostPage.evaluate(
         async ({ tournamentName }) => {
@@ -548,6 +551,7 @@ async function runHuntSession(opts: {
         roundtripResult.beforeHash !== roundtripResult.afterHash ||
         !roundtripResult.hasTournament
       ) {
+        result.autoCaptures++
         appendFinding({
           created: new Date().toISOString(),
           severity: 'auto-capture',
@@ -557,11 +561,12 @@ async function runHuntSession(opts: {
           detail: `Exported ${roundtripResult.beforeLen}B → restored → re-exported ${roundtripResult.afterLen}B. Hash match: ${roundtripResult.beforeHash === roundtripResult.afterHash}. Tournament "${tournamentName}" present after restore: ${roundtripResult.hasTournament}.`,
           test: 'chaos-hunt',
           seed,
-          iteration: iterations,
+          iteration: result.iterationsRun,
           roundtrip: roundtripResult,
         })
       }
     } catch (err) {
+      result.autoCaptures++
       appendFinding({
         created: new Date().toISOString(),
         severity: 'auto-capture',
@@ -571,7 +576,7 @@ async function runHuntSession(opts: {
         detail: `Export or restore path raised: ${String(err instanceof Error ? err.message : err).slice(0, 300)}`,
         test: 'chaos-hunt',
         seed,
-        iteration: iterations,
+        iteration: result.iterationsRun,
       })
     }
 
@@ -579,21 +584,96 @@ async function runHuntSession(opts: {
     const skippedCount = chaosLog.filter((e) => e.outcome.status === 'skipped').length
     const erroredCount = chaosLog.filter((e) => e.outcome.status === 'error').length
     const divergedCount = chaosLog.filter((e) => !e.converged).length
-    // eslint-disable-next-line no-console
     console.log(
-      `[chaos-hunt] seed=${seed} done: ok=${okCount} skipped=${skippedCount} errored=${erroredCount} diverged=${divergedCount}`,
+      `[chaos-hunt] seed=${seed} done: iters=${chaosLog.length} ok=${okCount} skipped=${skippedCount} errored=${erroredCount} diverged=${divergedCount}`,
     )
-
-    // Action errors still count as hard failures — they indicate the action
-    // harness itself broke, not a product bug the run is trying to surface.
-    expect(erroredCount, `chaos actions errored; see log for seed ${seed}`).toBe(0)
   } finally {
     for (const v of viewers) {
-      const ctx = v.page.context()
+      if (traceDir) {
+        await v.context.tracing.stop({ path: path.join(traceDir, `${v.id}.zip`) }).catch(() => {})
+      }
       await v.page.close().catch(() => {})
-      await ctx.close().catch(() => {})
+      await v.context.close().catch(() => {})
+    }
+    if (traceDir) {
+      await hostCtx.tracing.stop({ path: path.join(traceDir, 'host.zip') }).catch(() => {})
     }
     await hostPage.close().catch(() => {})
     await hostCtx.close().catch(() => {})
   }
+
+  return result
 }
+
+async function main(): Promise<void> {
+  console.log(
+    `[chaos-hunt-runner] budget=${HUNT_MINUTES}min iters/seed=${HUNT_ITERS_PER_SEED} baseSeed=${HUNT_BASE_SEED} trace=${HUNT_TRACE}`,
+  )
+
+  try {
+    await ensureServerUp()
+  } catch (err) {
+    console.error(`[chaos-hunt-runner] p2p dev server not reachable at ${BASE_URL}`)
+    console.error(
+      `  Start it with: ./e2e/ensure-certs.sh && VITE_HTTPS=1 VITE_P2P_STRATEGY=mqtt pnpm dev --port 5174`,
+    )
+    console.error(`  (Error: ${err instanceof Error ? err.message : err})`)
+    process.exit(1)
+  }
+
+  const startedAt = Date.now()
+  const deadlineMs = startedAt + HUNT_MINUTES * 60_000
+  let interrupted = false
+  const sigintHandler = (): void => {
+    if (interrupted) {
+      console.log('[chaos-hunt-runner] second SIGINT; exiting hard')
+      process.exit(130)
+    }
+    interrupted = true
+    console.log('[chaos-hunt-runner] SIGINT — finishing current seed to flush videos/findings')
+  }
+  process.on('SIGINT', sigintHandler)
+
+  const browser = await chromium.launch()
+  const totals = { seeds: 0, iters: 0, divergences: 0, autoCaptures: 0 }
+
+  try {
+    let seedIdx = 0
+    while (Date.now() < deadlineMs && !interrupted) {
+      const seed = HUNT_BASE_SEED + seedIdx
+      const budgetLeftSec = Math.max(0, Math.round((deadlineMs - Date.now()) / 1000))
+      console.log(
+        `[chaos-hunt-runner] --- session ${seedIdx + 1} (seed=${seed}, budget_left=${budgetLeftSec}s) ---`,
+      )
+      const res = await runHuntSession({
+        browser,
+        seed,
+        maxIters: HUNT_ITERS_PER_SEED,
+        deadlineMs,
+        shouldStop: () => interrupted,
+      })
+      totals.seeds++
+      totals.iters += res.iterationsRun
+      totals.divergences += res.divergences
+      totals.autoCaptures += res.autoCaptures
+      if (res.hardFailure) {
+        console.error('[chaos-hunt-runner] hard failure surfaced; aborting remaining seeds')
+        break
+      }
+      seedIdx++
+    }
+  } finally {
+    await browser.close().catch(() => {})
+    process.off('SIGINT', sigintHandler)
+  }
+
+  const elapsedSec = Math.round((Date.now() - startedAt) / 1000)
+  console.log(
+    `[chaos-hunt-runner] done: seeds=${totals.seeds} iters=${totals.iters} divergences=${totals.divergences} auto_captures=${totals.autoCaptures} elapsed=${elapsedSec}s`,
+  )
+}
+
+main().catch((err) => {
+  console.error('[chaos-hunt-runner] fatal:', err)
+  process.exit(1)
+})

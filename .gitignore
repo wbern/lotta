@@ -40,6 +40,8 @@ showcase-stress.mp4
 keybind-demo.mp4
 whats-new-demo.mp4
 e2e/certs/
+e2e/chaos-hunt-videos/
+e2e/chaos-hunt-traces/
 
 # Infrastructure (secrets, IPs, deploy scripts)
 infra/

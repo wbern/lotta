@@ -123,7 +123,6 @@ export default defineConfig({
               launchOptions: { args: ['--no-sandbox'] },
             },
           },
-          { name: 'chaos-hunt', testMatch: 'chaos-hunt.spec.ts', use: p2pUse },
         ]
       : []),
     ...(hasBrowserStack
