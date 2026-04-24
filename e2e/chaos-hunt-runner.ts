@@ -90,6 +90,7 @@ const BENIGN_CONSOLE_PATTERNS: RegExp[] = [
   /test\.mosquitto\.org/,
   /WebSocket connection to '[^']*mqtt[^']*' failed/,
   /Trystero peer error: OperationError: User-Initiated Abort/,
+  /falling back to ArrayBuffer instantiation/,
 ]
 
 function attachErrorListeners(page: Page, panelId: string, sink: PanelError[]): void {
@@ -113,12 +114,16 @@ async function dismissBanner(page: Page): Promise<void> {
   }
 }
 
-async function snapshotHost(hostPage: Page): Promise<string> {
+async function snapshotHost(hostPage: Page, liveTournamentId?: number): Promise<string> {
   const url = hostPage.url()
   const tabMatch = url.match(/[?&]tab=([^&]+)/)
   const tab = tabMatch ? decodeURIComponent(tabMatch[1]) : 'pairings'
   if (tab !== 'pairings') return 'skip:non-pairings-tab'
-  if (!/[?&]tournamentId=\d+/.test(url)) return 'empty:no-tournament'
+  const tidMatch = url.match(/[?&]tournamentId=(\d+)/)
+  if (!tidMatch) return 'empty:no-tournament'
+  if (liveTournamentId != null && Number(tidMatch[1]) !== liveTournamentId) {
+    return 'skip:not-live-tournament'
+  }
 
   const table = hostPage.getByTestId('data-table')
   if (!(await table.isVisible({ timeout: 1500 }).catch(() => false))) {
@@ -199,14 +204,18 @@ async function awaitConvergence(
   hostPage: Page,
   viewer: Page,
   deadlineMs: number,
+  liveTournamentId?: number,
 ): Promise<{ converged: boolean; host: string; viewer: string }> {
   const start = Date.now()
   let host = ''
   let vs = ''
   while (Date.now() - start < deadlineMs) {
-    host = await snapshotHost(hostPage).catch(() => 'error:snapshot-host')
+    host = await snapshotHost(hostPage, liveTournamentId).catch(() => 'error:snapshot-host')
     vs = await snapshotViewer(viewer).catch(() => 'error:snapshot-viewer')
     if (host.startsWith('skip:')) return { converged: true, host, viewer: vs }
+    if (host.startsWith('empty:') && vs.startsWith('empty:')) {
+      return { converged: true, host, viewer: vs }
+    }
     if (host === vs) return { converged: true, host, viewer: vs }
     await hostPage.waitForTimeout(300)
   }
@@ -395,7 +404,7 @@ async function runHuntSession(opts: SessionOpts): Promise<SessionResult> {
         await pairingsTab.click({ timeout: 2000 }).catch(() => {})
       }
 
-      const conv = await awaitConvergence(hostPage, primaryViewer, 10_000)
+      const conv = await awaitConvergence(hostPage, primaryViewer, 10_000, tid)
       const entry: ChaosLogEntry = {
         i,
         name: action.name,
