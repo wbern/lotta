@@ -6,6 +6,7 @@ import {
   broadcastAfterPairing,
   broadcastAfterRestore,
   broadcastAfterResultChange,
+  broadcastAfterTournamentDelete,
   getCurrentPageUpdates,
   handleResultSubmission,
   sendCurrentStateToPeer,
@@ -228,6 +229,36 @@ describe('broadcastAfterPairing', () => {
     expect(mockBroadcastRoundManifest).toHaveBeenCalledWith(
       expect.objectContaining({ tournamentId: 1, roundNrs: [1, 2] }),
     )
+  })
+})
+
+describe('broadcastAfterTournamentDelete', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(p2pProvider.getP2PService).mockReturnValue({
+      connectionState: 'connected',
+      broadcastPageUpdate: mockBroadcastPageUpdate,
+      broadcastRoundManifest: mockBroadcastRoundManifest,
+      role: 'organizer',
+    } as unknown as ReturnType<typeof p2pProvider.getP2PService>)
+  })
+
+  it('broadcasts an empty manifest for the deleted tournament so viewers prune their cache', async () => {
+    await broadcastAfterTournamentDelete(42)
+
+    expect(mockBroadcastRoundManifest).toHaveBeenCalledWith(
+      expect.objectContaining({ tournamentId: 42, roundNrs: [] }),
+    )
+  })
+
+  it('does nothing when P2P is not active', async () => {
+    vi.mocked(p2pProvider.getP2PService).mockImplementation(() => {
+      throw new Error('P2PService not initialized')
+    })
+
+    await broadcastAfterTournamentDelete(42)
+
+    expect(mockBroadcastRoundManifest).not.toHaveBeenCalled()
   })
 })
 

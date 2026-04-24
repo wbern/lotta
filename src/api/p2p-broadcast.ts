@@ -126,6 +126,20 @@ export async function broadcastAfterRestore(): Promise<void> {
   if (standingsInput) broadcastStandings(ctx.tournamentId, standingsInput)
 }
 
+/**
+ * Broadcast an empty round manifest for a tournament that the host has just
+ * deleted. Viewers currently showing that tournament reconcile by dropping
+ * all cached rounds; viewers on a different tournament ignore the manifest.
+ */
+export async function broadcastAfterTournamentDelete(tournamentId: number): Promise<void> {
+  if (!isP2PActive()) return
+  getP2PService().broadcastRoundManifest({
+    tournamentId,
+    roundNrs: [],
+    timestamp: Date.now(),
+  })
+}
+
 /** Send the shared tournament set to a specific peer. */
 export function sendSharedTournamentsToPeer(
   peerId: string,
