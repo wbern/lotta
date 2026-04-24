@@ -282,6 +282,10 @@ function LivePageInner({
   const selectedTournamentIdRef = useRef<number | null>(null)
   const sharedFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const newRoundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const roundsRef = useRef(rounds)
+  useEffect(() => {
+    roundsRef.current = rounds
+  }, [rounds])
   const { scrollRef: chatScrollRef, bottomRef: chatBottomRef } = useChatAutoScroll(chatMessages)
   useDocumentTitle(unreadChat, tournamentName || normalizedRoom)
 
@@ -368,20 +372,18 @@ function LivePageInner({
       if (selectedId != null && msg.tournamentId !== selectedId) return
 
       const keep = new Set(msg.roundNrs)
+      for (const roundNr of roundsRef.current.keys()) {
+        if (keep.has(roundNr)) continue
+        for (const pt of BROADCAST_PAGE_TYPES) {
+          localStorage.removeItem(cacheKey(normalizedRoom, pt, roundNr))
+        }
+      }
       setRounds((prev) => {
-        let changed = false
         const next = new Map<number, Map<PageType, CachedPage>>()
         for (const [roundNr, roundMap] of prev) {
-          if (keep.has(roundNr)) {
-            next.set(roundNr, roundMap)
-          } else {
-            changed = true
-            for (const pt of BROADCAST_PAGE_TYPES) {
-              localStorage.removeItem(cacheKey(normalizedRoom, pt, roundNr))
-            }
-          }
+          if (keep.has(roundNr)) next.set(roundNr, roundMap)
         }
-        return changed ? next : prev
+        return next.size === prev.size ? prev : next
       })
       setSelectedRound((prev) => (prev != null && !keep.has(prev) ? null : prev))
       setLatestRound((prev) => (prev != null && !keep.has(prev) ? null : prev))
