@@ -22,6 +22,7 @@ export interface P2PPeer {
 
 export type PageUpdateMessage = {
   pageType: PageType
+  tournamentId: number
   tournamentName: string
   roundNr: number
   html: string
@@ -84,4 +85,14 @@ export type ChatDeleteMessage = {
 
 export type PeerKickMessage = {
   reason?: string
+}
+
+export type SharedTournamentsMessage = {
+  tournamentIds: number[]
+  includeFutureTournaments: boolean
+  timestamp: number
+}
+
+export type ViewerSelectTournamentMessage = {
+  tournamentId: number
 }

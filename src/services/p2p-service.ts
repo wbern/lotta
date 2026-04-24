@@ -21,6 +21,8 @@ import type {
   PeerKickMessage,
   ResultAckMessage,
   ResultSubmitMessage,
+  SharedTournamentsMessage,
+  ViewerSelectTournamentMessage,
 } from '../types/p2p.ts'
 
 const APP_ID = 'lotta-chess-pairer'
@@ -291,6 +293,10 @@ export class P2PService {
   onPeerToken: ((peerId: string, token: string) => void) | null = null
   onHostRefreshing: ((refreshing: boolean) => void) | null = null
   onDiagnosticEvent: ((entry: DiagnosticEntry) => void) | null = null
+  onSharedTournaments: ((message: SharedTournamentsMessage) => void) | null = null
+  onViewerSelectTournament:
+    | ((message: ViewerSelectTournamentMessage, peerId: string) => void)
+    | null = null
   private diagnosticLog: DiagnosticEntry[] = []
   private peers: Map<string, P2PPeer> = new Map()
   private room: Room | null = null
@@ -307,6 +313,8 @@ export class P2PService {
   private _sendDataChanged: ActionSender<{ ts: number }> | null = null
   private _sendHostRefreshing: ActionSender<{ ts: number }> | null = null
   private _sendHeartbeat: ActionSender<HeartbeatMessage> | null = null
+  private _sendSharedTournaments: ActionSender<SharedTournamentsMessage> | null = null
+  private _sendViewerSelectTournament: ActionSender<ViewerSelectTournamentMessage> | null = null
   private _reconnectAttempts = 0
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null
   private heartbeatTimeout: ReturnType<typeof setTimeout> | null = null
@@ -366,6 +374,8 @@ export class P2PService {
     this._sendDataChanged = null
     this._sendHostRefreshing = null
     this._sendHeartbeat = null
+    this._sendSharedTournaments = null
+    this._sendViewerSelectTournament = null
     this.roomId = null
     this.clearHeartbeatTimers()
     this.clearReconnectTimer()
@@ -435,6 +445,20 @@ export class P2PService {
 
   broadcastHostRefreshing(): void {
     this._sendHostRefreshing?.({ ts: Date.now() }, null)
+  }
+
+  broadcastSharedTournaments(message: SharedTournamentsMessage): void {
+    this._sendSharedTournaments?.(message, null)
+  }
+
+  sendSharedTournamentsTo(message: SharedTournamentsMessage, peerId: string): void {
+    this._sendSharedTournaments?.(message, peerId)
+  }
+
+  sendViewerSelectTournament(message: ViewerSelectTournamentMessage): void {
+    const hostId = this.getObservedHostId()
+    if (!hostId) return
+    this._sendViewerSelectTournament?.(message, hostId)
   }
 
   kickPeer(peerId: string, reason?: string): void {
@@ -658,6 +682,8 @@ export class P2PService {
     this._sendDataChanged = null
     this._sendHostRefreshing = null
     this._sendHeartbeat = null
+    this._sendSharedTournaments = null
+    this._sendViewerSelectTournament = null
     this.peers.clear()
     this.onPeersChange?.()
 
@@ -912,6 +938,22 @@ export class P2PService {
       if (peer?.role !== 'organizer') return
       this.logDiagnostic('Host sent refresh hint')
       this.onHostRefreshing?.(true)
+    })
+
+    // Shared tournaments: host broadcasts/sends-to-peer, viewer/referee listens
+    const [sendSharedTournaments, receiveSharedTournaments] =
+      this.room.makeAction<SharedTournamentsMessage>('shared-tournaments')
+    this._sendSharedTournaments = sendSharedTournaments
+    receiveSharedTournaments((data: SharedTournamentsMessage) => {
+      this.onSharedTournaments?.(data)
+    })
+
+    // Viewer → host: viewer announces which shared tournament they're watching
+    const [sendViewerSelectTournament, receiveViewerSelectTournament] =
+      this.room.makeAction<ViewerSelectTournamentMessage>('viewer-select-tournament')
+    this._sendViewerSelectTournament = sendViewerSelectTournament
+    receiveViewerSelectTournament((data: ViewerSelectTournamentMessage, peerId: string) => {
+      this.onViewerSelectTournament?.(data, peerId)
     })
 
     // Kick: organizer sends to specific peer, that peer listens

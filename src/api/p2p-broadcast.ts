@@ -22,26 +22,27 @@ function isP2PActive(): boolean {
 
 function buildMessage(
   pageType: PageUpdateMessage['pageType'],
+  tournamentId: number,
   tournamentName: string,
   roundNr: number,
   html: string,
 ): PageUpdateMessage {
-  return { pageType, tournamentName, roundNr, html, timestamp: Date.now() }
+  return { pageType, tournamentId, tournamentName, roundNr, html, timestamp: Date.now() }
 }
 
-function broadcastPairings(input: PairingsPublishInput): void {
+function broadcastPairings(tournamentId: number, input: PairingsPublishInput): void {
   if (!isP2PActive()) return
   const html = publishPairings(input)
   getP2PService().broadcastPageUpdate(
-    buildMessage('pairings', input.tournamentName, input.roundNr, html),
+    buildMessage('pairings', tournamentId, input.tournamentName, input.roundNr, html),
   )
 }
 
-function broadcastStandings(input: StandingsPublishInput): void {
+function broadcastStandings(tournamentId: number, input: StandingsPublishInput): void {
   if (!isP2PActive()) return
   const html = publishStandings(input)
   getP2PService().broadcastPageUpdate(
-    buildMessage('standings', input.tournamentName, input.roundNr, html),
+    buildMessage('standings', tournamentId, input.tournamentName, input.roundNr, html),
   )
 }
 
@@ -54,7 +55,7 @@ function broadcastRefereePairings(tournamentId: number, roundNr: number): void {
     tournamentId,
   })
   getP2PService().broadcastPageUpdate(
-    buildMessage('refereePairings', input.tournamentName, roundNr, html),
+    buildMessage('refereePairings', tournamentId, input.tournamentName, roundNr, html),
   )
 }
 
@@ -66,12 +67,12 @@ export async function broadcastAfterResultChange(
   if (!isP2PActive()) return
 
   const pairingsInput = buildPairingsInput(tournamentId, roundNr)
-  if (pairingsInput) broadcastPairings(pairingsInput)
+  if (pairingsInput) broadcastPairings(tournamentId, pairingsInput)
 
   broadcastRefereePairings(tournamentId, roundNr)
 
   const standingsInput = await buildStandingsInput(tournamentId, roundNr)
-  if (standingsInput) broadcastStandings(standingsInput)
+  if (standingsInput) broadcastStandings(tournamentId, standingsInput)
 }
 
 /** Broadcast pairings after a new round is paired. */
@@ -79,7 +80,7 @@ export async function broadcastAfterPairing(tournamentId: number, roundNr: numbe
   if (!isP2PActive()) return
 
   const pairingsInput = buildPairingsInput(tournamentId, roundNr)
-  if (pairingsInput) broadcastPairings(pairingsInput)
+  if (pairingsInput) broadcastPairings(tournamentId, pairingsInput)
 
   broadcastRefereePairings(tournamentId, roundNr)
 }
@@ -104,12 +105,34 @@ export async function broadcastAfterRestore(): Promise<void> {
     ctx.round != null && roundNrs.includes(ctx.round) ? ctx.round : roundNrs[roundNrs.length - 1]
 
   const pairingsInput = buildPairingsInput(ctx.tournamentId, roundNr)
-  if (pairingsInput) broadcastPairings(pairingsInput)
+  if (pairingsInput) broadcastPairings(ctx.tournamentId, pairingsInput)
 
   broadcastRefereePairings(ctx.tournamentId, roundNr)
 
   const standingsInput = await buildStandingsInput(ctx.tournamentId, roundNr)
-  if (standingsInput) broadcastStandings(standingsInput)
+  if (standingsInput) broadcastStandings(ctx.tournamentId, standingsInput)
+}
+
+/** Send the shared tournament set to a specific peer. */
+export function sendSharedTournamentsToPeer(
+  peerId: string,
+  tournamentIds: number[],
+  includeFutureTournaments: boolean,
+): void {
+  if (!isP2PActive()) return
+  getP2PService().sendSharedTournamentsTo(
+    { tournamentIds, includeFutureTournaments, timestamp: Date.now() },
+    peerId,
+  )
+}
+
+/** Send the latest-round state of a given tournament to a specific peer. */
+export async function sendLatestStateToPeer(peerId: string, tournamentId: number): Promise<void> {
+  if (!isP2PActive()) return
+  const rounds = getDatabaseService().games.listRounds(tournamentId)
+  if (rounds.length === 0) return
+  const latest = rounds[rounds.length - 1].roundNr
+  await sendCurrentStateToPeer(peerId, tournamentId, latest)
 }
 
 /**
@@ -128,6 +151,7 @@ async function buildCurrentStateMessages(
     messages.push(
       buildMessage(
         'pairings',
+        tournamentId,
         pairingsInput.tournamentName,
         roundNr,
         publishPairings(pairingsInput),
@@ -136,6 +160,7 @@ async function buildCurrentStateMessages(
     messages.push(
       buildMessage(
         'refereePairings',
+        tournamentId,
         pairingsInput.tournamentName,
         roundNr,
         publishRefereePairings({ ...pairingsInput, tournamentId }),
@@ -148,6 +173,7 @@ async function buildCurrentStateMessages(
     messages.push(
       buildMessage(
         'standings',
+        tournamentId,
         standingsInput.tournamentName,
         roundNr,
         publishStandings(standingsInput),

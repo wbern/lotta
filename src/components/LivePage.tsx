@@ -26,6 +26,7 @@ import type {
   PeerCountMessage,
   ResultAckMessage,
   ResultSubmitMessage,
+  SharedTournamentsMessage,
 } from '../types/p2p'
 import { ChatMessageItem } from './ChatMessageItem'
 import { CompatWarnings } from './CompatWarnings'
@@ -42,6 +43,7 @@ interface LivePageProps {
 
 interface CachedPage {
   pageType: PageType
+  tournamentId?: number
   tournamentName: string
   roundNr: number
   html: string
@@ -257,6 +259,9 @@ function LivePageInner({
   const [unreadChat, setUnreadChat] = useState(0)
   const [chatEnabled, setChatEnabled] = useState(true)
   const [hostRefreshing, setHostRefreshing] = useState(false)
+  const [sharedTournamentIds, setSharedTournamentIds] = useState<number[]>([])
+  const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null)
+  const [sharedSetFlashing, setSharedSetFlashing] = useState(false)
   const [showDiagnostics, setShowDiagnostics] = useState(false)
   const [diagnosticLog, setDiagnosticLog] = useState<DiagnosticEntry[]>([])
   const [relayStatus, setRelayStatus] = useState<RelaySocketInfo[]>([])
@@ -273,13 +278,23 @@ function LivePageInner({
   const chatEnabledRef = useRef(true)
   const chatRateLimitRef = useRef(new Map<string, number>())
   const highestRoundRef = useRef<number | null>(null)
+  const selectedTournamentIdRef = useRef<number | null>(null)
+  const sharedFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const newRoundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { scrollRef: chatScrollRef, bottomRef: chatBottomRef } = useChatAutoScroll(chatMessages)
   useDocumentTitle(unreadChat, tournamentName || normalizedRoom)
 
   const handlePageUpdate = useCallback(
     (msg: PageUpdateMessage) => {
+      // Drop stale updates for a tournament the viewer is no longer watching.
+      // This matters during a handover — the host may have broadcast before
+      // receiving our viewer-select message.
+      const selectedId = selectedTournamentIdRef.current
+      if (selectedId != null && msg.tournamentId !== selectedId) return
+
       const page: CachedPage = {
         pageType: msg.pageType,
+        tournamentId: msg.tournamentId,
         tournamentName: msg.tournamentName,
         roundNr: msg.roundNr,
         html: msg.html,
@@ -308,7 +323,11 @@ function LivePageInner({
       ) {
         playSound('round')
         setNewRoundAlert(msg.roundNr)
-        setTimeout(() => setNewRoundAlert(null), 8000)
+        if (newRoundTimerRef.current) clearTimeout(newRoundTimerRef.current)
+        newRoundTimerRef.current = setTimeout(() => {
+          setNewRoundAlert(null)
+          newRoundTimerRef.current = null
+        }, 8000)
       }
       if (highestRoundRef.current === null || msg.roundNr > highestRoundRef.current) {
         highestRoundRef.current = msg.roundNr
@@ -320,6 +339,27 @@ function LivePageInner({
     },
     [normalizedRoom],
   )
+
+  const handleSharedTournaments = useCallback((msg: SharedTournamentsMessage) => {
+    setSharedTournamentIds((prev) => {
+      const hasNew = msg.tournamentIds.some((id) => !prev.includes(id))
+      if (hasNew && prev.length > 0) {
+        setSharedSetFlashing(true)
+        if (sharedFlashTimerRef.current) clearTimeout(sharedFlashTimerRef.current)
+        sharedFlashTimerRef.current = setTimeout(() => {
+          setSharedSetFlashing(false)
+          sharedFlashTimerRef.current = null
+        }, 2000)
+      }
+      return msg.tournamentIds
+    })
+    setSelectedTournamentId((prev) => {
+      const next =
+        prev != null && msg.tournamentIds.includes(prev) ? prev : (msg.tournamentIds[0] ?? null)
+      selectedTournamentIdRef.current = next
+      return next
+    })
+  }, [])
 
   const handleResultAck = useCallback((msg: ResultAckMessage) => {
     setAckFeedback({
@@ -357,6 +397,7 @@ function LivePageInner({
     const service = new P2PService(role, refereeToken, label)
     serviceRef.current = service
     service.onPageUpdate = handlePageUpdate
+    service.onSharedTournaments = handleSharedTournaments
     service.onResultAck = handleResultAck
     const rpcProvider = createP2pClientProvider(service)
     service.onConnectionStateChange = (state) => {
@@ -415,7 +456,15 @@ function LivePageInner({
       service.leave()
       serviceRef.current = null
     }
-  }, [normalizedRoom, handlePageUpdate, handleResultAck, isReferee, refereeToken, confirmedName])
+  }, [
+    normalizedRoom,
+    handlePageUpdate,
+    handleSharedTournaments,
+    handleResultAck,
+    isReferee,
+    refereeToken,
+    confirmedName,
+  ])
 
   // Listen for postMessage from referee pairings iframe
   useEffect(() => {
@@ -450,6 +499,13 @@ function LivePageInner({
   useEffect(() => {
     chatOpenRef.current = chatOpen
   }, [chatOpen])
+
+  useEffect(() => {
+    return () => {
+      if (sharedFlashTimerRef.current) clearTimeout(sharedFlashTimerRef.current)
+      if (newRoundTimerRef.current) clearTimeout(newRoundTimerRef.current)
+    }
+  }, [])
 
   // Poll relay status and diagnostic info while panel is visible
   useEffect(() => {
@@ -560,6 +616,34 @@ function LivePageInner({
         <div className="live-title">
           {displayName || normalizedRoom}
           <span className="live-room-code">{roomCode.toUpperCase()}</span>
+          {sharedTournamentIds.length >= 2 && (
+            <select
+              className={`shared-tournaments-select${sharedSetFlashing ? ' shared-tournaments-select--flash' : ''}`}
+              data-testid="shared-tournaments-select"
+              aria-label="Välj turnering"
+              value={selectedTournamentId ?? ''}
+              onChange={(e) => {
+                const next = Number(e.target.value)
+                if (next === selectedTournamentId) return
+                setSelectedTournamentId(next)
+                selectedTournamentIdRef.current = next
+                // Drop the previous tournament's cached rounds so we don't
+                // briefly show its data while waiting for the host push.
+                setRounds(new Map())
+                setLatestRound(null)
+                setSelectedRound(null)
+                highestRoundRef.current = null
+                setTournamentName('')
+                serviceRef.current?.sendViewerSelectTournament({ tournamentId: next })
+              }}
+            >
+              {sharedTournamentIds.map((id) => (
+                <option key={id} value={id}>
+                  Turnering {id}
+                </option>
+              ))}
+            </select>
+          )}
           {availableRounds.length >= 2 && (
             <select
               className="live-round-select"

@@ -2,7 +2,13 @@
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ChatMessage, PageUpdateMessage, ResultAckMessage } from '../types/p2p'
+import type {
+  ChatMessage,
+  PageUpdateMessage,
+  ResultAckMessage,
+  SharedTournamentsMessage,
+  ViewerSelectTournamentMessage,
+} from '../types/p2p'
 import { LivePage } from './LivePage'
 
 let mockOnPageUpdate: ((msg: PageUpdateMessage) => void) | null = null
@@ -14,6 +20,8 @@ let mockSubmitResultCalls: unknown[] = []
 let mockConstructorRole: string | null = null
 let mockConstructorToken: string | undefined = undefined
 let mockOnChatMessage: ((msg: ChatMessage, peerId: string) => void) | null = null
+let mockOnSharedTournaments: ((msg: SharedTournamentsMessage) => void) | null = null
+let mockSendViewerSelectCalls: ViewerSelectTournamentMessage[] = []
 const mockServiceRef: { current: { connectionState: string } | null } = { current: null }
 
 vi.mock('@tanstack/react-router', () => ({
@@ -92,6 +100,15 @@ vi.mock('../services/p2p-service', () => {
       get onKicked() {
         return null
       }
+      set onSharedTournaments(cb: ((msg: SharedTournamentsMessage) => void) | null) {
+        mockOnSharedTournaments = cb
+      }
+      get onSharedTournaments() {
+        return mockOnSharedTournaments
+      }
+      sendViewerSelectTournament(msg: ViewerSelectTournamentMessage) {
+        mockSendViewerSelectCalls.push(msg)
+      }
     },
   }
 })
@@ -114,6 +131,8 @@ describe('LivePage', () => {
     mockConstructorRole = null
     mockConstructorToken = undefined
     mockOnChatMessage = null
+    mockOnSharedTournaments = null
+    mockSendViewerSelectCalls = []
     mockServiceRef.current = null
     mockPlaySound.mockClear()
     localStorage.clear()
@@ -145,6 +164,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>round 1</html>',
@@ -157,6 +177,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 2,
         html: '<html>round 2</html>',
@@ -174,6 +195,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>round 1</html>',
@@ -184,6 +206,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 2,
         html: '<html>round 2</html>',
@@ -207,6 +230,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>round 1</html>',
@@ -238,6 +262,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Spring Open',
         roundNr: 1,
         html: '<html><body>Pairings content</body></html>',
@@ -256,6 +281,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Grand Prix',
         roundNr: 1,
         html: '<html></html>',
@@ -272,6 +298,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>pairings</html>',
@@ -282,6 +309,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'standings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>standings</html>',
@@ -301,6 +329,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Cached',
         roundNr: 1,
         html: '<html>cached pairings</html>',
@@ -319,6 +348,7 @@ describe('LivePage', () => {
       'lotta-p2p-myroom-pairings-r1',
       JSON.stringify({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'From Cache',
         roundNr: 1,
         html: '<html>cached</html>',
@@ -346,6 +376,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>pairings data</html>',
@@ -402,6 +433,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>pairings html</html>',
@@ -412,6 +444,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'standings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>standings html</html>',
@@ -438,6 +471,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>pairings</html>',
@@ -456,6 +490,7 @@ describe('LivePage', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'standings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>standings only</html>',
@@ -486,6 +521,8 @@ describe('LivePage referee mode', () => {
     mockConstructorRole = null
     mockConstructorToken = undefined
     mockOnChatMessage = null
+    mockOnSharedTournaments = null
+    mockSendViewerSelectCalls = []
     mockServiceRef.current = null
     mockPlaySound.mockClear()
     localStorage.clear()
@@ -708,6 +745,7 @@ describe('LivePage referee mode', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'refereePairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>referee pairings</html>',
@@ -728,6 +766,7 @@ describe('LivePage referee mode', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'refereePairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>referee pairings</html>',
@@ -770,6 +809,8 @@ describe('LivePage kiosk mode', () => {
     mockConstructorRole = null
     mockConstructorToken = undefined
     mockOnChatMessage = null
+    mockOnSharedTournaments = null
+    mockSendViewerSelectCalls = []
     mockServiceRef.current = null
     mockPlaySound.mockClear()
     localStorage.clear()
@@ -786,6 +827,7 @@ describe('LivePage kiosk mode', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>pairings</html>',
@@ -803,6 +845,7 @@ describe('LivePage kiosk mode', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>pairings content</html>',
@@ -812,6 +855,7 @@ describe('LivePage kiosk mode', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'standings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>standings content</html>',
@@ -845,6 +889,7 @@ describe('LivePage kiosk mode', () => {
     act(() => {
       mockOnPageUpdate?.({
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>only pairings</html>',
@@ -882,5 +927,94 @@ describe('LivePage kiosk mode', () => {
       screen.getByTestId('kiosk-toggle').click()
     })
     expect(document.querySelector('.live-page--kiosk')).toBeNull()
+  })
+})
+
+describe('LivePage shared tournaments', () => {
+  beforeEach(() => {
+    mockOnPageUpdate = null
+    mockOnResultAck = null
+    mockOnConnectionStateChange = null
+    mockJoinRoomCalls = []
+    mockLeaveCalled = false
+    mockSubmitResultCalls = []
+    mockConstructorRole = null
+    mockConstructorToken = undefined
+    mockOnChatMessage = null
+    mockOnSharedTournaments = null
+    mockSendViewerSelectCalls = []
+    mockServiceRef.current = null
+    mockPlaySound.mockClear()
+    localStorage.clear()
+  })
+
+  it('does not show tournament dropdown when shared set has only one tournament', () => {
+    render(<LivePage roomCode="test" />)
+
+    act(() => {
+      mockOnSharedTournaments?.({
+        tournamentIds: [7],
+        includeFutureTournaments: false,
+        timestamp: Date.now(),
+      })
+    })
+
+    expect(screen.queryByTestId('shared-tournaments-select')).toBeNull()
+  })
+
+  it('shows tournament dropdown when shared set has multiple tournaments', () => {
+    render(<LivePage roomCode="test" />)
+
+    act(() => {
+      mockOnSharedTournaments?.({
+        tournamentIds: [7, 9],
+        includeFutureTournaments: true,
+        timestamp: Date.now(),
+      })
+    })
+
+    const select = screen.getByTestId('shared-tournaments-select') as HTMLSelectElement
+    expect(select).toBeTruthy()
+    const optionValues = Array.from(select.options).map((o) => o.value)
+    expect(optionValues).toEqual(['7', '9'])
+  })
+
+  it('sends ViewerSelectTournament message when user selects a different tournament', () => {
+    render(<LivePage roomCode="test" />)
+
+    act(() => {
+      mockOnSharedTournaments?.({
+        tournamentIds: [7, 9],
+        includeFutureTournaments: true,
+        timestamp: Date.now(),
+      })
+    })
+
+    const select = screen.getByTestId('shared-tournaments-select') as HTMLSelectElement
+    fireEvent.change(select, { target: { value: '9' } })
+
+    expect(mockSendViewerSelectCalls).toEqual([{ tournamentId: 9 }])
+  })
+
+  it('flashes the dropdown when a new tournament is added to the shared set', () => {
+    render(<LivePage roomCode="test" />)
+
+    act(() => {
+      mockOnSharedTournaments?.({
+        tournamentIds: [7],
+        includeFutureTournaments: true,
+        timestamp: Date.now(),
+      })
+    })
+    act(() => {
+      mockOnSharedTournaments?.({
+        tournamentIds: [7, 9],
+        includeFutureTournaments: true,
+        timestamp: Date.now() + 1,
+      })
+    })
+
+    const select = screen.getByTestId('shared-tournaments-select')
+    expect(select.className).toContain('shared-tournaments-select--flash')
   })
 })

@@ -20,6 +20,8 @@ let mockOnPeersChange: (() => void) | null = null
 let mockOnNewPeerJoin: ((peerId: string) => void) | null = null
 let mockOnPeerReconnected: ((peerId: string) => void) | null = null
 let mockOnPeerToken: ((peerId: string, token: string) => void) | null = null
+let mockOnViewerSelectTournament: ((msg: { tournamentId: number }, peerId: string) => void) | null =
+  null
 let mockConnectionState = 'disconnected'
 let mockPeers: { id: string; role: string; connectedAt: number; label?: string }[] = []
 let mockRoomId: string | null = null
@@ -150,6 +152,14 @@ vi.mock('../../services/p2p-service', () => {
       get onPeerToken() {
         return mockOnPeerToken
       }
+      set onViewerSelectTournament(cb:
+        | ((msg: { tournamentId: number }, peerId: string) => void)
+        | null,) {
+        mockOnViewerSelectTournament = cb
+      }
+      get onViewerSelectTournament() {
+        return mockOnViewerSelectTournament
+      }
     },
   }
 })
@@ -168,6 +178,8 @@ vi.mock('../../api/p2p-session', () => ({
 vi.mock('../../api/p2p-broadcast', () => ({
   handleResultSubmission: vi.fn(),
   sendCurrentStateToPeer: vi.fn(),
+  sendSharedTournamentsToPeer: vi.fn(),
+  sendLatestStateToPeer: vi.fn(),
 }))
 
 vi.mock('../../api/p2p-data-provider', async () => {
@@ -248,6 +260,7 @@ describe('LiveTab', () => {
     mockOnNewPeerJoin = null
     mockOnPeerReconnected = null
     mockOnPeerToken = null
+    mockOnViewerSelectTournament = null
     mockOnChatMessage = null
     mockBroadcastChatMessageCalls = []
     mockSendChatToPeerCalls = []
@@ -455,9 +468,9 @@ describe('LiveTab', () => {
     )
   })
 
-  it('sends current state to newly joined peer', async () => {
-    const { sendCurrentStateToPeer } = await import('../../api/p2p-broadcast')
-    const mockSend = vi.mocked(sendCurrentStateToPeer)
+  it('sends latest state to newly joined peer for first shared tournament', async () => {
+    const { sendLatestStateToPeer } = await import('../../api/p2p-broadcast')
+    const mockSend = vi.mocked(sendLatestStateToPeer)
     mockSend.mockClear()
 
     renderLiveTab({ tournamentId: 5, round: 3 })
@@ -469,13 +482,17 @@ describe('LiveTab', () => {
       mockOnNewPeerJoin?.('new-peer-123')
     })
 
-    expect(mockSend).toHaveBeenCalledWith('new-peer-123', 5, 3)
+    expect(mockSend).toHaveBeenCalledWith('new-peer-123', 5)
   })
 
-  it('does not send state with a defined round to new peer when no round is active', async () => {
-    const { sendCurrentStateToPeer } = await import('../../api/p2p-broadcast')
-    const mockSend = vi.mocked(sendCurrentStateToPeer)
-    mockSend.mockClear()
+  it('sends latest state to new peer even when host has no round selected', async () => {
+    const { sendLatestStateToPeer, sendCurrentStateToPeer } = await import(
+      '../../api/p2p-broadcast'
+    )
+    const mockLatest = vi.mocked(sendLatestStateToPeer)
+    const mockCurrent = vi.mocked(sendCurrentStateToPeer)
+    mockLatest.mockClear()
+    mockCurrent.mockClear()
 
     renderLiveTab({ tournamentId: 5, round: undefined })
     fireEvent.click(screen.getByText('Starta Live'))
@@ -484,10 +501,11 @@ describe('LiveTab', () => {
       mockOnNewPeerJoin?.('new-peer-456')
     })
 
-    expect(mockSend).not.toHaveBeenCalledWith('new-peer-456', 5, expect.any(Number))
+    expect(mockLatest).toHaveBeenCalledWith('new-peer-456', 5)
+    expect(mockCurrent).not.toHaveBeenCalledWith('new-peer-456', 5, expect.any(Number))
   })
 
-  it('sends state to peer that joined before round prop resolved', async () => {
+  it('pushes current state to peer when round resolves after peer joined', async () => {
     const { sendCurrentStateToPeer } = await import('../../api/p2p-broadcast')
     const mockSend = vi.mocked(sendCurrentStateToPeer)
     mockSend.mockClear()
@@ -516,6 +534,234 @@ describe('LiveTab', () => {
     await waitFor(() => {
       expect(mockSend).toHaveBeenCalledWith('new-peer-456', 5, 3)
     })
+  })
+
+  it('does not add newly-selected tournament to shared set when future-sharing is off', async () => {
+    const { getLiveContext } = await import('../../api/live-context')
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { rerender } = render(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="A" tournamentId={7} round={2} />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByText('Starta Live'))
+
+    rerender(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="B" tournamentId={9} round={2} />
+      </QueryClientProvider>,
+    )
+
+    expect(getLiveContext()?.sharedTournamentIds).toEqual([7])
+  })
+
+  it('adds newly-selected tournament to shared set when future-sharing is on', async () => {
+    const { getLiveContext } = await import('../../api/live-context')
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { rerender } = render(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="A" tournamentId={7} round={2} />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByTestId('share-future-tournaments'))
+
+    rerender(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="B" tournamentId={9} round={2} />
+      </QueryClientProvider>,
+    )
+
+    expect(getLiveContext()?.sharedTournamentIds).toEqual([7, 9])
+  })
+
+  it('toggling "Dela även framtida turneringar" updates includeFutureTournaments in context', async () => {
+    const { getLiveContext } = await import('../../api/live-context')
+
+    renderLiveTab({ tournamentId: 7, round: 2 })
+    fireEvent.click(screen.getByText('Starta Live'))
+
+    const checkbox = screen.getByTestId('share-future-tournaments') as HTMLInputElement
+    expect(checkbox.checked).toBe(false)
+    expect(getLiveContext()?.includeFutureTournaments).toBe(false)
+
+    fireEvent.click(checkbox)
+
+    expect(checkbox.checked).toBe(true)
+    expect(getLiveContext()?.includeFutureTournaments).toBe(true)
+  })
+
+  it('seeds the shared tournament set with the current tournament on Starta Live', async () => {
+    const { getLiveContext } = await import('../../api/live-context')
+
+    renderLiveTab({ tournamentId: 7, round: 2 })
+    fireEvent.click(screen.getByText('Starta Live'))
+
+    const ctx = getLiveContext()
+    expect(ctx?.sharedTournamentIds).toEqual([7])
+    expect(ctx?.includeFutureTournaments).toBe(false)
+  })
+
+  it('sends the shared tournament set to each newly joined peer', async () => {
+    const { sendSharedTournamentsToPeer } = await import('../../api/p2p-broadcast')
+    const mockSend = vi.mocked(sendSharedTournamentsToPeer)
+    mockSend.mockClear()
+
+    renderLiveTab({ tournamentId: 7, round: 2 })
+    fireEvent.click(screen.getByText('Starta Live'))
+
+    act(() => {
+      mockOnNewPeerJoin?.('fresh-peer-1')
+    })
+
+    expect(mockSend).toHaveBeenCalledWith('fresh-peer-1', [7], false)
+  })
+
+  it('rebroadcasts the shared tournament set to all peers when it grows', async () => {
+    const { sendSharedTournamentsToPeer } = await import('../../api/p2p-broadcast')
+    const mockSend = vi.mocked(sendSharedTournamentsToPeer)
+    mockSend.mockClear()
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { rerender } = render(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="A" tournamentId={7} round={2} />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByTestId('share-future-tournaments'))
+
+    // Two connected peers
+    act(() => {
+      mockPeers = [
+        { id: 'peer-x', role: 'viewer', connectedAt: Date.now() },
+        { id: 'peer-y', role: 'viewer', connectedAt: Date.now() },
+      ]
+      mockOnPeersChange?.()
+    })
+    mockSend.mockClear()
+
+    // Host navigates to a new tournament → set grows
+    rerender(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="B" tournamentId={9} round={2} />
+      </QueryClientProvider>,
+    )
+
+    expect(mockSend).toHaveBeenCalledWith('peer-x', [7, 9], true)
+    expect(mockSend).toHaveBeenCalledWith('peer-y', [7, 9], true)
+  })
+
+  it('new peer receives state for the first shared tournament, not host current selection', async () => {
+    const { sendLatestStateToPeer, sendCurrentStateToPeer } = await import(
+      '../../api/p2p-broadcast'
+    )
+    const mockLatest = vi.mocked(sendLatestStateToPeer)
+    const mockCurrent = vi.mocked(sendCurrentStateToPeer)
+    mockLatest.mockClear()
+    mockCurrent.mockClear()
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { rerender } = render(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="A" tournamentId={7} round={1} />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByText('Starta Live'))
+    // Host navigates away (without adding to shared set)
+    rerender(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="B" tournamentId={9} round={1} />
+      </QueryClientProvider>,
+    )
+
+    mockLatest.mockClear()
+    mockCurrent.mockClear()
+    act(() => {
+      mockOnNewPeerJoin?.('late-peer')
+    })
+
+    // Shared set is still [7] — peer should receive tournament 7's latest state,
+    // not host's current tournament 9.
+    expect(mockLatest).toHaveBeenCalledWith('late-peer', 7)
+    expect(mockCurrent).not.toHaveBeenCalledWith('late-peer', 9, expect.anything())
+  })
+
+  it('round-change push skips peers watching a different tournament than host', async () => {
+    const { sendCurrentStateToPeer } = await import('../../api/p2p-broadcast')
+    const mockSend = vi.mocked(sendCurrentStateToPeer)
+    mockSend.mockClear()
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { rerender } = render(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="A" tournamentId={7} round={1} />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByTestId('share-future-tournaments'))
+
+    rerender(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="B" tournamentId={9} round={1} />
+      </QueryClientProvider>,
+    )
+
+    act(() => {
+      mockPeers = [
+        { id: 'peer-a', role: 'viewer', connectedAt: Date.now() },
+        { id: 'peer-b', role: 'viewer', connectedAt: Date.now() },
+      ]
+      mockOnPeersChange?.()
+    })
+
+    // peer-a watches tournament 7 (not host's current); peer-b watches 9
+    act(() => {
+      mockOnViewerSelectTournament?.({ tournamentId: 7 }, 'peer-a')
+      mockOnViewerSelectTournament?.({ tournamentId: 9 }, 'peer-b')
+    })
+    mockSend.mockClear()
+
+    // Host advances round on tournament 9
+    rerender(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="B" tournamentId={9} round={2} />
+      </QueryClientProvider>,
+    )
+
+    // Only peer-b should get a push — peer-a is watching a different tournament.
+    expect(mockSend).toHaveBeenCalledWith('peer-b', 9, 2)
+    expect(mockSend).not.toHaveBeenCalledWith('peer-a', expect.anything(), expect.anything())
+  })
+
+  it('pushes latest state to peer when they select a different tournament', async () => {
+    const { sendLatestStateToPeer } = await import('../../api/p2p-broadcast')
+    const mockLatest = vi.mocked(sendLatestStateToPeer)
+    mockLatest.mockClear()
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { rerender } = render(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="A" tournamentId={7} round={1} />
+      </QueryClientProvider>,
+    )
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByTestId('share-future-tournaments'))
+
+    rerender(
+      <QueryClientProvider client={qc}>
+        <LiveTab tournamentName="B" tournamentId={9} round={1} />
+      </QueryClientProvider>,
+    )
+    mockLatest.mockClear()
+
+    act(() => {
+      mockOnViewerSelectTournament?.({ tournamentId: 7 }, 'peer-switch')
+    })
+
+    expect(mockLatest).toHaveBeenCalledWith('peer-switch', 7)
   })
 
   it('re-sends state to peer whose RTC connection recovered', async () => {

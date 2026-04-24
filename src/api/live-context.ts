@@ -1,4 +1,9 @@
-type LiveContext = { tournamentId: number; round: number | null }
+type LiveContext = {
+  tournamentId: number
+  round: number | null
+  sharedTournamentIds?: number[]
+  includeFutureTournaments?: boolean
+}
 
 let context: LiveContext | null = null
 

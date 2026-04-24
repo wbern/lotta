@@ -3,7 +3,12 @@ import { QRCodeSVG } from 'qrcode.react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { setLiveContext } from '../../api/live-context'
 import { getLocalProvider } from '../../api/local-data-provider'
-import { handleResultSubmission, sendCurrentStateToPeer } from '../../api/p2p-broadcast'
+import {
+  handleResultSubmission,
+  sendCurrentStateToPeer,
+  sendLatestStateToPeer,
+  sendSharedTournamentsToPeer,
+} from '../../api/p2p-broadcast'
 import type { RpcPermissions } from '../../api/p2p-data-provider'
 import {
   clearAllPeerPermissions,
@@ -202,6 +207,17 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const peerTokensRef = useRef(new Map<string, string>())
   const allClubEntriesRef = useRef<string[]>([])
   const [clubFilterEnabled, setClubFilterEnabled] = useState(false)
+  const [includeFutureTournaments, setIncludeFutureTournaments] = useState(false)
+  const [sharedTournamentIds, setSharedTournamentIds] = useState<number[]>([])
+  const sharedTournamentIdsRef = useRef<number[]>([])
+  const peerSelectedTournamentsRef = useRef(new Map<string, number>())
+  const includeFutureTournamentsRef = useRef(false)
+  useEffect(() => {
+    sharedTournamentIdsRef.current = sharedTournamentIds
+  }, [sharedTournamentIds])
+  useEffect(() => {
+    includeFutureTournamentsRef.current = includeFutureTournaments
+  }, [includeFutureTournaments])
   const clubFilterEnabledRef = useRef(false)
   const [shareClubDialog, setShareClubDialog] = useState<string | null>(null)
   const [clubCodeRateLimited, setClubCodeRateLimited] = useState(false)
@@ -244,13 +260,37 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     const prevRound = roundRef.current
     tournamentIdRef.current = tournamentId
     roundRef.current = round
-    setLiveContext({ tournamentId, round: round ?? null })
+    setSharedTournamentIds((prev) => {
+      if (prev.includes(tournamentId)) return prev
+      if (prev.length === 0 || includeFutureTournamentsRef.current) {
+        return [...prev, tournamentId]
+      }
+      return prev
+    })
     if (round != null && round !== prevRound && serviceRef.current) {
+      const selections = peerSelectedTournamentsRef.current
       for (const peer of serviceRef.current.getPeers()) {
-        sendCurrentStateToPeer(peer.id, tournamentId, round)
+        const selected = selections.get(peer.id) ?? tournamentId
+        if (selected === tournamentId) {
+          sendCurrentStateToPeer(peer.id, tournamentId, round)
+        }
       }
     }
   }, [tournamentId, round])
+  useEffect(() => {
+    setLiveContext({
+      tournamentId,
+      round: round ?? null,
+      sharedTournamentIds,
+      includeFutureTournaments,
+    })
+  }, [tournamentId, round, sharedTournamentIds, includeFutureTournaments])
+  useEffect(() => {
+    if (!serviceRef.current) return
+    for (const peer of serviceRef.current.getPeers()) {
+      sendSharedTournamentsToPeer(peer.id, sharedTournamentIds, includeFutureTournaments)
+    }
+  }, [sharedTournamentIds, includeFutureTournaments])
   useEffect(() => {
     chatEnabledRef.current = chatEnabled
   }, [chatEnabled])
@@ -378,7 +418,15 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     }
 
     service.onNewPeerJoin = (peerId: string) => {
-      sendCurrentStateToPeer(peerId, tournamentIdRef.current, roundRef.current)
+      sendSharedTournamentsToPeer(
+        peerId,
+        sharedTournamentIdsRef.current,
+        includeFutureTournamentsRef.current,
+      )
+      const firstShared = sharedTournamentIdsRef.current[0]
+      if (firstShared != null) {
+        void sendLatestStateToPeer(peerId, firstShared)
+      }
       for (const msg of chatMessagesRef.current) {
         serviceRef.current?.sendChatMessageToPeer(msg, peerId)
       }
@@ -386,6 +434,11 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
 
     service.onPeerReconnected = (peerId: string) => {
       sendCurrentStateToPeer(peerId, tournamentIdRef.current, roundRef.current)
+    }
+
+    service.onViewerSelectTournament = (msg, peerId: string) => {
+      peerSelectedTournamentsRef.current.set(peerId, msg.tournamentId)
+      void sendLatestStateToPeer(peerId, msg.tournamentId)
     }
 
     startP2pRpcServer(service, getLocalProvider(), {
@@ -842,6 +895,15 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
                   </div>
                 </div>
               </div>
+              <label className="live-tab-share-future">
+                <input
+                  type="checkbox"
+                  data-testid="share-future-tournaments"
+                  checked={includeFutureTournaments}
+                  onChange={(e) => setIncludeFutureTournaments(e.target.checked)}
+                />
+                Dela även framtida turneringar
+              </label>
             </div>
 
             <div className="live-tab-peers">

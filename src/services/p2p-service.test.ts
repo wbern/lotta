@@ -331,6 +331,7 @@ describe('P2PService', () => {
 
     const message = {
       pageType: 'pairings' as const,
+      tournamentId: 1,
       tournamentName: 'Test Tournament',
       roundNr: 1,
       html: '<html><body>Pairings</body></html>',
@@ -356,6 +357,7 @@ describe('P2PService', () => {
       'page-update',
       {
         pageType: 'standings',
+        tournamentId: 1,
         tournamentName: 'Test',
         roundNr: 1,
         html: '<html>Standings</html>',
@@ -436,6 +438,7 @@ describe('P2PService', () => {
 
     const message = {
       pageType: 'pairings' as const,
+      tournamentId: 1,
       tournamentName: 'Test',
       roundNr: 1,
       html: '<html>Pairings</html>',
@@ -574,6 +577,7 @@ describe('P2PService', () => {
     // Should not throw when no room is connected
     service.broadcastPageUpdate({
       pageType: 'pairings',
+      tournamentId: 1,
       tournamentName: 'Test',
       roundNr: 1,
       html: '<html></html>',

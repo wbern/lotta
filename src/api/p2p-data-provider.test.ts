@@ -309,6 +309,7 @@ describe('startP2pRpcServer', () => {
     const fakeMessages: PageUpdateMessage[] = [
       {
         pageType: 'pairings',
+        tournamentId: 1,
         tournamentName: 'T',
         roundNr: 2,
         html: '<p>pairings</p>',
