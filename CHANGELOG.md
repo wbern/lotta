@@ -1,3 +1,23 @@
+# [1.4.0](https://github.com/wbern/lotta/compare/v1.3.0...v1.4.0) (2026-04-24)
+
+
+### Bug Fixes
+
+* **live:** broadcast empty manifest on tournament delete ([e27fe63](https://github.com/wbern/lotta/commit/e27fe63dcbad4b07686dfa1b1e8585f9193f192c))
+* **live:** broadcast state when host switches tournament ([f0db17e](https://github.com/wbern/lotta/commit/f0db17ef4bc6eb1768211e9ca428b7c8b18d5458))
+* **live:** reconcile viewer cache against host round manifest ([dbf829d](https://github.com/wbern/lotta/commit/dbf829d6f4695e85da7c3c969f0d7e37586668bd))
+* **live:** scope tournament-delete broadcast to live/shared set ([636dab1](https://github.com/wbern/lotta/commit/636dab159871c24d52505c0d93071a174bfb8a86))
+
+
+### Features
+
+* **live:** explicit shared tournament set with per-tournament scoping ([fe2c5df](https://github.com/wbern/lotta/commit/fe2c5df80e776d329fcb124f7a37d08b6eaa899a))
+
+
+### Reverts
+
+* Revert "fix(live): broadcast state when host switches tournament" ([22222f8](https://github.com/wbern/lotta/commit/22222f88ffb54b0d205be881cadb6a0d2fe15dcc))
+
 # [1.3.0](https://github.com/wbern/lotta/compare/v1.2.1...v1.3.0) (2026-04-24)
 
 
