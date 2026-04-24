@@ -1,7 +1,7 @@
 import { DatabaseService } from '../db/database-service'
 import { getUndoManager } from '../db/undo-provider'
 import { getDataProvider } from './active-provider'
-import { broadcastAfterRestore } from './p2p-broadcast'
+import { dispatchBroadcast } from './broadcast-hook'
 import { getDatabaseService, setDatabaseService } from './service-provider'
 
 async function restoreFromSnapshot(data: Uint8Array): Promise<void> {
@@ -12,7 +12,7 @@ async function restoreFromSnapshot(data: Uint8Array): Promise<void> {
   setDatabaseService(newService)
   await newService.save()
 
-  void broadcastAfterRestore().catch((e) =>
+  void dispatchBroadcast({ kind: 'restore' }).catch((e) =>
     console.warn('P2P broadcast failed after undo/redo restore:', e),
   )
 }

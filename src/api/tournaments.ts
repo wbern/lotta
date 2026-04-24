@@ -2,7 +2,6 @@ import { generateLiveChessPgn } from '../domain/livechess'
 import { getPlayerRating } from '../domain/ratings'
 import type { CreateTournamentRequest, TournamentDto, TournamentListItemDto } from '../types/api'
 import { getDataProvider } from './active-provider'
-import { broadcastAfterTournamentDelete } from './p2p-broadcast'
 import { getDatabaseService, withSave } from './service-provider'
 
 export async function listTournamentsLocal(): Promise<TournamentListItemDto[]> {
@@ -37,6 +36,7 @@ export async function deleteTournamentLocal(id: number): Promise<void> {
     () => getDatabaseService().tournaments.delete(id),
     'Ta bort turnering',
     tournament?.name ?? '',
+    { kind: 'tournamentDeleted', tournamentId: id },
   )
 }
 
@@ -61,7 +61,6 @@ export async function updateTournament(
 
 export async function deleteTournament(id: number): Promise<void> {
   await getDataProvider().tournaments.delete(id)
-  broadcastAfterTournamentDelete(id)
 }
 
 export async function exportTournamentPlayers(id: number): Promise<Blob> {

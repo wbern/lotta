@@ -1,6 +1,5 @@
 import type { GameDto, SetResultRequest } from '../types/api'
 import { getActiveDataProvider, getDataProvider } from './active-provider'
-import { broadcastAfterResultChange } from './p2p-broadcast'
 import { createCommandDeps, handleSetResult, ResultConflictError } from './result-command'
 import { getDatabaseService, withSave } from './service-provider'
 
@@ -19,6 +18,7 @@ export async function setResultLocal(
             () => getDatabaseService().games.setResult(tid, rn, bn, r),
             'Ange resultat',
             (game) => `Bord ${bn}: ${game.resultDisplay}`,
+            { kind: 'results', tournamentId: tid, roundNr: rn },
           ),
       },
     })
@@ -38,28 +38,16 @@ export async function setResultLocal(
       throw new ResultConflictError(outcome.current)
     }
 
-    if (outcome.status === 'idempotent') {
-      const round = getDatabaseService().games.getRound(tournamentId, roundNr)!
-      return round.games.find((g) => g.boardNr === boardNr)!
-    }
-
-    // applied
-    void broadcastAfterResultChange(tournamentId, roundNr).catch((e) =>
-      console.warn('P2P broadcast failed after result change:', e),
-    )
     const round = getDatabaseService().games.getRound(tournamentId, roundNr)!
     return round.games.find((g) => g.boardNr === boardNr)!
   }
 
-  const result = await withSave(
+  return withSave(
     () => getDatabaseService().games.setResult(tournamentId, roundNr, boardNr, req),
     'Ange resultat',
     (game) => `Bord ${boardNr}: ${game.resultDisplay}`,
+    { kind: 'results', tournamentId, roundNr },
   )
-  void broadcastAfterResultChange(tournamentId, roundNr).catch((e) =>
-    console.warn('P2P broadcast failed after result change:', e),
-  )
-  return result
 }
 
 export async function deleteGameLocal(

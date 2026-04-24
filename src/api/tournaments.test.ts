@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DatabaseService } from '../db/database-service.ts'
 import { deleteDatabase } from '../db/persistence.ts'
 import { setLocalProviderFactory } from './active-provider.ts'
+import { dispatchBroadcast } from './broadcast-hook.ts'
 import { getLocalProvider } from './local-data-provider.ts'
-import { broadcastAfterTournamentDelete } from './p2p-broadcast.ts'
 import { setDatabaseService } from './service-provider.ts'
 import {
   createTournament,
@@ -15,9 +15,10 @@ import {
   updateTournament,
 } from './tournaments.ts'
 
-vi.mock('./p2p-broadcast.ts', () => ({
-  broadcastAfterTournamentDelete: vi.fn(),
-}))
+vi.mock('./broadcast-hook.ts', async () => {
+  const actual = await vi.importActual<typeof import('./broadcast-hook.ts')>('./broadcast-hook.ts')
+  return { ...actual, dispatchBroadcast: vi.fn().mockResolvedValue(undefined) }
+})
 
 describe('tournaments API (local)', () => {
   let service: DatabaseService
@@ -94,10 +95,13 @@ describe('tournaments API (local)', () => {
       showGroup: true,
     })
 
-    vi.mocked(broadcastAfterTournamentDelete).mockClear()
+    vi.mocked(dispatchBroadcast).mockClear()
     await deleteTournament(created.id)
 
-    expect(broadcastAfterTournamentDelete).toHaveBeenCalledWith(created.id)
+    expect(dispatchBroadcast).toHaveBeenCalledWith({
+      kind: 'tournamentDeleted',
+      tournamentId: created.id,
+    })
   })
 
   it('exports tournament players as TSV with UTF-8 BOM', async () => {

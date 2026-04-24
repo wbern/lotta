@@ -11,7 +11,6 @@ import {
 import { getPlayerRating } from '../domain/ratings'
 import type { RoundDto } from '../types/api'
 import { getDataProvider } from './active-provider'
-import { broadcastAfterPairing } from './p2p-broadcast'
 import { getPairingExecutor } from './pairing-executor-provider'
 import { getDatabaseService, withSave } from './service-provider'
 
@@ -98,15 +97,12 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
 
   // Berger is a deterministic round-robin; keep the legacy synchronous path.
   if (tournament.pairingSystem === 'Berger') {
-    const result = await withSave(
+    return withSave(
       () => pairBerger(tournamentId, tournament, pairingPlayers, roundsPlayed),
       'Lotta rond',
       (r) => `Rond ${r.roundNr}`,
+      (r) => ({ kind: 'pairing', tournamentId, roundNr: r.roundNr }),
     )
-    void broadcastAfterPairing(tournamentId, result.roundNr).catch((e) =>
-      console.warn('P2P broadcast failed after pairing:', e),
-    )
-    return result
   }
 
   const activePlayers = preparePairing({
@@ -214,7 +210,7 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
     allGames.push({ whitePlayerId: bye.id, blackPlayerId: null })
   }
 
-  const result = await withSave(
+  return withSave(
     () => {
       insertGames(tournamentId, nextRoundNr, allGames, lotNrMap)
       if (bye) {
@@ -226,12 +222,8 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
     },
     'Lotta rond',
     (r) => `Rond ${r.roundNr}`,
+    (r) => ({ kind: 'pairing', tournamentId, roundNr: r.roundNr }),
   )
-
-  void broadcastAfterPairing(tournamentId, result.roundNr).catch((e) =>
-    console.warn('P2P broadcast failed after pairing:', e),
-  )
-  return result
 }
 
 /**

@@ -6,6 +6,7 @@ import {
 } from '../domain/html-publisher.ts'
 import { getP2PService } from '../services/p2p-provider.ts'
 import type { AuditLogEntry, PageUpdateMessage, ResultSubmitMessage } from '../types/p2p.ts'
+import { setBroadcastHook } from './broadcast-hook.ts'
 import { getLiveContext } from './live-context.ts'
 import { buildPairingsInput, buildStandingsInput } from './publish-data.ts'
 import { setResult } from './results.ts'
@@ -328,3 +329,20 @@ export async function handleResultSubmission(
     })
   }
 }
+
+setBroadcastHook(async (affects) => {
+  switch (affects.kind) {
+    case 'results':
+      await broadcastAfterResultChange(affects.tournamentId, affects.roundNr)
+      return
+    case 'pairing':
+      await broadcastAfterPairing(affects.tournamentId, affects.roundNr)
+      return
+    case 'tournamentDeleted':
+      broadcastAfterTournamentDelete(affects.tournamentId)
+      return
+    case 'restore':
+      await broadcastAfterRestore()
+      return
+  }
+})
