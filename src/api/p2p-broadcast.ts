@@ -46,6 +46,13 @@ function broadcastStandings(tournamentId: number, input: StandingsPublishInput):
   )
 }
 
+function broadcastRoundManifest(tournamentId: number): void {
+  const roundNrs = getDatabaseService()
+    .games.listRounds(tournamentId)
+    .map((r) => r.roundNr)
+  getP2PService().broadcastRoundManifest({ tournamentId, roundNrs, timestamp: Date.now() })
+}
+
 function broadcastRefereePairings(tournamentId: number, roundNr: number): void {
   if (!isP2PActive()) return
   const input = buildPairingsInput(tournamentId, roundNr)
@@ -73,6 +80,8 @@ export async function broadcastAfterResultChange(
 
   const standingsInput = await buildStandingsInput(tournamentId, roundNr)
   if (standingsInput) broadcastStandings(tournamentId, standingsInput)
+
+  broadcastRoundManifest(tournamentId)
 }
 
 /** Broadcast pairings after a new round is paired. */
@@ -83,6 +92,8 @@ export async function broadcastAfterPairing(tournamentId: number, roundNr: numbe
   if (pairingsInput) broadcastPairings(tournamentId, pairingsInput)
 
   broadcastRefereePairings(tournamentId, roundNr)
+
+  broadcastRoundManifest(tournamentId)
 }
 
 /**
@@ -95,6 +106,8 @@ export async function broadcastAfterRestore(): Promise<void> {
   if (!isP2PActive()) return
   const ctx = getLiveContext()
   if (!ctx) return
+
+  broadcastRoundManifest(ctx.tournamentId)
 
   const db = getDatabaseService()
   const rounds = db.games.listRounds(ctx.tournamentId)
@@ -198,6 +211,10 @@ export async function sendCurrentStateToPeer(
   for (const msg of messages) {
     service.sendPageUpdateTo(msg, peerId)
   }
+  const roundNrs = getDatabaseService()
+    .games.listRounds(tournamentId)
+    .map((r) => r.roundNr)
+  service.sendRoundManifestTo({ tournamentId, roundNrs, timestamp: Date.now() }, peerId)
 }
 
 /**

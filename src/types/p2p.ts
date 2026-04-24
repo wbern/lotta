@@ -96,3 +96,9 @@ export type SharedTournamentsMessage = {
 export type ViewerSelectTournamentMessage = {
   tournamentId: number
 }
+
+export type RoundManifestMessage = {
+  tournamentId: number
+  roundNrs: number[]
+  timestamp: number
+}

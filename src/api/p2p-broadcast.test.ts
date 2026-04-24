@@ -15,6 +15,8 @@ const mockBroadcastPageUpdate = vi.fn()
 const mockSendPageUpdateTo = vi.fn()
 const mockSendResultAck = vi.fn()
 const mockIsPeerVerifiedReferee = vi.fn()
+const mockBroadcastRoundManifest = vi.fn()
+const mockSendRoundManifestTo = vi.fn()
 
 vi.mock('../services/p2p-provider.ts', () => ({
   getP2PService: vi.fn(() => ({
@@ -23,6 +25,8 @@ vi.mock('../services/p2p-provider.ts', () => ({
     sendPageUpdateTo: mockSendPageUpdateTo,
     sendResultAck: mockSendResultAck,
     isPeerVerifiedReferee: mockIsPeerVerifiedReferee,
+    broadcastRoundManifest: mockBroadcastRoundManifest,
+    sendRoundManifestTo: mockSendRoundManifestTo,
     role: 'organizer',
   })),
 }))
@@ -131,8 +135,23 @@ describe('broadcastAfterResultChange', () => {
       connectionState: 'connected',
       broadcastPageUpdate: mockBroadcastPageUpdate,
       sendPageUpdateTo: mockSendPageUpdateTo,
+      broadcastRoundManifest: mockBroadcastRoundManifest,
+      sendRoundManifestTo: mockSendRoundManifestTo,
       role: 'organizer',
     } as unknown as ReturnType<typeof p2pProvider.getP2PService>)
+  })
+
+  it('broadcasts a round manifest listing all existing rounds', async () => {
+    const db = createMockDb({ tournamentName: 'Spring Open' })
+    db.games.listRounds.mockReturnValue([{ roundNr: 1 }, { roundNr: 2 }] as never)
+    mockGetDatabaseService.mockReturnValue(db)
+    mockGetStandings.mockResolvedValue([])
+
+    await broadcastAfterResultChange(1, 1)
+
+    expect(mockBroadcastRoundManifest).toHaveBeenCalledWith(
+      expect.objectContaining({ tournamentId: 1, roundNrs: [1, 2] }),
+    )
   })
 
   it('broadcasts pairings, referee pairings, and standings after a result change', async () => {
@@ -178,6 +197,8 @@ describe('broadcastAfterPairing', () => {
       connectionState: 'connected',
       broadcastPageUpdate: mockBroadcastPageUpdate,
       sendPageUpdateTo: mockSendPageUpdateTo,
+      broadcastRoundManifest: mockBroadcastRoundManifest,
+      sendRoundManifestTo: mockSendRoundManifestTo,
       role: 'organizer',
     } as unknown as ReturnType<typeof p2pProvider.getP2PService>)
   })
@@ -196,6 +217,18 @@ describe('broadcastAfterPairing', () => {
     expect(pageTypes).toContain('refereePairings')
     expect(mockBroadcastPageUpdate.mock.calls[0][0].roundNr).toBe(2)
   })
+
+  it('broadcasts a round manifest including the newly paired round', async () => {
+    const db = createMockDb({ tournamentName: 'Cup', roundNr: 2 })
+    db.games.listRounds.mockReturnValue([{ roundNr: 1 }, { roundNr: 2 }] as never)
+    mockGetDatabaseService.mockReturnValue(db)
+
+    await broadcastAfterPairing(1, 2)
+
+    expect(mockBroadcastRoundManifest).toHaveBeenCalledWith(
+      expect.objectContaining({ tournamentId: 1, roundNrs: [1, 2] }),
+    )
+  })
 })
 
 describe('sendCurrentStateToPeer', () => {
@@ -205,8 +238,24 @@ describe('sendCurrentStateToPeer', () => {
       connectionState: 'connected',
       broadcastPageUpdate: mockBroadcastPageUpdate,
       sendPageUpdateTo: mockSendPageUpdateTo,
+      broadcastRoundManifest: mockBroadcastRoundManifest,
+      sendRoundManifestTo: mockSendRoundManifestTo,
       role: 'organizer',
     } as unknown as ReturnType<typeof p2pProvider.getP2PService>)
+  })
+
+  it('sends the round manifest to the peer so it can prune stale cached rounds', async () => {
+    const db = createMockDb({ tournamentName: 'Sync Test' })
+    db.games.listRounds.mockReturnValue([{ roundNr: 1 }, { roundNr: 2 }] as never)
+    mockGetDatabaseService.mockReturnValue(db)
+    mockGetStandings.mockResolvedValue([])
+
+    await sendCurrentStateToPeer('new-peer', 1, 2)
+
+    expect(mockSendRoundManifestTo).toHaveBeenCalledWith(
+      expect.objectContaining({ tournamentId: 1, roundNrs: [1, 2] }),
+      'new-peer',
+    )
   })
 
   it('sends pairings and standings to a specific peer', async () => {
@@ -248,12 +297,28 @@ describe('broadcastAfterRestore', () => {
       connectionState: 'connected',
       broadcastPageUpdate: mockBroadcastPageUpdate,
       sendPageUpdateTo: mockSendPageUpdateTo,
+      broadcastRoundManifest: mockBroadcastRoundManifest,
+      sendRoundManifestTo: mockSendRoundManifestTo,
       role: 'organizer',
     } as unknown as ReturnType<typeof p2pProvider.getP2PService>)
   })
 
   afterEach(() => {
     setLiveContext(null)
+  })
+
+  it('broadcasts a round manifest listing all existing rounds for the tournament', async () => {
+    setLiveContext({ tournamentId: 1, round: 2 })
+    const db = createMockDb({ roundNr: 2 })
+    db.games.listRounds.mockReturnValue([{ roundNr: 1 }, { roundNr: 2 }] as never)
+    mockGetDatabaseService.mockReturnValue(db)
+    mockGetStandings.mockResolvedValue([])
+
+    await broadcastAfterRestore()
+
+    expect(mockBroadcastRoundManifest).toHaveBeenCalledWith(
+      expect.objectContaining({ tournamentId: 1, roundNrs: [1, 2] }),
+    )
   })
 
   it('broadcasts pairings, referee pairings, and standings for the live round', async () => {
@@ -313,6 +378,19 @@ describe('broadcastAfterRestore', () => {
     await broadcastAfterRestore()
 
     expect(mockBroadcastPageUpdate).not.toHaveBeenCalled()
+  })
+
+  it('broadcasts an empty round manifest when the tournament has no rounds', async () => {
+    setLiveContext({ tournamentId: 1, round: null })
+    const db = createMockDb()
+    db.games.listRounds.mockReturnValue([] as never)
+    mockGetDatabaseService.mockReturnValue(db)
+
+    await broadcastAfterRestore()
+
+    expect(mockBroadcastRoundManifest).toHaveBeenCalledWith(
+      expect.objectContaining({ tournamentId: 1, roundNrs: [] }),
+    )
   })
 
   it('does nothing when P2P is not active', async () => {

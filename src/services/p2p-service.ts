@@ -21,6 +21,7 @@ import type {
   PeerKickMessage,
   ResultAckMessage,
   ResultSubmitMessage,
+  RoundManifestMessage,
   SharedTournamentsMessage,
   ViewerSelectTournamentMessage,
 } from '../types/p2p.ts'
@@ -297,6 +298,7 @@ export class P2PService {
   onViewerSelectTournament:
     | ((message: ViewerSelectTournamentMessage, peerId: string) => void)
     | null = null
+  onRoundManifest: ((message: RoundManifestMessage) => void) | null = null
   private diagnosticLog: DiagnosticEntry[] = []
   private peers: Map<string, P2PPeer> = new Map()
   private room: Room | null = null
@@ -315,6 +317,7 @@ export class P2PService {
   private _sendHeartbeat: ActionSender<HeartbeatMessage> | null = null
   private _sendSharedTournaments: ActionSender<SharedTournamentsMessage> | null = null
   private _sendViewerSelectTournament: ActionSender<ViewerSelectTournamentMessage> | null = null
+  private _sendRoundManifest: ActionSender<RoundManifestMessage> | null = null
   private _reconnectAttempts = 0
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null
   private heartbeatTimeout: ReturnType<typeof setTimeout> | null = null
@@ -376,6 +379,7 @@ export class P2PService {
     this._sendHeartbeat = null
     this._sendSharedTournaments = null
     this._sendViewerSelectTournament = null
+    this._sendRoundManifest = null
     this.roomId = null
     this.clearHeartbeatTimers()
     this.clearReconnectTimer()
@@ -459,6 +463,14 @@ export class P2PService {
     const hostId = this.getObservedHostId()
     if (!hostId) return
     this._sendViewerSelectTournament?.(message, hostId)
+  }
+
+  broadcastRoundManifest(message: RoundManifestMessage): void {
+    this._sendRoundManifest?.(message, null)
+  }
+
+  sendRoundManifestTo(message: RoundManifestMessage, peerId: string): void {
+    this._sendRoundManifest?.(message, peerId)
   }
 
   kickPeer(peerId: string, reason?: string): void {
@@ -684,6 +696,7 @@ export class P2PService {
     this._sendHeartbeat = null
     this._sendSharedTournaments = null
     this._sendViewerSelectTournament = null
+    this._sendRoundManifest = null
     this.peers.clear()
     this.onPeersChange?.()
 
@@ -954,6 +967,15 @@ export class P2PService {
     this._sendViewerSelectTournament = sendViewerSelectTournament
     receiveViewerSelectTournament((data: ViewerSelectTournamentMessage, peerId: string) => {
       this.onViewerSelectTournament?.(data, peerId)
+    })
+
+    // Round manifest: host broadcasts authoritative round list after mutations,
+    // viewers reconcile cached rounds against it (dropping rounds no longer present).
+    const [sendRoundManifest, receiveRoundManifest] =
+      this.room.makeAction<RoundManifestMessage>('round-manifest')
+    this._sendRoundManifest = sendRoundManifest
+    receiveRoundManifest((data: RoundManifestMessage) => {
+      this.onRoundManifest?.(data)
     })
 
     // Kick: organizer sends to specific peer, that peer listens

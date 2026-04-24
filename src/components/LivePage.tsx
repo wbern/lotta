@@ -26,6 +26,7 @@ import type {
   PeerCountMessage,
   ResultAckMessage,
   ResultSubmitMessage,
+  RoundManifestMessage,
   SharedTournamentsMessage,
 } from '../types/p2p'
 import { ChatMessageItem } from './ChatMessageItem'
@@ -361,6 +362,33 @@ function LivePageInner({
     })
   }, [])
 
+  const handleRoundManifest = useCallback(
+    (msg: RoundManifestMessage) => {
+      const selectedId = selectedTournamentIdRef.current
+      if (selectedId != null && msg.tournamentId !== selectedId) return
+
+      const keep = new Set(msg.roundNrs)
+      setRounds((prev) => {
+        let changed = false
+        const next = new Map<number, Map<PageType, CachedPage>>()
+        for (const [roundNr, roundMap] of prev) {
+          if (keep.has(roundNr)) {
+            next.set(roundNr, roundMap)
+          } else {
+            changed = true
+            for (const pt of BROADCAST_PAGE_TYPES) {
+              localStorage.removeItem(cacheKey(normalizedRoom, pt, roundNr))
+            }
+          }
+        }
+        return changed ? next : prev
+      })
+      setSelectedRound((prev) => (prev != null && !keep.has(prev) ? null : prev))
+      setLatestRound((prev) => (prev != null && !keep.has(prev) ? null : prev))
+    },
+    [normalizedRoom],
+  )
+
   const handleResultAck = useCallback((msg: ResultAckMessage) => {
     setAckFeedback({
       boardNr: msg.boardNr,
@@ -398,6 +426,7 @@ function LivePageInner({
     serviceRef.current = service
     service.onPageUpdate = handlePageUpdate
     service.onSharedTournaments = handleSharedTournaments
+    service.onRoundManifest = handleRoundManifest
     service.onResultAck = handleResultAck
     const rpcProvider = createP2pClientProvider(service)
     service.onConnectionStateChange = (state) => {
@@ -460,6 +489,7 @@ function LivePageInner({
     normalizedRoom,
     handlePageUpdate,
     handleSharedTournaments,
+    handleRoundManifest,
     handleResultAck,
     isReferee,
     refereeToken,

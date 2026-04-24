@@ -6,6 +6,7 @@ import type {
   ChatMessage,
   PageUpdateMessage,
   ResultAckMessage,
+  RoundManifestMessage,
   SharedTournamentsMessage,
   ViewerSelectTournamentMessage,
 } from '../types/p2p'
@@ -21,6 +22,7 @@ let mockConstructorRole: string | null = null
 let mockConstructorToken: string | undefined = undefined
 let mockOnChatMessage: ((msg: ChatMessage, peerId: string) => void) | null = null
 let mockOnSharedTournaments: ((msg: SharedTournamentsMessage) => void) | null = null
+let mockOnRoundManifest: ((msg: RoundManifestMessage) => void) | null = null
 let mockSendViewerSelectCalls: ViewerSelectTournamentMessage[] = []
 const mockServiceRef: { current: { connectionState: string } | null } = { current: null }
 
@@ -106,6 +108,12 @@ vi.mock('../services/p2p-service', () => {
       get onSharedTournaments() {
         return mockOnSharedTournaments
       }
+      set onRoundManifest(cb: ((msg: RoundManifestMessage) => void) | null) {
+        mockOnRoundManifest = cb
+      }
+      get onRoundManifest() {
+        return mockOnRoundManifest
+      }
       sendViewerSelectTournament(msg: ViewerSelectTournamentMessage) {
         mockSendViewerSelectCalls.push(msg)
       }
@@ -132,6 +140,7 @@ describe('LivePage', () => {
     mockConstructorToken = undefined
     mockOnChatMessage = null
     mockOnSharedTournaments = null
+    mockOnRoundManifest = null
     mockSendViewerSelectCalls = []
     mockServiceRef.current = null
     mockPlaySound.mockClear()
@@ -522,6 +531,7 @@ describe('LivePage referee mode', () => {
     mockConstructorToken = undefined
     mockOnChatMessage = null
     mockOnSharedTournaments = null
+    mockOnRoundManifest = null
     mockSendViewerSelectCalls = []
     mockServiceRef.current = null
     mockPlaySound.mockClear()
@@ -810,6 +820,7 @@ describe('LivePage kiosk mode', () => {
     mockConstructorToken = undefined
     mockOnChatMessage = null
     mockOnSharedTournaments = null
+    mockOnRoundManifest = null
     mockSendViewerSelectCalls = []
     mockServiceRef.current = null
     mockPlaySound.mockClear()
@@ -942,6 +953,7 @@ describe('LivePage shared tournaments', () => {
     mockConstructorToken = undefined
     mockOnChatMessage = null
     mockOnSharedTournaments = null
+    mockOnRoundManifest = null
     mockSendViewerSelectCalls = []
     mockServiceRef.current = null
     mockPlaySound.mockClear()
@@ -1016,5 +1028,117 @@ describe('LivePage shared tournaments', () => {
 
     const select = screen.getByTestId('shared-tournaments-select')
     expect(select.className).toContain('shared-tournaments-select--flash')
+  })
+})
+
+describe('LivePage round manifest reconciliation', () => {
+  beforeEach(() => {
+    mockOnPageUpdate = null
+    mockOnResultAck = null
+    mockOnConnectionStateChange = null
+    mockJoinRoomCalls = []
+    mockLeaveCalled = false
+    mockSubmitResultCalls = []
+    mockConstructorRole = null
+    mockConstructorToken = undefined
+    mockOnChatMessage = null
+    mockOnSharedTournaments = null
+    mockOnRoundManifest = null
+    mockSendViewerSelectCalls = []
+    mockServiceRef.current = null
+    mockPlaySound.mockClear()
+    localStorage.clear()
+  })
+
+  it('drops cached rounds that are no longer in the host manifest', () => {
+    render(<LivePage roomCode="test" />)
+
+    act(() => {
+      mockOnPageUpdate?.({
+        pageType: 'pairings',
+        tournamentId: 1,
+        tournamentName: 'Cup',
+        roundNr: 1,
+        html: '<html>round 1</html>',
+        timestamp: Date.now(),
+      })
+    })
+    act(() => {
+      mockOnPageUpdate?.({
+        pageType: 'pairings',
+        tournamentId: 1,
+        tournamentName: 'Cup',
+        roundNr: 2,
+        html: '<html>round 2</html>',
+        timestamp: Date.now(),
+      })
+    })
+
+    const roundSelectBefore = document.querySelector(
+      'select.live-round-select',
+    ) as HTMLSelectElement | null
+    const roundValuesBefore = roundSelectBefore
+      ? Array.from(roundSelectBefore.options).map((o) => o.value)
+      : []
+    expect(roundValuesBefore).toEqual(['1', '2'])
+
+    // Host broadcasts a manifest that no longer contains round 1 (e.g. snapshot undo).
+    act(() => {
+      mockOnRoundManifest?.({
+        tournamentId: 1,
+        roundNrs: [2],
+        timestamp: Date.now(),
+      })
+    })
+
+    const roundSelectAfter = document.querySelector(
+      'select.live-round-select',
+    ) as HTMLSelectElement | null
+    const roundValuesAfter = roundSelectAfter
+      ? Array.from(roundSelectAfter.options).map((o) => o.value)
+      : []
+    // Selector hides when <2 rounds — so either no selector, or only round 2.
+    expect(roundValuesAfter).not.toContain('1')
+  })
+
+  it('clears all cached rounds when host broadcasts an empty manifest', () => {
+    render(<LivePage roomCode="test" />)
+
+    act(() => {
+      mockOnPageUpdate?.({
+        pageType: 'pairings',
+        tournamentId: 1,
+        tournamentName: 'Cup',
+        roundNr: 1,
+        html: '<html>round 1 html</html>',
+        timestamp: Date.now(),
+      })
+    })
+    act(() => {
+      mockOnPageUpdate?.({
+        pageType: 'pairings',
+        tournamentId: 1,
+        tournamentName: 'Cup',
+        roundNr: 2,
+        html: '<html>round 2 html</html>',
+        timestamp: Date.now(),
+      })
+    })
+
+    act(() => {
+      mockOnRoundManifest?.({
+        tournamentId: 1,
+        roundNrs: [],
+        timestamp: Date.now(),
+      })
+    })
+
+    const roundSelect = document.querySelector(
+      'select.live-round-select',
+    ) as HTMLSelectElement | null
+    expect(roundSelect).toBeNull()
+    // Cache entries removed from localStorage too.
+    expect(localStorage.getItem('lotta-p2p-test-pairings-r1')).toBeNull()
+    expect(localStorage.getItem('lotta-p2p-test-pairings-r2')).toBeNull()
   })
 })
