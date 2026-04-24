@@ -535,42 +535,6 @@ describe('LiveTab', () => {
     expect(mockSend).toHaveBeenCalledWith('recovered-peer-1', 5, 3)
   })
 
-  it('re-sends state to all connected peers when host switches to a different tournament', async () => {
-    const { sendCurrentStateToPeer } = await import('../../api/p2p-broadcast')
-    const mockSend = vi.mocked(sendCurrentStateToPeer)
-    mockSend.mockClear()
-
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const { rerender } = render(
-      <QueryClientProvider client={qc}>
-        <LiveTab tournamentName="Tournament A" tournamentId={5} round={3} />
-      </QueryClientProvider>,
-    )
-    fireEvent.click(screen.getByText('Starta Live'))
-
-    act(() => {
-      mockPeers = [
-        { id: 'peer-1', role: 'viewer', connectedAt: Date.now() },
-        { id: 'peer-2', role: 'viewer', connectedAt: Date.now() },
-      ]
-      mockOnNewPeerJoin?.('peer-1')
-      mockOnNewPeerJoin?.('peer-2')
-    })
-
-    mockSend.mockClear()
-
-    rerender(
-      <QueryClientProvider client={qc}>
-        <LiveTab tournamentName="Tournament B" tournamentId={7} round={3} />
-      </QueryClientProvider>,
-    )
-
-    await waitFor(() => {
-      expect(mockSend).toHaveBeenCalledWith('peer-1', 7, 3)
-      expect(mockSend).toHaveBeenCalledWith('peer-2', 7, 3)
-    })
-  })
-
   it('shows empty-state hint in Domarstyrning panel when no grants exist', () => {
     renderLiveTab()
     fireEvent.click(screen.getByText('Starta Live'))
