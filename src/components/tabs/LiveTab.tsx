@@ -242,10 +242,12 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   useDocumentTitle(unreadChat, `Live: ${tournamentName}`)
   useEffect(() => {
     const prevRound = roundRef.current
+    const prevTournamentId = tournamentIdRef.current
     tournamentIdRef.current = tournamentId
     roundRef.current = round
     setLiveContext({ tournamentId, round: round ?? null })
-    if (round != null && round !== prevRound && serviceRef.current) {
+    const changed = round !== prevRound || tournamentId !== prevTournamentId
+    if (round != null && changed && serviceRef.current) {
       for (const peer of serviceRef.current.getPeers()) {
         sendCurrentStateToPeer(peer.id, tournamentId, round)
       }
