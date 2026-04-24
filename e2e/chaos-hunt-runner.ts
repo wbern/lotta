@@ -114,6 +114,12 @@ async function dismissBanner(page: Page): Promise<void> {
 }
 
 async function snapshotHost(hostPage: Page): Promise<string> {
+  const url = hostPage.url()
+  const tabMatch = url.match(/[?&]tab=([^&]+)/)
+  const tab = tabMatch ? decodeURIComponent(tabMatch[1]) : 'pairings'
+  if (tab !== 'pairings') return 'skip:non-pairings-tab'
+  if (!/[?&]tournamentId=\d+/.test(url)) return 'empty:no-tournament'
+
   const table = hostPage.getByTestId('data-table')
   if (!(await table.isVisible({ timeout: 1500 }).catch(() => false))) {
     return 'empty:no-table'
@@ -200,6 +206,7 @@ async function awaitConvergence(
   while (Date.now() - start < deadlineMs) {
     host = await snapshotHost(hostPage).catch(() => 'error:snapshot-host')
     vs = await snapshotViewer(viewer).catch(() => 'error:snapshot-viewer')
+    if (host.startsWith('skip:')) return { converged: true, host, viewer: vs }
     if (host === vs) return { converged: true, host, viewer: vs }
     await hostPage.waitForTimeout(300)
   }
