@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/wbern/lotta/compare/v1.2.0...v1.2.1) (2026-04-24)
+
+
+### Bug Fixes
+
+* **publish:** group alphabetical pairings by club in non-chess4 mode ([f2d8444](https://github.com/wbern/lotta/commit/f2d8444c640c917f08b4b7c03ddfc6954567e3d6))
+
 # [1.2.0](https://github.com/wbern/lotta/compare/v1.1.3...v1.2.0) (2026-04-24)
 
 
