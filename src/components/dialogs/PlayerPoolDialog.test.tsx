@@ -92,6 +92,58 @@ describe('PlayerPoolDialog add validation', () => {
   })
 })
 
+describe('PlayerPoolDialog discard-changes confirm', () => {
+  it('shows a confirm dialog when double-clicking a player while the edit form has unsaved input', () => {
+    renderDialog()
+
+    fireEvent.click(screen.getByText('Skapa eller editera spelare'))
+    fireEvent.change(screen.getByTestId('first-name-input'), { target: { value: 'Pending' } })
+    fireEvent.click(screen.getByText('Spelarpool'))
+
+    fireEvent.doubleClick(screen.getByText('Anna Svensson'))
+
+    expect(screen.getByText('Osparade ändringar')).toBeTruthy()
+  })
+
+  it('discards the pending changes and loads the chosen player when confirming', () => {
+    renderDialog()
+
+    fireEvent.click(screen.getByText('Skapa eller editera spelare'))
+    fireEvent.change(screen.getByTestId('first-name-input'), { target: { value: 'Pending' } })
+    fireEvent.click(screen.getByText('Spelarpool'))
+    fireEvent.doubleClick(screen.getByText('Anna Svensson'))
+
+    fireEvent.click(screen.getByText('OK'))
+
+    expect(screen.queryByText('Osparade ändringar')).toBeNull()
+    expect((screen.getByTestId('first-name-input') as HTMLInputElement).value).toBe('Anna')
+  })
+
+  it('keeps the in-progress form when cancelling', () => {
+    renderDialog()
+
+    fireEvent.click(screen.getByText('Skapa eller editera spelare'))
+    fireEvent.change(screen.getByTestId('first-name-input'), { target: { value: 'Pending' } })
+    fireEvent.click(screen.getByText('Spelarpool'))
+    fireEvent.doubleClick(screen.getByText('Anna Svensson'))
+
+    fireEvent.click(screen.getByText('Cancel'))
+
+    expect(screen.queryByText('Osparade ändringar')).toBeNull()
+    fireEvent.click(screen.getByText('Skapa eller editera spelare'))
+    expect((screen.getByTestId('first-name-input') as HTMLInputElement).value).toBe('Pending')
+  })
+
+  it('does not prompt when the form is clean (double-click loads immediately)', () => {
+    renderDialog()
+
+    fireEvent.doubleClick(screen.getByText('Anna Svensson'))
+
+    expect(screen.queryByText('Osparade ändringar')).toBeNull()
+    expect((screen.getByTestId('first-name-input') as HTMLInputElement).value).toBe('Anna')
+  })
+})
+
 describe('PlayerPoolDialog reset on reopen', () => {
   it('returns to a fresh form on the pool tab when the dialog is reopened after editing a player', () => {
     const { rerender } = render(<PlayerPoolDialog open onClose={vi.fn()} />)

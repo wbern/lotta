@@ -176,6 +176,9 @@ export const sv = {
     poolNote:
       'Not: Spelare från spelarpoolen KOPIERAS in i turneringen. Det betyder att editera en turneringsspelare påverkar inte spelaren i spelarpoolen.',
     editPoolTitle: 'Ändra i spelarpool',
+    discardChangesTitle: 'Osparade ändringar',
+    discardChangesMessage:
+      'Du har osparade ändringar i formuläret. Ladda vald spelare och kasta dina ändringar?',
   },
   club: {
     enterName: 'Ange klubbnamn:',

@@ -11,6 +11,7 @@ import { useTableSort } from '../../hooks/useTableSort'
 import { sv } from '../../lib/swedish-text'
 import type { PlayerDto } from '../../types/api'
 import { SortableHeader } from '../SortableHeader'
+import { ConfirmDialog } from './ConfirmDialog'
 import { Dialog } from './Dialog'
 import { PlayerEditor } from './PlayerEditor'
 
@@ -53,6 +54,8 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
   const [isNew, setIsNew] = useState(true)
   const [activeTab, setActiveTab] = useState<'edit' | 'pool'>('pool')
   const [nameError, setNameError] = useState('')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [pendingPlayer, setPendingPlayer] = useState<PlayerDto | null>(null)
 
   const wasOpen = useRef(open)
   useEffect(() => {
@@ -62,6 +65,8 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
       setIsNew(true)
       setActiveTab('pool')
       setNameError('')
+      setHasUnsavedChanges(false)
+      setPendingPlayer(null)
     }
     wasOpen.current = open
   }, [open])
@@ -210,6 +215,7 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
             clubs={clubs || []}
             onChange={(p) => {
               setEditPlayer(p)
+              setHasUnsavedChanges(true)
               if (nameError) setNameError('')
             }}
             nameError={nameError}
@@ -276,6 +282,10 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
                 onMouseDown={shiftSelectMouseDown}
                 onClick={(e) => handleSelectPlayer(p, e)}
                 onDoubleClick={(e) => {
+                  if (hasUnsavedChanges && !selectedIds.has(p.id)) {
+                    setPendingPlayer(p)
+                    return
+                  }
                   handleSelectPlayer(p, e)
                   setActiveTab('edit')
                 }}
@@ -293,6 +303,23 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
           </tbody>
         </table>
       )}
+      <ConfirmDialog
+        open={pendingPlayer !== null}
+        title={sv.player.discardChangesTitle}
+        message={sv.player.discardChangesMessage}
+        onConfirm={() => {
+          if (pendingPlayer) {
+            setSelectedIds(new Set([pendingPlayer.id]))
+            setEditPlayer({ ...pendingPlayer })
+            setIsNew(false)
+            setActiveTab('edit')
+            setHasUnsavedChanges(false)
+            setNameError('')
+          }
+          setPendingPlayer(null)
+        }}
+        onCancel={() => setPendingPlayer(null)}
+      />
     </Dialog>
   )
 }

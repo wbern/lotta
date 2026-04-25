@@ -13,6 +13,7 @@ import {
 import { sv } from '../../lib/swedish-text'
 import type { PlayerDto } from '../../types/api'
 import { SortableHeader } from '../SortableHeader'
+import { ConfirmDialog } from './ConfirmDialog'
 import { Dialog } from './Dialog'
 import { PlayerEditor } from './PlayerEditor'
 
@@ -62,6 +63,8 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
   const [isNew, setIsNew] = useState(true)
   const [activeTab, setActiveTab] = useState<'edit' | 'tournament' | 'pool'>('tournament')
   const [nameError, setNameError] = useState('')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [pendingPlayer, setPendingPlayer] = useState<PlayerDto | null>(null)
 
   const wasOpen = useRef(open)
   useEffect(() => {
@@ -72,6 +75,8 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
       setIsNew(true)
       setActiveTab('tournament')
       setNameError('')
+      setHasUnsavedChanges(false)
+      setPendingPlayer(null)
     }
     wasOpen.current = open
   }, [open])
@@ -289,6 +294,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
             clubs={clubs || []}
             onChange={(p) => {
               setEditPlayer(p)
+              setHasUnsavedChanges(true)
               if (nameError) setNameError('')
             }}
             nameError={nameError}
@@ -357,6 +363,10 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                   onMouseDown={tournamentShiftSelect.handleMouseDown}
                   onClick={(e) => handleSelectTournamentPlayer(p, e)}
                   onDoubleClick={(e) => {
+                    if (hasUnsavedChanges && !selectedTournamentPlayers.has(p.id)) {
+                      setPendingPlayer(p)
+                      return
+                    }
                     handleSelectTournamentPlayer(p, e)
                     setActiveTab('edit')
                   }}
@@ -431,6 +441,24 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
           </table>
         </>
       )}
+      <ConfirmDialog
+        open={pendingPlayer !== null}
+        title={sv.player.discardChangesTitle}
+        message={sv.player.discardChangesMessage}
+        onConfirm={() => {
+          if (pendingPlayer) {
+            setSelectedTournamentPlayers(new Set([pendingPlayer.id]))
+            setSelectedPoolPlayers(new Set())
+            setEditPlayer({ ...pendingPlayer })
+            setIsNew(false)
+            setActiveTab('edit')
+            setHasUnsavedChanges(false)
+            setNameError('')
+          }
+          setPendingPlayer(null)
+        }}
+        onCancel={() => setPendingPlayer(null)}
+      />
     </Dialog>
   )
 }
