@@ -1,3 +1,10 @@
+## [1.4.6](https://github.com/wbern/lotta/compare/v1.4.5...v1.4.6) (2026-04-25)
+
+
+### Bug Fixes
+
+* **ux:** suppress browser text selection on shift+click row range ([d4680f4](https://github.com/wbern/lotta/commit/d4680f49976a9cbaca2abef0a745c2634772c800))
+
 ## [1.4.5](https://github.com/wbern/lotta/compare/v1.4.4...v1.4.5) (2026-04-25)
 
 
