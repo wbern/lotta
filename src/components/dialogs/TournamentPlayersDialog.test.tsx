@@ -104,6 +104,37 @@ describe('TournamentPlayersDialog reset button', () => {
   })
 })
 
+describe('TournamentPlayersDialog reset on reopen', () => {
+  it('returns to a fresh form on the tournament tab when the dialog is reopened after editing a player', () => {
+    const { rerender } = render(
+      <TournamentPlayersDialog open tournamentId={1} tournamentName="Test" onClose={vi.fn()} />,
+    )
+
+    fireEvent.click(screen.getByText('Erik Johansson'))
+    fireEvent.click(screen.getByText('Skapa eller editera spelare'))
+    expect((screen.getByTestId('first-name-input') as HTMLInputElement).value).toBe('Erik')
+
+    rerender(
+      <TournamentPlayersDialog
+        open={false}
+        tournamentId={1}
+        tournamentName="Test"
+        onClose={vi.fn()}
+      />,
+    )
+    rerender(
+      <TournamentPlayersDialog open tournamentId={1} tournamentName="Test" onClose={vi.fn()} />,
+    )
+
+    expect(screen.queryByTestId('first-name-input')).toBeNull()
+    expect(screen.getByTestId('data-table')).toBeTruthy()
+    const rows = screen.getByTestId('data-table').querySelectorAll('tbody tr')
+    for (const row of rows) {
+      expect(row.className).not.toContain('selected')
+    }
+  })
+})
+
 describe('TournamentPlayersDialog update validation', () => {
   it('shows error when updating player with empty names', () => {
     renderDialog()

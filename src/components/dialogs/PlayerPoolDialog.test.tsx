@@ -92,6 +92,26 @@ describe('PlayerPoolDialog add validation', () => {
   })
 })
 
+describe('PlayerPoolDialog reset on reopen', () => {
+  it('returns to a fresh form on the pool tab when the dialog is reopened after editing a player', () => {
+    const { rerender } = render(<PlayerPoolDialog open onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('Anna Svensson'))
+    fireEvent.click(screen.getByText('Skapa eller editera spelare'))
+    expect((screen.getByTestId('first-name-input') as HTMLInputElement).value).toBe('Anna')
+
+    rerender(<PlayerPoolDialog open={false} onClose={vi.fn()} />)
+    rerender(<PlayerPoolDialog open onClose={vi.fn()} />)
+
+    expect(screen.queryByTestId('first-name-input')).toBeNull()
+    expect(screen.getByTestId('data-table')).toBeTruthy()
+    const rows = screen.getByTestId('data-table').querySelectorAll('tbody tr')
+    for (const row of rows) {
+      expect(row.className).not.toContain('selected')
+    }
+  })
+})
+
 describe('PlayerPoolDialog multi-select', () => {
   it('plain click selects only that pool player', () => {
     renderDialog()

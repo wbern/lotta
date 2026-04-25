@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAddClub, useClubs, useDeleteClub, useRenameClub } from '../../hooks/useClubs'
 import {
   useAddPoolPlayer,
@@ -53,6 +53,18 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
   const [isNew, setIsNew] = useState(true)
   const [activeTab, setActiveTab] = useState<'edit' | 'pool'>('pool')
   const [nameError, setNameError] = useState('')
+
+  const wasOpen = useRef(open)
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      setSelectedIds(new Set())
+      setEditPlayer({ ...emptyPlayer })
+      setIsNew(true)
+      setActiveTab('pool')
+      setNameError('')
+    }
+    wasOpen.current = open
+  }, [open])
 
   const getValue = useCallback((p: PlayerDto, col: string): string | number | null => {
     if (col === 'name') return `${p.firstName}, ${p.lastName}`

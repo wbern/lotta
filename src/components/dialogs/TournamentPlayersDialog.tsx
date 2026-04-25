@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAddClub, useClubs, useDeleteClub, useRenameClub } from '../../hooks/useClubs'
 import { usePoolPlayers } from '../../hooks/usePlayers'
 import { useShiftSelect } from '../../hooks/useShiftSelect'
@@ -62,6 +62,19 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
   const [isNew, setIsNew] = useState(true)
   const [activeTab, setActiveTab] = useState<'edit' | 'tournament' | 'pool'>('tournament')
   const [nameError, setNameError] = useState('')
+
+  const wasOpen = useRef(open)
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      setSelectedTournamentPlayers(new Set())
+      setSelectedPoolPlayers(new Set())
+      setEditPlayer({ ...emptyPlayer })
+      setIsNew(true)
+      setActiveTab('tournament')
+      setNameError('')
+    }
+    wasOpen.current = open
+  }, [open])
 
   // Available = pool players not already in tournament.
   // Pool and tournament tables have independent auto-increment IDs, so we match
