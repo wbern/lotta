@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/wbern/lotta/compare/v1.4.7...v1.5.0) (2026-04-25)
+
+
+### Features
+
+* **player-form:** confirm before discarding unsaved input on double-click ([e68314a](https://github.com/wbern/lotta/commit/e68314a1ce93442dada3ee97c560097efe45d0ae))
+
 ## [1.4.7](https://github.com/wbern/lotta/compare/v1.4.6...v1.4.7) (2026-04-25)
 
 
