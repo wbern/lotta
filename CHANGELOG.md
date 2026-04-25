@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/wbern/lotta/compare/v1.5.0...v1.6.0) (2026-04-25)
+
+
+### Features
+
+* **tournament-lock:** lock destructive settings and gate deletion past draft ([c54d113](https://github.com/wbern/lotta/commit/c54d113eaee13080107a0d5f5e5bf28a2a8e7caa))
+
 # [1.5.0](https://github.com/wbern/lotta/compare/v1.4.7...v1.5.0) (2026-04-25)
 
 
