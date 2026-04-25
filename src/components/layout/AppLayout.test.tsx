@@ -46,9 +46,10 @@ vi.mock('../dialogs/RollbackDialog', () => ({ RollbackDialog: () => null }))
 const mockSearch: { tournamentId?: number; round?: number; tab?: string } = {
   tournamentId: 1,
 }
+const mockNavigate = vi.fn()
 vi.mock('@tanstack/react-router', () => ({
   useSearch: () => mockSearch,
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
   Outlet: () => null,
 }))
 
@@ -109,6 +110,7 @@ vi.mock('../../hooks/useKeyboardShortcuts', () => ({
 
 afterEach(() => {
   cleanup()
+  mockNavigate.mockClear()
   // Reset search params
   mockSearch.round = undefined
   mockSearch.tab = undefined
@@ -134,6 +136,27 @@ describe('AppLayout round prop', () => {
     render(<AppLayout />)
 
     expect(tabPanelProps.round).toBe(2)
+  })
+})
+
+describe('AppLayout pairing focus', () => {
+  it('clears explicit round and switches to pairings tab when MenuBar reports a successful pairing', () => {
+    mockSearch.tournamentId = 1
+    mockSearch.round = 2
+    mockSearch.tab = 'standings'
+
+    render(<AppLayout />)
+
+    const onPaired = menuBarProps.onPaired as () => void
+    expect(onPaired).toBeDefined()
+    act(() => {
+      onPaired()
+    })
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/',
+      search: { tournamentId: 1, round: undefined, tab: 'pairings' },
+    })
   })
 })
 

@@ -34,6 +34,7 @@ interface Props {
   onUnpair?: () => void
   onCheckUpdates?: () => void
   onRollback?: () => void
+  onPaired?: () => void
 }
 
 export function MenuBar({
@@ -65,6 +66,7 @@ export function MenuBar({
   onUnpair,
   onCheckUpdates,
   onRollback,
+  onPaired,
 }: Props) {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [showAbout, setShowAbout] = useState(false)
@@ -159,7 +161,10 @@ export function MenuBar({
               onClick={() =>
                 action(() =>
                   pairMutation.mutate(undefined, {
-                    onSuccess: () => setPairError(''),
+                    onSuccess: () => {
+                      setPairError('')
+                      onPaired?.()
+                    },
                     onError: (err) => setPairError(err.message),
                   }),
                 )

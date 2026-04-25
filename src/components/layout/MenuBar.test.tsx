@@ -267,3 +267,20 @@ describe('MenuBar pairing error', () => {
     expect(screen.queryByText('Kan inte lotta')).toBeNull()
   })
 })
+
+describe('MenuBar pairing success callback', () => {
+  it('invokes onPaired when pairing succeeds', () => {
+    let capturedOpts: { onSuccess?: () => void } = {}
+    mockPairMutate.mockImplementation((_: unknown, opts: { onSuccess?: () => void }) => {
+      capturedOpts = opts
+    })
+    const onPaired = vi.fn()
+    render(<MenuBar tournamentId={1} roundNr={undefined} onPaired={onPaired} />)
+
+    openMenu('Lotta')
+    fireEvent.click(screen.getByText('Lotta nästa rond'))
+    act(() => capturedOpts.onSuccess?.())
+
+    expect(onPaired).toHaveBeenCalledTimes(1)
+  })
+})

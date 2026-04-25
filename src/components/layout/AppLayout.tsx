@@ -428,6 +428,9 @@ export function AppLayout() {
         onUnpair={() => setShowUnpairConfirm(true)}
         onCheckUpdates={handleCheckUpdates}
         onRollback={() => setShowRollbackDialog(true)}
+        onPaired={() =>
+          navigate({ to: '/', search: { tournamentId, round: undefined, tab: 'pairings' } })
+        }
       />
       {actionError && (
         <div
