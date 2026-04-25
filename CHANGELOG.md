@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/wbern/lotta/compare/v1.4.1...v1.4.2) (2026-04-25)
+
+
+### Bug Fixes
+
+* **live:** stop overriding document title when not hosting ([9594f8d](https://github.com/wbern/lotta/commit/9594f8d94e852ff2a755a27b6374218ab471c9e2))
+
 ## [1.4.1](https://github.com/wbern/lotta/compare/v1.4.0...v1.4.1) (2026-04-25)
 
 
