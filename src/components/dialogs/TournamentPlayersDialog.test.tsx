@@ -95,11 +95,11 @@ describe('TournamentPlayersDialog default sort', () => {
 })
 
 describe('TournamentPlayersDialog reset button', () => {
-  it('shows "Återställ" button label instead of "Ny spelare"', () => {
+  it('shows "Rensa formulär (ny spelarinmatning)" button label instead of "Ny spelare"', () => {
     renderDialog()
     fireEvent.click(screen.getByText('Skapa eller editera spelare'))
 
-    expect(screen.getByText('Återställ')).toBeTruthy()
+    expect(screen.getByText('Rensa formulär (ny spelarinmatning)')).toBeTruthy()
     expect(screen.queryByText('Ny spelare')).toBeNull()
   })
 })

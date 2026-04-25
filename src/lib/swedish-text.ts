@@ -168,7 +168,7 @@ export const sv = {
     blitzELO: 'Blixt-ELO',
     kFactor: 'K-faktor',
     nameRequired: 'Spelare måste ha förnamn eller efternamn.',
-    reset: 'Återställ',
+    reset: 'Rensa formulär (ny spelarinmatning)',
     mainTab: 'Allmänt',
     fideTab: 'FIDE',
     otherTab: 'Övrigt',
