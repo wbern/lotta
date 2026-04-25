@@ -71,4 +71,28 @@ describe('useDocumentTitle', () => {
     unmount()
     expect(document.title).toBe('Lotta')
   })
+
+  it('does not touch the document title when disabled', () => {
+    document.title = 'Lotta'
+    renderHook(() => useDocumentTitle(0, 'Live: Höstturneringen', false))
+    expect(document.title).toBe('Lotta')
+  })
+
+  it('does not flash or set a count badge when disabled', () => {
+    document.title = 'Lotta'
+    renderHook(() => useDocumentTitle(5, 'Live: Höstturneringen', false))
+    expect(document.title).toBe('Lotta')
+  })
+
+  it('restores the original title when transitioning from enabled to disabled', () => {
+    document.title = 'Lotta'
+    const { rerender } = renderHook(
+      ({ enabled }) => useDocumentTitle(2, 'Live: Höstturneringen', enabled),
+      { initialProps: { enabled: true } },
+    )
+    expect(document.title).toBe('(2) Live: Höstturneringen')
+
+    rerender({ enabled: false })
+    expect(document.title).toBe('Lotta')
+  })
 })

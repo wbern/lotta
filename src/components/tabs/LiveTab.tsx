@@ -255,7 +255,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     return generateClubCodeMap(allClubEntries, clubCodeSecret)
   }, [allClubEntries, clubCodeSecret])
 
-  useDocumentTitle(unreadChat, `Live: ${tournamentName}`)
+  useDocumentTitle(unreadChat, `Live: ${tournamentName}`, isHosting)
   useEffect(() => {
     const prevRound = roundRef.current
     tournamentIdRef.current = tournamentId
