@@ -86,7 +86,11 @@ export function PairingsTab({
   const singleSelected = selectedBoards.size === 1 ? [...selectedBoards][0] : null
 
   const getBoardNr = useCallback((g: GameDto) => g.boardNr, [])
-  const { handleClick: shiftSelectClick } = useShiftSelect(games, setSelectedBoards, getBoardNr)
+  const { handleClick: shiftSelectClick, handleMouseDown: shiftSelectMouseDown } = useShiftSelect(
+    games,
+    setSelectedBoards,
+    getBoardNr,
+  )
 
   const toggleBoard = useCallback(
     (boardNr: number, event: React.MouseEvent) => {
@@ -265,6 +269,7 @@ export function PairingsTab({
                 key={game.boardNr}
                 data-board-nr={game.boardNr}
                 className={selectedBoards.has(game.boardNr) ? 'selected' : ''}
+                onMouseDown={shiftSelectMouseDown}
                 onClick={(e) => {
                   toggleBoard(game.boardNr, e)
                   e.currentTarget.focus()

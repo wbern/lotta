@@ -6,8 +6,15 @@ export function useShiftSelect<T>(
   getKey: (item: T) => number = (item) => (item as { id: number }).id,
 ): {
   handleClick: (id: number, event: React.MouseEvent) => void
+  handleMouseDown: (event: React.MouseEvent) => void
 } {
   const lastClickedId = useRef<number | null>(null)
+
+  // Shift+click would otherwise start a browser text-range selection on
+  // mousedown; suppressing the default keeps only the row highlight.
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    if (event.shiftKey) event.preventDefault()
+  }, [])
 
   const handleClick = useCallback(
     (id: number, event: React.MouseEvent) => {
@@ -38,5 +45,5 @@ export function useShiftSelect<T>(
     [sortedItems, setSelectedIds, getKey],
   )
 
-  return { handleClick }
+  return { handleClick, handleMouseDown }
 }

@@ -68,7 +68,10 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
     getValue,
   )
 
-  const { handleClick: shiftSelectClick } = useShiftSelect(sorted, setSelectedIds)
+  const { handleClick: shiftSelectClick, handleMouseDown: shiftSelectMouseDown } = useShiftSelect(
+    sorted,
+    setSelectedIds,
+  )
 
   const handleSelectPlayer = (p: PlayerDto, event: React.MouseEvent) => {
     shiftSelectClick(p.id, event)
@@ -258,6 +261,7 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
               <tr
                 key={p.id}
                 className={selectedIds.has(p.id) ? 'selected' : ''}
+                onMouseDown={shiftSelectMouseDown}
                 onClick={(e) => handleSelectPlayer(p, e)}
                 onDoubleClick={(e) => {
                   handleSelectPlayer(p, e)

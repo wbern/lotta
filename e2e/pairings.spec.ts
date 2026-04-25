@@ -279,6 +279,27 @@ test.describe('Keyboard navigation in pairings table', () => {
     // Board 1 must remain blank — focus moved before v was pressed
     await expect(page.getByTestId('result-dropdown-1')).not.toContainText('1-0')
   })
+
+  test('shift+click range-selects rows without leaving a browser text selection, and keyboard nav still works', async ({
+    page,
+  }) => {
+    const rows = await seedAndOpen(page)
+
+    await rows.nth(0).click()
+    await rows.nth(2).click({ modifiers: ['Shift'] })
+
+    await expect(rows.nth(0)).toHaveClass(/selected/)
+    await expect(rows.nth(1)).toHaveClass(/selected/)
+    await expect(rows.nth(2)).toHaveClass(/selected/)
+
+    // Browser text-range selection must not appear: preventDefault on shift+mousedown
+    // stops the native drag-select from ever starting.
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBeFalsy()
+
+    // Focus must still land on the shift-clicked row so arrow-key nav keeps working.
+    await page.keyboard.press('ArrowDown')
+    await expect(rows.nth(3)).toHaveClass(/selected/)
+  })
 })
 
 test.describe('Withdrawal: player drops after round 2', () => {

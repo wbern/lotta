@@ -341,6 +341,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                 <tr
                   key={p.id}
                   className={selectedTournamentPlayers.has(p.id) ? 'selected' : ''}
+                  onMouseDown={tournamentShiftSelect.handleMouseDown}
                   onClick={(e) => handleSelectTournamentPlayer(p, e)}
                   onDoubleClick={(e) => {
                     handleSelectTournamentPlayer(p, e)
@@ -400,6 +401,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                 <tr
                   key={p.id}
                   className={selectedPoolPlayers.has(p.id) ? 'selected' : ''}
+                  onMouseDown={poolShiftSelect.handleMouseDown}
                   onClick={(e) => handleSelectPoolPlayer(p.id, e)}
                   style={{ cursor: 'pointer' }}
                 >
