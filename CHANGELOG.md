@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/wbern/lotta/compare/v1.4.0...v1.4.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* **publish:** show actual board number in alphabetical pairings print ([e7cd006](https://github.com/wbern/lotta/commit/e7cd006ea93bb371995771383f6a0306bf8636bb))
+
 # [1.4.0](https://github.com/wbern/lotta/compare/v1.3.0...v1.4.0) (2026-04-24)
 
 
