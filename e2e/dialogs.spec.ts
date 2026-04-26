@@ -34,7 +34,7 @@ test.describe('Settings dialog', () => {
     const dialog = page.getByTestId('dialog-overlay')
     await expect(dialog.getByText('Namnvisning')).toBeVisible()
 
-    const nameSelect = dialog.locator('select')
+    const nameSelect = dialog.getByTestId('name-presentation-select')
     await expect(nameSelect).toBeVisible()
 
     // Two options: "Förnamn efternamn" and "Efternamn förnamn"
@@ -125,7 +125,7 @@ test.describe('Settings dialog', () => {
     await page.getByTestId('menu-dropdown').getByText('Inställningar').click()
 
     const dialog = page.getByTestId('dialog-overlay')
-    const nameSelect = dialog.locator('select')
+    const nameSelect = dialog.getByTestId('name-presentation-select')
 
     await nameSelect.selectOption('LAST_FIRST')
     await expect(nameSelect).toHaveValue('LAST_FIRST')
@@ -212,16 +212,19 @@ test.describe('Settings dialog', () => {
     // Click confirm — this deletes IndexedDB and reloads the page
     await confirmBtn.click()
 
-    // Page reloads — wait for it to settle
-    await page.waitForURL('/')
+    // After reload, no tournaments should exist — wait for the cleared state to be observable.
+    // We can't use `waitForURL('/')` because the URL preserves `?tournamentId=N` across reload.
+    await page.waitForFunction(
+      () => {
+        const select = document.querySelector(
+          '[data-testid="tournament-selector"] select',
+        ) as HTMLSelectElement | null
+        return select !== null && select.options.length <= 1
+      },
+      undefined,
+      { timeout: 15000 },
+    )
     await expect(page.getByTestId('menu-bar')).toBeVisible()
-
-    // After reload, no tournaments should exist — the selector should show the placeholder
-    const selector = page.getByTestId('tournament-selector').locator('select').first()
-    const options = selector.locator('option')
-    // Only the default placeholder option should remain (no tournaments)
-    const optionCount = await options.count()
-    expect(optionCount).toBeLessThanOrEqual(1)
   })
 
   test('clear database confirmation dialog: Avbryt closes without clearing', async ({ page }) => {
@@ -238,8 +241,11 @@ test.describe('Settings dialog', () => {
     // Confirmation dialog appears
     await expect(page.getByTestId('clear-db-input')).toBeVisible()
 
-    // Click Avbryt
-    await page.getByRole('button', { name: 'Avbryt' }).last().click()
+    // Click Avbryt within the clear-db confirmation overlay (the inner, topmost overlay).
+    // ClearDatabaseDialog is rendered nested inside SettingsDialog (no portal), so `.last()`
+    // selects the inner overlay; click within scopes Avbryt to that dialog's footer.
+    const clearDbOverlay = page.getByTestId('dialog-overlay').last()
+    await clearDbOverlay.getByRole('button', { name: 'Avbryt' }).click()
 
     // Confirmation dialog should close, settings dialog still visible
     await expect(page.getByTestId('clear-db-input')).not.toBeVisible()

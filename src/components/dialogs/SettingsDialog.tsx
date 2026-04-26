@@ -73,6 +73,7 @@ export function SettingsDialog({ open, onClose }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <span>Namnvisning</span>
         <select
+          data-testid="name-presentation-select"
           value={playerPresentation}
           onChange={(e) => setPlayerPresentation(e.target.value)}
           style={{ marginLeft: 'auto' }}
