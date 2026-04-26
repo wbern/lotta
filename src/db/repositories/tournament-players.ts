@@ -106,6 +106,17 @@ export class TournamentPlayerRepository {
   }
 
   remove(id: number): void {
+    const refs = this.db.exec(
+      'SELECT COUNT(*) FROM tournamentgames WHERE whiteplayer = ? OR blackplayer = ?',
+      [id, id],
+    )
+    const referencingGames = (refs[0]?.values[0][0] as number) ?? 0
+    if (referencingGames > 0) {
+      throw new Error(
+        `Cannot remove player ${id}: ${referencingGames} game(s) reference them. ` +
+          `Withdraw the player instead via withdrawnFromRound.`,
+      )
+    }
     this.db.run('DELETE FROM tournamentplayers WHERE "index" = ?', [id])
   }
 

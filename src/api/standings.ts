@@ -32,6 +32,11 @@ function buildStandingsInput(tournamentId: number, round?: number): StandingsInp
   const presentation: NamePresentation =
     settings.playerPresentation === 'LAST_FIRST' ? 'LAST_FIRST' : 'FIRST_LAST'
 
+  // Iterates ALL currently-registered players, not just those who existed
+  // when round `roundNr` was paired. Late-add players therefore appear in
+  // historical round standings as 0-score rows (no game, no opponent, no WO)
+  // — port-faithful to legacy Lotta (`cp/api/dto/DtoMapper.toStandings` +
+  // `cp/Player.getScore(round)` produce the same phantom-row shape).
   const players = db.tournamentPlayers.list(tournamentId)
   const rounds = db.games.listRounds(tournamentId)
 

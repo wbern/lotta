@@ -96,6 +96,15 @@ export default defineConfig({
     ...(runningStress
       ? [{ name: 'determinism-stress', testMatch: 'determinism-stress.spec.ts' }]
       : []),
+    { name: 'seed-corruption', testMatch: 'seed-corruption.spec.ts' },
+    { name: 'curl-progression', testMatch: 'curl-progression.spec.ts' },
+    { name: 'publish-bug-repro', testMatch: 'publish-bug-repro.spec.ts' },
+    { name: 'tourney-probe', testMatch: 'tourney-probe.spec.ts' },
+    { name: 'late-add-reshuffle', testMatch: 'late-add-reshuffle.spec.ts' },
+    {
+      name: 'late-add-determinism-probe',
+      testMatch: 'late-add-determinism-probe.spec.ts',
+    },
     ...(runningP2P
       ? [
           { name: 'p2p', testMatch: 'p2p.spec.ts', use: p2pUse },

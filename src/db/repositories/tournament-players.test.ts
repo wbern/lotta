@@ -74,4 +74,18 @@ describe('TournamentPlayerRepository', () => {
     expect(list).toHaveLength(1)
     expect(list[0].lastName).toBe('Carlsson')
   })
+
+  it('refuses to remove a player still referenced by a game', () => {
+    const p1 = tournamentPlayers.add(tournamentId, { lastName: 'Andersson', firstName: 'Erik' })
+    const p2 = tournamentPlayers.add(tournamentId, { lastName: 'Bergström', firstName: 'Anna' })
+    db.run(
+      `INSERT INTO tournamentgames
+        (tournament, round, boardnr, whiteplayer, blackplayer, resulttype, whitescore, blackscore)
+        VALUES (?, 1, 1, ?, ?, 0, 0, 0)`,
+      [tournamentId, p1.id, p2.id],
+    )
+
+    expect(() => tournamentPlayers.remove(p1.id)).toThrow(/Cannot remove player/)
+    expect(tournamentPlayers.get(p1.id)).not.toBeNull()
+  })
 })
