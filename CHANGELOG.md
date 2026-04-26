@@ -1,3 +1,10 @@
+## [1.7.3](https://github.com/wbern/lotta/compare/v1.7.2...v1.7.3) (2026-04-26)
+
+
+### Bug Fixes
+
+* **p2p:** surface failure on reconnect drop and tolerate legacy acks ([bf1913f](https://github.com/wbern/lotta/commit/bf1913fbc512842133b09ac26308aa88a210d2a5))
+
 ## [1.7.2](https://github.com/wbern/lotta/compare/v1.7.1...v1.7.2) (2026-04-26)
 
 
