@@ -375,7 +375,10 @@ export class P2PService {
     if (this.beforeUnloadHandler) return
     if (typeof window === 'undefined') return
     this.beforeUnloadHandler = (e) => {
-      if (this.pendingResultSubmissions.size > 0) e.preventDefault()
+      if (this.pendingResultSubmissions.size === 0) return
+      e.preventDefault()
+      // Older Firefox needs returnValue set for the dialog to actually appear.
+      e.returnValue = ''
     }
     window.addEventListener('beforeunload', this.beforeUnloadHandler)
   }
@@ -422,12 +425,25 @@ export class P2PService {
     this.setConnectionState('disconnected')
   }
 
-  private clearPendingSubmissions(): void {
+  private clearPendingSubmissions(reason?: string): void {
+    const dropped: ResultSubmitMessage[] = []
     for (const pending of this.pendingResultSubmissions.values()) {
       clearTimeout(pending.timer)
+      dropped.push(pending.message)
     }
     this.pendingResultSubmissions.clear()
     this.notifyPendingChange()
+    if (reason) {
+      for (const msg of dropped) {
+        this.onResultAck?.({
+          tournamentId: msg.tournamentId,
+          boardNr: msg.boardNr,
+          roundNr: msg.roundNr,
+          accepted: false,
+          reason,
+        })
+      }
+    }
   }
 
   private clearHostRefreshGrace(): void {
@@ -462,6 +478,24 @@ export class P2PService {
 
   getPendingSubmissions(): ResultSubmitMessage[] {
     return Array.from(this.pendingResultSubmissions.values()).map((p) => p.message)
+  }
+
+  private findPendingKeyForAck(data: ResultAckMessage): string | null {
+    if (data.tournamentId != null) {
+      const key = pendingKey(data.tournamentId, data.roundNr, data.boardNr)
+      return this.pendingResultSubmissions.has(key) ? key : null
+    }
+    // Backwards-compat: old hosts ack without tournamentId. Fall back to a
+    // round+board scan. Refs can switch tournaments mid-session, so this is
+    // not strictly unambiguous, but the failure mode (acking the wrong
+    // tournament's pending entry) only triggers when both halves of the fleet
+    // straddle the upgrade — acceptable until the old hosts roll over.
+    for (const [key, pending] of this.pendingResultSubmissions) {
+      if (pending.message.roundNr === data.roundNr && pending.message.boardNr === data.boardNr) {
+        return key
+      }
+    }
+    return null
   }
 
   private notifyPendingChange(): void {
@@ -761,6 +795,7 @@ export class P2PService {
     this.clearHeartbeatTimers()
     this.clearRelayHealthCheck()
     this.clearHostRefreshGrace()
+    this.clearPendingSubmissions('Anslutning tappad innan svar från värd')
     this.sendPageUpdate = null
     this.sendResultSubmit = null
     this._sendResultAck = null
@@ -964,10 +999,10 @@ export class P2PService {
     const [sendResultAck, receiveResultAck] = this.room.makeAction<ResultAckMessage>('result-ack')
     this._sendResultAck = sendResultAck
     receiveResultAck((data: ResultAckMessage) => {
-      const key = pendingKey(data.tournamentId, data.roundNr, data.boardNr)
-      const pending = this.pendingResultSubmissions.get(key)
-      if (pending) {
-        clearTimeout(pending.timer)
+      const key = this.findPendingKeyForAck(data)
+      if (key) {
+        const pending = this.pendingResultSubmissions.get(key)
+        if (pending) clearTimeout(pending.timer)
         this.pendingResultSubmissions.delete(key)
         this.notifyPendingChange()
       }

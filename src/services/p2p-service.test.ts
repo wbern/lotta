@@ -1683,6 +1683,76 @@ describe('P2PService', () => {
       expect(service.getPendingSubmissions()).toHaveLength(1)
     })
 
+    it('matches an ack without tournamentId against pending submissions (backwards-compat)', async () => {
+      const mockRoom = createMockRoom()
+      mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)
+      const service = new P2PService('referee')
+      service.joinRoom('test-room')
+      await flush()
+
+      service.submitResult({
+        tournamentId: 7,
+        roundNr: 2,
+        boardNr: 3,
+        resultType: 'WHITE_WIN',
+        refereeName: 'Anna',
+        timestamp: Date.now(),
+      })
+      expect(service.getPendingSubmissions()).toHaveLength(1)
+
+      // Old host (pre-tournamentId-on-ack) responds without tournamentId.
+      mockRoom._simulateReceive(
+        'result-ack',
+        { roundNr: 2, boardNr: 3, accepted: true },
+        'host-peer',
+      )
+
+      expect(service.getPendingSubmissions()).toEqual([])
+    })
+
+    it('clears pending retry timers and surfaces failure when an auto-reconnect performs full teardown', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const service = new P2PService('referee')
+        const acks: ResultAckMessage[] = []
+        service.onResultAck = (msg) => acks.push(msg)
+        service.joinRoom('test-room')
+        await flush()
+        const initialRoom = mockRooms[mockRooms.length - 1]
+
+        initialRoom._simulateReceive('heartbeat', { ts: Date.now() }, 'host-peer')
+
+        // Submit just before the reconnect trigger so retries haven't exhausted yet.
+        await vi.advanceTimersByTimeAsync(20_000)
+        service.submitResult({
+          tournamentId: 1,
+          roundNr: 2,
+          boardNr: 3,
+          resultType: 'WHITE_WIN',
+          refereeName: 'Anna',
+          timestamp: Date.now(),
+        })
+        expect(service.getPendingSubmissions()).toHaveLength(1)
+
+        // Heartbeat times out at 25s, full teardown fires at +2s backoff.
+        await vi.advanceTimersByTimeAsync(5_000) // → host-offline at 25s
+        await vi.advanceTimersByTimeAsync(2_000) // → full teardown
+        await flush()
+        expect(service.connectionState).toBe('reconnecting')
+
+        // Teardown must drop the in-flight pending so its timer can't fire
+        // against a null sender and surface a false "No response" failure.
+        expect(service.getPendingSubmissions()).toEqual([])
+
+        // The user MUST be told their submission was lost — silent removal
+        // would let them assume the host got it.
+        const failure = acks.find((a) => a.boardNr === 3 && a.roundNr === 2 && a.accepted === false)
+        expect(failure).toBeDefined()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
     it('clears pending submissions and timers when leave() is called', async () => {
       const mockRoom = createMockRoom()
       mockJoinRoom.mockReturnValueOnce(mockRoom as unknown as ReturnType<typeof joinRoom>)

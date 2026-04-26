@@ -549,4 +549,35 @@ describe('PairingsTab conflict notification', () => {
 
     expect(screen.queryByTestId('conflict-notification')).toBeNull()
   })
+
+  it('does not auto-dismiss the conflict notification', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const { ResultConflictError } = await import('../../api/result-command')
+      mockMutationState.error = new ResultConflictError('WHITE_WIN')
+      mockMutationState.variables = { boardNr: 1 }
+
+      renderTab()
+      expect(screen.getByTestId('conflict-notification')).toBeTruthy()
+
+      // Old behavior auto-dismissed at 5s; the notification must now stick
+      // around until the user acknowledges it.
+      vi.advanceTimersByTime(30_000)
+      expect(mockMutationState.reset).not.toHaveBeenCalled()
+      expect(screen.getByTestId('conflict-notification')).toBeTruthy()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('dismisses the conflict notification when the close button is clicked', async () => {
+    const { ResultConflictError } = await import('../../api/result-command')
+    mockMutationState.error = new ResultConflictError('WHITE_WIN')
+    mockMutationState.variables = { boardNr: 1 }
+
+    renderTab()
+    const dismiss = screen.getByTestId('conflict-notification-dismiss')
+    dismiss.click()
+    expect(mockMutationState.reset).toHaveBeenCalled()
+  })
 })

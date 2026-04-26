@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ResultConflictError } from '../../api/result-command'
 import { deleteGame, deleteGames } from '../../api/results'
 import {
@@ -69,16 +69,7 @@ export function PairingsTab({
   const conflictBoardNr = conflictError
     ? (setResultMutation.variables as { boardNr: number } | undefined)?.boardNr
     : null
-  const resetRef = useRef(setResultMutation.reset)
-  useEffect(() => {
-    resetRef.current = setResultMutation.reset
-  })
-
-  useEffect(() => {
-    if (!conflictError) return
-    const timer = setTimeout(() => resetRef.current(), 5000)
-    return () => clearTimeout(timer)
-  }, [conflictError])
+  const dismissConflict = setResultMutation.reset
 
   const games = useMemo(() => roundData?.games || [], [roundData?.games])
 
@@ -247,8 +238,19 @@ export function PairingsTab({
     <>
       {conflictError && (
         <div className="conflict-notification" role="alert" data-testid="conflict-notification">
-          Bord {conflictBoardNr} har redan resultat{' '}
-          {formatResultLabel(conflictError.current, { chess4, pointsPerGame })}
+          <span>
+            Bord {conflictBoardNr} har redan resultat{' '}
+            {formatResultLabel(conflictError.current, { chess4, pointsPerGame })}
+          </span>
+          <button
+            type="button"
+            className="conflict-notification-dismiss"
+            data-testid="conflict-notification-dismiss"
+            aria-label="Stäng"
+            onClick={() => dismissConflict()}
+          >
+            ×
+          </button>
         </div>
       )}
       <div className="table-scroll" data-testid="scroll-container">

@@ -906,12 +906,26 @@ body,
 
 /* Conflict Notification */
 .conflict-notification {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   background: var(--color-danger);
   color: var(--color-text-on-primary);
   padding: 8px 16px;
   border-radius: var(--border-radius);
   margin-bottom: 8px;
   font-size: var(--font-size-small);
+}
+
+.conflict-notification-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 6px;
+  cursor: pointer;
 }
 
 /* Context Menu */

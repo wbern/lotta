@@ -539,7 +539,7 @@ export function publishRefereePairings(input: RefereePairingsPublishInput): stri
   body += `<h2>${esc(input.tournamentName)} - Rond ${input.roundNr}</h2>\n`
 
   for (const g of input.games) {
-    const current = g.currentResult ?? 'NO_RESULT'
+    const current = esc(g.currentResult ?? 'NO_RESULT')
     body += `<div class="ref-row" data-board="${g.boardNr}" data-current="${current}">\n`
     body += `  <div class="ref-board">${g.boardNr}</div>\n`
     body += `  <div class="ref-white">${esc(g.whiteName ?? 'frirond')}</div>\n`
