@@ -9,6 +9,10 @@ const hasBrowserStack = !!process.env.BROWSERSTACK_USERNAME
 // or implicitly via BrowserStack.
 const runningP2P = process.env.RUN_P2P_E2E === '1' || hasBrowserStack
 const runningStress = process.env.RUN_STRESS === '1'
+// Investigation specs (curl-progression, publish-bug-repro, tourney-probe)
+// load a real ~/Downloads/lotta-backup*.sqlite snapshot. Opt in locally with
+// RUN_INVESTIGATION=1; otherwise excluded so CI doesn't fail without a backup.
+const runningInvestigation = process.env.RUN_INVESTIGATION === '1'
 
 const p2pWebRtcLaunch = {
   args: [
@@ -97,9 +101,13 @@ export default defineConfig({
       ? [{ name: 'determinism-stress', testMatch: 'determinism-stress.spec.ts' }]
       : []),
     { name: 'seed-corruption', testMatch: 'seed-corruption.spec.ts' },
-    { name: 'curl-progression', testMatch: 'curl-progression.spec.ts' },
-    { name: 'publish-bug-repro', testMatch: 'publish-bug-repro.spec.ts' },
-    { name: 'tourney-probe', testMatch: 'tourney-probe.spec.ts' },
+    ...(runningInvestigation
+      ? [
+          { name: 'curl-progression', testMatch: 'curl-progression.spec.ts' },
+          { name: 'publish-bug-repro', testMatch: 'publish-bug-repro.spec.ts' },
+          { name: 'tourney-probe', testMatch: 'tourney-probe.spec.ts' },
+        ]
+      : []),
     { name: 'late-add-reshuffle', testMatch: 'late-add-reshuffle.spec.ts' },
     {
       name: 'late-add-determinism-probe',
