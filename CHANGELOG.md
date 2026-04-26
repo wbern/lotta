@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/wbern/lotta/compare/v1.6.0...v1.7.0) (2026-04-26)
+
+
+### Features
+
+* **p2p:** pending-sync badge and optimistic locking for ref submissions ([2f2e7c5](https://github.com/wbern/lotta/commit/2f2e7c59b8daeb6ffa22b89529ac51a745c0abd6))
+
 # [1.6.0](https://github.com/wbern/lotta/compare/v1.5.0...v1.6.0) (2026-04-25)
 
 
