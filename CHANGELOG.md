@@ -1,3 +1,11 @@
+## [1.7.1](https://github.com/wbern/lotta/compare/v1.7.0...v1.7.1) (2026-04-26)
+
+
+### Bug Fixes
+
+* **live:** broadcast data-changed on every host DB mutation ([47671ff](https://github.com/wbern/lotta/commit/47671ff14bfc9d1696978650d85a6e41f793166b))
+* **live:** view-mode shows the tournament the host is sharing ([d6427ed](https://github.com/wbern/lotta/commit/d6427ed2c4cab104165ecc0ad5e640fa2cbf58af))
+
 # [1.7.0](https://github.com/wbern/lotta/compare/v1.6.0...v1.7.0) (2026-04-26)
 
 
