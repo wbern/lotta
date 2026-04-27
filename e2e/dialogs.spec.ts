@@ -1089,11 +1089,11 @@ test.describe('Tournament players dialog', () => {
   test('clicking a tournament player selects it and fills editor', async ({ page }) => {
     const dialog = page.getByTestId('dialog-overlay')
     const tournamentTable = dialog.getByTestId('data-table')
-    // Click a player that has a last name (Valhöll, Fenris)
-    const valhollRow = tournamentTable.locator('tbody tr').filter({ hasText: 'Valhöll' })
-    await valhollRow.click()
+    // Pick a HERO_PLAYERS entry: Järnsida / Björn
+    const playerRow = tournamentTable.locator('tbody tr').filter({ hasText: 'Järnsida' })
+    await playerRow.click()
 
-    await expect(valhollRow).toHaveClass(/selected/)
+    await expect(playerRow).toHaveClass(/selected/)
 
     // Switch to edit tab to verify the editor
     await dialog.getByRole('button', { name: 'Skapa eller editera spelare' }).click()
@@ -1103,12 +1103,12 @@ test.describe('Tournament players dialog', () => {
       .locator('.form-group')
       .filter({ hasText: 'Efternamn' })
       .locator('input')
-    await expect(lastNameInput).toHaveValue('Valhöll')
+    await expect(lastNameInput).toHaveValue('Järnsida')
     const firstNameInput = dialog
       .locator('.form-group')
       .filter({ hasText: 'Förnamn' })
       .locator('input')
-    await expect(firstNameInput).toHaveValue('Fenris')
+    await expect(firstNameInput).toHaveValue('Björn')
   })
 
   test('double-clicking a tournament player switches to edit tab with player loaded', async ({
@@ -1116,8 +1116,8 @@ test.describe('Tournament players dialog', () => {
   }) => {
     const dialog = page.getByTestId('dialog-overlay')
     const tournamentTable = dialog.getByTestId('data-table')
-    const valhollRow = tournamentTable.locator('tbody tr').filter({ hasText: 'Valhöll' })
-    await valhollRow.dblclick()
+    const playerRow = tournamentTable.locator('tbody tr').filter({ hasText: 'Järnsida' })
+    await playerRow.dblclick()
 
     // Should automatically switch to the edit tab
     const lastNameInput = dialog
@@ -1125,12 +1125,12 @@ test.describe('Tournament players dialog', () => {
       .filter({ hasText: 'Efternamn' })
       .locator('input')
     await expect(lastNameInput).toBeVisible()
-    await expect(lastNameInput).toHaveValue('Valhöll')
+    await expect(lastNameInput).toHaveValue('Järnsida')
     const firstNameInput = dialog
       .locator('.form-group')
       .filter({ hasText: 'Förnamn' })
       .locator('input')
-    await expect(firstNameInput).toHaveValue('Fenris')
+    await expect(firstNameInput).toHaveValue('Björn')
   })
 
   test('pool tab has add button for adding from pool', async ({ page }) => {
@@ -1149,29 +1149,32 @@ test.describe('Tournament players dialog', () => {
 
   test('Editera button switches to edit tab with selected player', async ({ page }) => {
     const dialog = page.getByTestId('dialog-overlay')
-    const valhollRow = dialog
+    const playerRow = dialog
       .getByTestId('data-table')
       .locator('tbody tr')
-      .filter({ hasText: 'Valhöll' })
-    await valhollRow.click()
+      .filter({ hasText: 'Järnsida' })
+    await playerRow.click()
     await dialog.getByRole('button', { name: 'Editera', exact: true }).click()
 
-    // Should switch to edit tab with Valhöll loaded
+    // Should switch to edit tab with Järnsida loaded
     const lastNameInput = dialog
       .locator('.form-group')
       .filter({ hasText: 'Efternamn' })
       .locator('input')
     await expect(lastNameInput).toBeVisible()
-    await expect(lastNameInput).toHaveValue('Valhöll')
+    await expect(lastNameInput).toHaveValue('Järnsida')
   })
 
-  test('has "Ny spelare", "Lägg till", and "Uppdatera uppgifter" buttons in edit tab', async ({
+  test('has reset, "Lägg till", and "Uppdatera uppgifter" buttons in edit tab', async ({
     page,
   }) => {
     const dialog = page.getByTestId('dialog-overlay')
     // Switch to edit tab
     await dialog.getByRole('button', { name: 'Skapa eller editera spelare' }).click()
-    await expect(dialog.getByRole('button', { name: 'Ny spelare' })).toBeVisible()
+    // Reset button label is sv.player.reset
+    await expect(
+      dialog.getByRole('button', { name: 'Rensa formulär (ny spelarinmatning)' }),
+    ).toBeVisible()
     // Use last() to distinguish from the club "Lägg till" button
     await expect(
       dialog.getByRole('button', { name: 'Lägg till', exact: true }).last(),
@@ -1494,10 +1497,12 @@ test.describe('EditScore dialog', () => {
     await expect(firstRow).toContainText('½')
 
     // Verify via API that the score persisted in the database
-    // Determine the last round dynamically (tournament may have 5 rounds)
     await waitForApi(page)
     const $ = apiClient(page)
-    const rounds: any[] = await $.get('/api/tournaments/2/rounds')
+    const tournaments: { id: number; name: string }[] = await $.get('/api/tournaments')
+    const hero = tournaments.find((t) => t.name === 'Hjälteturneringen 2025')
+    if (!hero) throw new Error('Hjälteturneringen 2025 not found')
+    const rounds: any[] = await $.get(`/api/tournaments/${hero.id}/rounds`)
     const lastRound = rounds[rounds.length - 1]
     const game = lastRound.games.find((g: any) => g.boardNr === 1)
     expect(game.whiteScore).toBe(0.5)
@@ -1574,10 +1579,13 @@ test.describe('Ångra lottning confirm dialog', () => {
   })
 
   test('confirms unpairing and verifies round removed via API', async ({ page }) => {
-    // Get round count before unpairing
+    // Get round count before unpairing — look up tournament id by name
     await waitForApi(page)
     const $ = apiClient(page)
-    const roundsBefore: any[] = await $.get('/api/tournaments/2/rounds')
+    const tournaments: { id: number; name: string }[] = await $.get('/api/tournaments')
+    const hero = tournaments.find((t) => t.name === 'Hjälteturneringen 2025')
+    if (!hero) throw new Error('Hjälteturneringen 2025 not found')
+    const roundsBefore: any[] = await $.get(`/api/tournaments/${hero.id}/rounds`)
     const roundCountBefore = roundsBefore.length
 
     await page.getByTestId('menu-bar').getByRole('button', { name: 'Lotta' }).click()
@@ -1591,7 +1599,7 @@ test.describe('Ångra lottning confirm dialog', () => {
     await expect(dialog).not.toBeVisible()
 
     // Verify via API that the last round was removed
-    const roundsAfter: any[] = await $.get('/api/tournaments/2/rounds')
+    const roundsAfter: any[] = await $.get(`/api/tournaments/${hero.id}/rounds`)
     expect(roundsAfter.length).toBe(roundCountBefore - 1)
   })
 })
@@ -1649,15 +1657,11 @@ test.describe('Delete tournament confirm dialog', () => {
     const dialog = page.getByTestId('dialog-overlay')
     await expect(dialog).toBeVisible()
 
-    // Click OK and wait for the DELETE API call to complete
-    const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/api/tournaments/') && resp.request().method() === 'DELETE',
-    )
-    await dialog.getByRole('button', { name: 'OK' }).click()
-    const response = await responsePromise
+    // Past-draft deletion requires typing the full tournament name (tournament-lock).
+    // Full name includes the group: `${name} ${group}`.
+    await dialog.getByTestId('confirm-text-input').fill('Hjälteturneringen 2025 Alla')
 
-    // Verify the DELETE succeeded
-    expect(response.status()).toBeLessThan(400)
+    await dialog.getByRole('button', { name: 'OK' }).click()
     await expect(dialog).not.toBeVisible()
 
     // Verify via API that the tournament was deleted from the database
