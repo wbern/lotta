@@ -279,6 +279,15 @@ export async function seedHeroTournament(page: Page): Promise<number> {
     clubIndex: clubIds[i % clubIds.length],
   }))
 
+  // Seed the pool too — Spelarpool dialog tests need available_players to be non-empty.
+  const existingPool: { lastName: string; firstName: string }[] = await $.get('/api/players')
+  for (const p of players) {
+    const exists = existingPool.some(
+      (e) => e.lastName === p.lastName && e.firstName === p.firstName,
+    )
+    if (!exists) await $.post('/api/players', p)
+  }
+
   const { tid } = await createTournament(
     $,
     {

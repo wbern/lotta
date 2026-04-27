@@ -849,14 +849,21 @@ test.describe('Player pool dialog', () => {
     await dialog.getByRole('button', { name: 'Skapa eller editera spelare' }).click()
     const editor = dialog.locator('.form-group')
 
-    // Player editor fields (use label locator to avoid matching table headers)
+    // Always-visible header fields (above the sub-tabs)
     await expect(editor.filter({ hasText: 'Förnamn' })).toHaveCount(1)
     await expect(editor.filter({ hasText: 'Efternamn' })).toHaveCount(1)
     await expect(dialog.locator('label', { hasText: 'Klubb' })).toBeVisible()
+
+    // PlayerEditor uses three sub-tabs (Allmänt / FIDE / Övrigt). Visit each.
+    await dialog.getByTestId('editor-tab-main').click()
     await expect(dialog.locator('label', { hasText: 'Titel' })).toBeVisible()
-    await expect(dialog.getByText('SSF id')).toBeVisible()
-    await expect(dialog.getByText('FIDE-information')).toBeVisible()
     await expect(dialog.locator('label', { hasText: 'Kön' })).toBeVisible()
+
+    await dialog.getByTestId('editor-tab-fide').click()
+    await expect(dialog.getByText('FIDE-information')).toBeVisible()
+
+    await dialog.getByTestId('editor-tab-other').click()
+    await expect(dialog.getByText('SSF id')).toBeVisible()
     await expect(dialog.locator('label', { hasText: 'Federation' }).first()).toBeVisible()
     await expect(dialog.getByText('FIDE id')).toBeVisible()
   })
@@ -915,19 +922,24 @@ test.describe('Player pool dialog', () => {
     expect(value.length).toBeGreaterThan(0)
   })
 
-  test('has "Ny spelare", "Lägg till", "Ändra", "Ta bort" buttons in edit tab', async ({
-    page,
-  }) => {
+  test('has reset, "Lägg till", "Ändra" buttons in edit tab footer', async ({ page }) => {
     const dialog = page.getByTestId('dialog-overlay')
     // Switch to edit tab
     await dialog.getByRole('button', { name: 'Skapa eller editera spelare' }).click()
-    await expect(dialog.getByRole('button', { name: 'Ny spelare' })).toBeVisible()
+    // The reset button is now labeled "Rensa formulär (ny spelarinmatning)" (sv.player.reset)
+    await expect(
+      dialog.getByRole('button', { name: 'Rensa formulär (ny spelarinmatning)' }),
+    ).toBeVisible()
     // Use exact + last to distinguish player action buttons from club management buttons
     await expect(
       dialog.getByRole('button', { name: 'Lägg till', exact: true }).last(),
     ).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Ändra', exact: true }).last()).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Ta bort', exact: true }).last()).toBeVisible()
+    // Player-level "Ta bort" moved to the pool tab footer (delete-from-pool); the only
+    // "Ta bort" in the edit tab now is the club-delete button inside .club-row.
+    await expect(
+      dialog.locator('.club-row').getByRole('button', { name: 'Ta bort', exact: true }),
+    ).toBeVisible()
   })
 
   test('has "Stäng" button in footer', async ({ page }) => {
@@ -965,7 +977,7 @@ test.describe('Player pool dialog', () => {
     await expect(dialog).not.toBeVisible()
   })
 
-  test('"Ny spelare" button resets the editor', async ({ page }) => {
+  test('reset button clears the editor', async ({ page }) => {
     const dialog = page.getByTestId('dialog-overlay')
 
     // Select a player first
@@ -983,8 +995,8 @@ test.describe('Player pool dialog', () => {
     const value = await firstNameInput.inputValue()
     expect(value.length).toBeGreaterThan(0)
 
-    // Click "Ny spelare"
-    await dialog.getByRole('button', { name: 'Ny spelare' }).click()
+    // Reset button label is sv.player.reset = "Rensa formulär (ny spelarinmatning)"
+    await dialog.getByRole('button', { name: 'Rensa formulär (ny spelarinmatning)' }).click()
 
     // Editor should be reset
     await expect(firstNameInput).toHaveValue('')
