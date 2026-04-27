@@ -1,249 +1,249 @@
-## [1.7.4](https://github.com/wbern/lotta/compare/v1.7.3...v1.7.4) (2026-04-27)
+## 1.7.4 (2026-04-27)
 
 
 ### Bug Fixes
 
-* **e2e:** repair Player pool dialog tests for new editor sub-tabs ([39abbe8](https://github.com/wbern/lotta/commit/39abbe88a75a0def301d48244b2d27e1ab14b972))
-* **e2e:** repair Settings dialog tests for theme-select disambiguation and nested clear-db dialog ([97fdec5](https://github.com/wbern/lotta/commit/97fdec511345baf00bf70bd773373aab08a137d2))
-* **e2e:** repair Tournament dialog + Player encoding tests; add Windows-1252 import fallback ([f11d8df](https://github.com/wbern/lotta/commit/f11d8dffc6f4debcd73de19c58315c1918560486))
-* **e2e:** repair Tournament players, EditScore, and Confirm dialog tests ([76f2ef2](https://github.com/wbern/lotta/commit/76f2ef2f6a0a1f90ec2d92e9cb52c8b65f411579))
-* **query:** default to networkMode 'always' for IDB-backed queries ([fd099c1](https://github.com/wbern/lotta/commit/fd099c1722cb6fe3de9aca68676b5823997d9f79))
+* **e2e:** repair Player pool dialog tests for new editor sub-tabs
+* **e2e:** repair Settings dialog tests for theme-select disambiguation and nested clear-db dialog
+* **e2e:** repair Tournament dialog + Player encoding tests; add Windows-1252 import fallback
+* **e2e:** repair Tournament players, EditScore, and Confirm dialog tests
+* **query:** default to networkMode 'always' for IDB-backed queries
 
-## [1.7.3](https://github.com/wbern/lotta/compare/v1.7.2...v1.7.3) (2026-04-26)
-
-
-### Bug Fixes
-
-* **p2p:** surface failure on reconnect drop and tolerate legacy acks ([bf1913f](https://github.com/wbern/lotta/commit/bf1913fbc512842133b09ac26308aa88a210d2a5))
-
-## [1.7.2](https://github.com/wbern/lotta/compare/v1.7.1...v1.7.2) (2026-04-26)
+## 1.7.3 (2026-04-26)
 
 
 ### Bug Fixes
 
-* **e2e:** derive expected spectator result from recorded scores ([2e4c8b8](https://github.com/wbern/lotta/commit/2e4c8b8f439ddff83527c0c84368fa85d59b4c13))
+* **p2p:** surface failure on reconnect drop and tolerate legacy acks
 
-## [1.7.1](https://github.com/wbern/lotta/compare/v1.7.0...v1.7.1) (2026-04-26)
+## 1.7.2 (2026-04-26)
 
 
 ### Bug Fixes
 
-* **live:** broadcast data-changed on every host DB mutation ([47671ff](https://github.com/wbern/lotta/commit/47671ff14bfc9d1696978650d85a6e41f793166b))
-* **live:** view-mode shows the tournament the host is sharing ([d6427ed](https://github.com/wbern/lotta/commit/d6427ed2c4cab104165ecc0ad5e640fa2cbf58af))
+* **e2e:** derive expected spectator result from recorded scores
 
-# [1.7.0](https://github.com/wbern/lotta/compare/v1.6.0...v1.7.0) (2026-04-26)
+## 1.7.1 (2026-04-26)
+
+
+### Bug Fixes
+
+* **live:** broadcast data-changed on every host DB mutation
+* **live:** view-mode shows the tournament the host is sharing
+
+# 1.7.0 (2026-04-26)
 
 
 ### Features
 
-* **p2p:** pending-sync badge and optimistic locking for ref submissions ([2f2e7c5](https://github.com/wbern/lotta/commit/2f2e7c59b8daeb6ffa22b89529ac51a745c0abd6))
+* **p2p:** pending-sync badge and optimistic locking for ref submissions
 
-# [1.6.0](https://github.com/wbern/lotta/compare/v1.5.0...v1.6.0) (2026-04-25)
-
-
-### Features
-
-* **tournament-lock:** lock destructive settings and gate deletion past draft ([c54d113](https://github.com/wbern/lotta/commit/c54d113eaee13080107a0d5f5e5bf28a2a8e7caa))
-
-# [1.5.0](https://github.com/wbern/lotta/compare/v1.4.7...v1.5.0) (2026-04-25)
+# 1.6.0 (2026-04-25)
 
 
 ### Features
 
-* **player-form:** confirm before discarding unsaved input on double-click ([e68314a](https://github.com/wbern/lotta/commit/e68314a1ce93442dada3ee97c560097efe45d0ae))
+* **tournament-lock:** lock destructive settings and gate deletion past draft
 
-## [1.4.7](https://github.com/wbern/lotta/compare/v1.4.6...v1.4.7) (2026-04-25)
-
-
-### Bug Fixes
-
-* **player-form:** reset form state when dialog reopens ([664c66f](https://github.com/wbern/lotta/commit/664c66f34b95184baf4ef70cfcc33f243481048c))
-
-## [1.4.6](https://github.com/wbern/lotta/compare/v1.4.5...v1.4.6) (2026-04-25)
-
-
-### Bug Fixes
-
-* **ux:** suppress browser text selection on shift+click row range ([d4680f4](https://github.com/wbern/lotta/commit/d4680f49976a9cbaca2abef0a745c2634772c800))
-
-## [1.4.5](https://github.com/wbern/lotta/compare/v1.4.4...v1.4.5) (2026-04-25)
-
-
-### Bug Fixes
-
-* **live:** gate live-context on isHosting and lock in title coverage ([dc130d6](https://github.com/wbern/lotta/commit/dc130d6c29f2ba914192ebec03856a3249ddeb0e))
-* **rounds:** focus pairings tab and latest round after seeding ([6969fe4](https://github.com/wbern/lotta/commit/6969fe4d7edb53fa25359e5781ad194bd10ddc33))
-
-## [1.4.4](https://github.com/wbern/lotta/compare/v1.4.3...v1.4.4) (2026-04-25)
-
-
-### Bug Fixes
-
-* **chess4:** hide clubs with zero participants from setup and standings ([f05bf0c](https://github.com/wbern/lotta/commit/f05bf0c809b3e26fc1d8da022c821faf6fe149bf))
-
-## [1.4.3](https://github.com/wbern/lotta/compare/v1.4.2...v1.4.3) (2026-04-25)
-
-
-### Bug Fixes
-
-* **player-form:** clarify reset button label ([9dfc428](https://github.com/wbern/lotta/commit/9dfc428755c697d403a818c81f6a506c2ebd86c9))
-
-## [1.4.2](https://github.com/wbern/lotta/compare/v1.4.1...v1.4.2) (2026-04-25)
-
-
-### Bug Fixes
-
-* **live:** stop overriding document title when not hosting ([9594f8d](https://github.com/wbern/lotta/commit/9594f8d94e852ff2a755a27b6374218ab471c9e2))
-
-## [1.4.1](https://github.com/wbern/lotta/compare/v1.4.0...v1.4.1) (2026-04-25)
-
-
-### Bug Fixes
-
-* **publish:** show actual board number in alphabetical pairings print ([e7cd006](https://github.com/wbern/lotta/commit/e7cd006ea93bb371995771383f6a0306bf8636bb))
-
-# [1.4.0](https://github.com/wbern/lotta/compare/v1.3.0...v1.4.0) (2026-04-24)
-
-
-### Bug Fixes
-
-* **live:** broadcast empty manifest on tournament delete ([e27fe63](https://github.com/wbern/lotta/commit/e27fe63dcbad4b07686dfa1b1e8585f9193f192c))
-* **live:** broadcast state when host switches tournament ([f0db17e](https://github.com/wbern/lotta/commit/f0db17ef4bc6eb1768211e9ca428b7c8b18d5458))
-* **live:** reconcile viewer cache against host round manifest ([dbf829d](https://github.com/wbern/lotta/commit/dbf829d6f4695e85da7c3c969f0d7e37586668bd))
-* **live:** scope tournament-delete broadcast to live/shared set ([636dab1](https://github.com/wbern/lotta/commit/636dab159871c24d52505c0d93071a174bfb8a86))
+# 1.5.0 (2026-04-25)
 
 
 ### Features
 
-* **live:** explicit shared tournament set with per-tournament scoping ([fe2c5df](https://github.com/wbern/lotta/commit/fe2c5df80e776d329fcb124f7a37d08b6eaa899a))
+* **player-form:** confirm before discarding unsaved input on double-click
+
+## 1.4.7 (2026-04-25)
+
+
+### Bug Fixes
+
+* **player-form:** reset form state when dialog reopens
+
+## 1.4.6 (2026-04-25)
+
+
+### Bug Fixes
+
+* **ux:** suppress browser text selection on shift+click row range
+
+## 1.4.5 (2026-04-25)
+
+
+### Bug Fixes
+
+* **live:** gate live-context on isHosting and lock in title coverage
+* **rounds:** focus pairings tab and latest round after seeding
+
+## 1.4.4 (2026-04-25)
+
+
+### Bug Fixes
+
+* **chess4:** hide clubs with zero participants from setup and standings
+
+## 1.4.3 (2026-04-25)
+
+
+### Bug Fixes
+
+* **player-form:** clarify reset button label
+
+## 1.4.2 (2026-04-25)
+
+
+### Bug Fixes
+
+* **live:** stop overriding document title when not hosting
+
+## 1.4.1 (2026-04-25)
+
+
+### Bug Fixes
+
+* **publish:** show actual board number in alphabetical pairings print
+
+# 1.4.0 (2026-04-24)
+
+
+### Bug Fixes
+
+* **live:** broadcast empty manifest on tournament delete
+* **live:** broadcast state when host switches tournament
+* **live:** reconcile viewer cache against host round manifest
+* **live:** scope tournament-delete broadcast to live/shared set
+
+
+### Features
+
+* **live:** explicit shared tournament set with per-tournament scoping
 
 
 ### Reverts
 
-* Revert "fix(live): broadcast state when host switches tournament" ([22222f8](https://github.com/wbern/lotta/commit/22222f88ffb54b0d205be881cadb6a0d2fe15dcc))
+* Revert "fix(live): broadcast state when host switches tournament"
 
-# [1.3.0](https://github.com/wbern/lotta/compare/v1.2.1...v1.3.0) (2026-04-24)
-
-
-### Features
-
-* **publish:** add option to hide opponent's last name in alphabetical pairings ([ca0f57b](https://github.com/wbern/lotta/commit/ca0f57ba6871918bf59c0cce3a83180d793cbe9b))
-
-## [1.2.1](https://github.com/wbern/lotta/compare/v1.2.0...v1.2.1) (2026-04-24)
-
-
-### Bug Fixes
-
-* **publish:** group alphabetical pairings by club in non-chess4 mode ([f2d8444](https://github.com/wbern/lotta/commit/f2d8444c640c917f08b4b7c03ddfc6954567e3d6))
-
-# [1.2.0](https://github.com/wbern/lotta/compare/v1.1.3...v1.2.0) (2026-04-24)
+# 1.3.0 (2026-04-24)
 
 
 ### Features
 
-* **publish:** repeat title on each alphabetical pairings page ([b3130ce](https://github.com/wbern/lotta/commit/b3130ce42d93f5894eaab554f1f36ae01643dd98))
+* **publish:** add option to hide opponent's last name in alphabetical pairings
 
-## [1.1.3](https://github.com/wbern/lotta/compare/v1.1.2...v1.1.3) (2026-04-23)
-
-
-### Bug Fixes
-
-* **live:** stop club-scoping referees who never redeemed a club code ([63a4ace](https://github.com/wbern/lotta/commit/63a4ace85c828da9ac358eafc2adda0ba5185176))
-
-## [1.1.2](https://github.com/wbern/lotta/compare/v1.1.1...v1.1.2) (2026-04-23)
+## 1.2.1 (2026-04-24)
 
 
 ### Bug Fixes
 
-* **live:** broadcast state to peers after host undo/redo ([34df6da](https://github.com/wbern/lotta/commit/34df6da0468076cbdb556ef8605b6feb4ff334ee))
+* **publish:** group alphabetical pairings by club in non-chess4 mode
 
-## [1.1.1](https://github.com/wbern/lotta/compare/v1.1.0...v1.1.1) (2026-04-22)
-
-
-### Bug Fixes
-
-* **live:** send state to peers who miss the initial push ([d73a8d5](https://github.com/wbern/lotta/commit/d73a8d5d9b5481e3816f04116c9c17d0b8b42929))
-
-# [1.1.0](https://github.com/wbern/lotta/compare/v1.0.3...v1.1.0) (2026-04-21)
+# 1.2.0 (2026-04-24)
 
 
 ### Features
 
-* **e2e-bridge:** expose DB export/restore for chaos-hunt roundtrip ([b687980](https://github.com/wbern/lotta/commit/b687980c31ee649dc15bfc649d9ecd7b841e4ccc))
+* **publish:** repeat title on each alphabetical pairings page
 
-## [1.0.3](https://github.com/wbern/lotta/compare/v1.0.2...v1.0.3) (2026-04-21)
-
-
-### Bug Fixes
-
-* **rollback:** rephrase warning to describe per-version DB isolation ([0524e79](https://github.com/wbern/lotta/commit/0524e798fc30aba51e81615af445d04275f8c808))
-
-## [1.0.2](https://github.com/wbern/lotta/compare/v1.0.1...v1.0.2) (2026-04-21)
+## 1.1.3 (2026-04-23)
 
 
 ### Bug Fixes
 
-* **ci:** harden release dispatch + rollback versions.json push ([6b51540](https://github.com/wbern/lotta/commit/6b515405bdab93e3e489428588863e09c8dc326d)), closes [#pages](https://github.com/wbern/lotta/issues/pages)
-* **ui:** tighten WhatsNewDialog edge cases ([4dd687f](https://github.com/wbern/lotta/commit/4dd687f7e5c1b01237cd474d122148877b1dd203))
+* **live:** stop club-scoping referees who never redeemed a club code
 
-## [1.0.1](https://github.com/wbern/lotta/compare/v1.0.0...v1.0.1) (2026-04-21)
+## 1.1.2 (2026-04-23)
 
 
 ### Bug Fixes
 
-* **ci:** dispatch rollback-deploy after semantic-release cuts a tag ([0f46892](https://github.com/wbern/lotta/commit/0f4689273a81c46899d6d4179cd9d09402c6aba6))
+* **live:** broadcast state to peers after host undo/redo
+
+## 1.1.1 (2026-04-22)
+
+
+### Bug Fixes
+
+* **live:** send state to peers who miss the initial push
+
+# 1.1.0 (2026-04-21)
+
+
+### Features
+
+* **e2e-bridge:** expose DB export/restore for chaos-hunt roundtrip
+
+## 1.0.3 (2026-04-21)
+
+
+### Bug Fixes
+
+* **rollback:** rephrase warning to describe per-version DB isolation
+
+## 1.0.2 (2026-04-21)
+
+
+### Bug Fixes
+
+* **ci:** harden release dispatch + rollback versions.json push, closes [#pages](https://github.com/wbern/lotta/issues/pages)
+* **ui:** tighten WhatsNewDialog edge cases
+
+## 1.0.1 (2026-04-21)
+
+
+### Bug Fixes
+
+* **ci:** dispatch rollback-deploy after semantic-release cuts a tag
 
 # 1.0.0 (2026-04-21)
 
 
 ### Bug Fixes
 
-* **build:** use /v/<version>/ base for rollback bundles ([fdd0dda](https://github.com/wbern/lotta/commit/fdd0dda9508a3f1ebf6f0eb975c37a518c6d8270))
-* **ci:** check out repo at default path so JamesIves can init git ([e5d9ff2](https://github.com/wbern/lotta/commit/e5d9ff292db2c7165a35a0ab69765de8a80abd40)), closes [#pages](https://github.com/wbern/lotta/issues/pages)
-* flip result context menu upward near bottom of viewport ([71c32fa](https://github.com/wbern/lotta/commit/71c32fab80eca3f9864cae48eca7e5838d4b46ff))
-* keep share button inline with club label in picker tree ([0d5f4be](https://github.com/wbern/lotta/commit/0d5f4be9dbcebdb573cd0f0c15bc370a0cb8416f))
-* **live:** harden host-refreshing hint with role check and dedicated CSS ([3051a9c](https://github.com/wbern/lotta/commit/3051a9c4cf9810923c11264d7d32f36838d7f319))
-* **live:** improve grant form accessibility and keyboard UX ([787f211](https://github.com/wbern/lotta/commit/787f211859951b999fdabfcb4d2dddb8f6efcdee))
-* **live:** make LiveTab wrapper fill height so sharing panels can scroll ([1d70559](https://github.com/wbern/lotta/commit/1d70559a390054db5b7be6637635bac2cd4df141))
-* **live:** revoking a grant deauthorizes already-connected peers ([4e2d51e](https://github.com/wbern/lotta/commit/4e2d51eaee38866cb62ab6c55d9e5990e2a3e011))
-* **live:** show entered name in chat for Domare grants ([eb989dd](https://github.com/wbern/lotta/commit/eb989ddaa5653b08b903637da5242c00504978cc))
-* **pairings:** adapt result keybinds to scoring system (lt-4aa) ([f121021](https://github.com/wbern/lotta/commit/f12102178a7f535576ad35f953df7b9e65d41573))
-* **pairings:** only handle result-entry keys when a row has focus ([5f13489](https://github.com/wbern/lotta/commit/5f13489cd9b61c122a9d11df2e4db2527c894045))
-* **players:** display player names as "FirstName LastName" in list dialogs ([6b85b58](https://github.com/wbern/lotta/commit/6b85b5839b8fd26837c1313ffd48159fa4cff3ab))
-* **players:** sort alphabetically by first name, last name as tiebreak ([7e61c0f](https://github.com/wbern/lotta/commit/7e61c0f45ee26d000f32ce20fdd9a7d774d71181))
-* **publish:** group Schackfyran alphabetical pairings by school class ([ba17332](https://github.com/wbern/lotta/commit/ba1733285e10c0e75d7699ce83367eb9dbf4805a))
-* **tournament:** block scoring-system change once results are recorded ([22e4b93](https://github.com/wbern/lotta/commit/22e4b931d0f5f8703bd20e231790639498d8abf8))
+* **build:** use /v/<version>/ base for rollback bundles
+* **ci:** check out repo at default path so JamesIves can init git, closes [#pages](https://github.com/wbern/lotta/issues/pages)
+* flip result context menu upward near bottom of viewport
+* keep share button inline with club label in picker tree
+* **live:** harden host-refreshing hint with role check and dedicated CSS
+* **live:** improve grant form accessibility and keyboard UX
+* **live:** make LiveTab wrapper fill height so sharing panels can scroll
+* **live:** revoking a grant deauthorizes already-connected peers
+* **live:** show entered name in chat for Domare grants
+* **pairings:** adapt result keybinds to scoring system (lt-4aa)
+* **pairings:** only handle result-entry keys when a row has focus
+* **players:** display player names as "FirstName LastName" in list dialogs
+* **players:** sort alphabetically by first name, last name as tiebreak
+* **publish:** group Schackfyran alphabetical pairings by school class
+* **tournament:** block scoring-system change once results are recorded
 
 
 ### Features
 
-* add "Lägg till grupp" flow for spawning tournament groups ([ce4f5e7](https://github.com/wbern/lotta/commit/ce4f5e7b4dc9c52f77eff0acac918e676dae268d))
-* **build:** add rollback build flavor with namespaced DB and PWA identity ([8ab8d2b](https://github.com/wbern/lotta/commit/8ab8d2bdb98001b67dd63e5479a6498bdeb7da8b))
-* **build:** generate versions.json manifest ([a37d931](https://github.com/wbern/lotta/commit/a37d93186f0a10ef67521385e268dfdff723a9e3)), closes [#pages](https://github.com/wbern/lotta/issues/pages) [#pages](https://github.com/wbern/lotta/issues/pages)
-* **build:** skip VitePWA plugin in rollback builds ([8042077](https://github.com/wbern/lotta/commit/80420770d7e80d4bf989e6b66d16f12fc9bcb34f))
-* club-code spectator view with per-club share dialog ([d963268](https://github.com/wbern/lotta/commit/d963268ef28f1f7e1caafca9a7b36eb7c758b8ea))
-* initial public release ([ba130ae](https://github.com/wbern/lotta/commit/ba130aebc5d94b4521b4a49f589a9960efff9d84))
-* **live:** add grants domain module ([295d077](https://github.com/wbern/lotta/commit/295d077ef266b629f935b85437cc397f81226b94))
-* **live:** add native share button for spectator and grant links ([3ce2e4b](https://github.com/wbern/lotta/commit/3ce2e4b071e554f8c2ddb7f00e909ce6860fff1d))
-* **live:** add native share button to club-code share dialog ([002bb0c](https://github.com/wbern/lotta/commit/002bb0cb67f83f735f55df2353363ed3c3fbe901))
-* **live:** download PDFs for QR codes and simpler club-code sharing ([844bdef](https://github.com/wbern/lotta/commit/844bdef9a6d22d28f39952a13ada099a0aa2c2b5))
-* **live:** host auto-resumes hosting on page load from saved session ([45b5185](https://github.com/wbern/lotta/commit/45b51851a5c5654bf3e2879351a08475bd77794b))
-* **live:** host broadcasts 'refreshing' hint on pagehide for friendlier viewer UX ([e29568c](https://github.com/wbern/lotta/commit/e29568ca734e1e711dc10aaa75d577ca10fc6dce))
-* **live:** mint stable hostId for host refresh recovery ([472bcf8](https://github.com/wbern/lotta/commit/472bcf89c6cbf1c56ac0983eb583af68c6c8e281))
-* **live:** per-permission checkboxes for granting live access ([2e2759e](https://github.com/wbern/lotta/commit/2e2759ed9aac6c15af55ede6b3063bb13199ceb0))
-* **live:** persist grants across session refresh and migrate legacy sessions ([aa6b8f0](https://github.com/wbern/lotta/commit/aa6b8f0d86c7e32132d3a0b4dbf22290d771979d))
-* **live:** replace single-token Domarstyrning with grants list ([ec7133d](https://github.com/wbern/lotta/commit/ec7133da1b225bbc4efcacc36f54aa1ce8a9942c))
-* **live:** revoke grants individually and deauthorize their tokens ([7836566](https://github.com/wbern/lotta/commit/7836566e5913de061ab314794c7c98b5d697a964))
-* **live:** show disconnect button when connected to another host ([eb31c6a](https://github.com/wbern/lotta/commit/eb31c6ac5172f9709c07b0066990b162bf664ae0))
-* **live:** viewer keeps host peer alive across refresh and rebinds by hostId ([30183fb](https://github.com/wbern/lotta/commit/30183fbde8df7c1e6357c8bd285673e805a6223e))
-* **p2p:** host-wide club-code rate limit with escalating lockout ([fbd871b](https://github.com/wbern/lotta/commit/fbd871bd810afd21f99a39326a938d58429cb80a))
-* **pairing:** guard round pairing with a 10s deadline ([a5bc399](https://github.com/wbern/lotta/commit/a5bc399f6f0632438d8bb109ca49a7c57ec52222))
-* **pairings:** arrow keys move row selection and focus ([7819e28](https://github.com/wbern/lotta/commit/7819e2866476156aff172992c4f8015c8c68a294))
-* **pairing:** show a "Lottar..." progress dialog with elapsed timer ([084e297](https://github.com/wbern/lotta/commit/084e297bb56b45945ede4cd941bbeb96451744cb))
-* **pwa:** hide already-installed versions in Vad är nytt by default ([bd79415](https://github.com/wbern/lotta/commit/bd79415ba48b66a602287ba5d666d7eec4575e75))
-* **pwa:** opt-in changelog view and working update check ([ccec15b](https://github.com/wbern/lotta/commit/ccec15b19fde577f4ee70755b4e3fb27372ebe4d))
-* **pwa:** surface release changes in update prompt and menu ([5eaabf5](https://github.com/wbern/lotta/commit/5eaabf57d067d36f5267f665923f9470faad4e33))
-* **rollback:** add version-picker dialog with forced export gate ([51446ab](https://github.com/wbern/lotta/commit/51446abfe4b8ba2722938163c1571c0a63699c35))
-* **rollback:** replace forced-export gate with backup advisory warning ([b206dac](https://github.com/wbern/lotta/commit/b206dac04f4114d800d904a077a3ce95a62f22f8))
-* seed test players into selected or random tournament ([821165a](https://github.com/wbern/lotta/commit/821165afe3a18e5041a7cc22fc674ec8ed7a1633))
-* **sw:** runtime-cache rollback bundles under /v/** ([506b7df](https://github.com/wbern/lotta/commit/506b7df0d83d98208cfed37f8f61cf03ee180b5c))
+* add "Lägg till grupp" flow for spawning tournament groups
+* **build:** add rollback build flavor with namespaced DB and PWA identity
+* **build:** generate versions.json manifest, closes [#pages](https://github.com/wbern/lotta/issues/pages) [#pages](https://github.com/wbern/lotta/issues/pages)
+* **build:** skip VitePWA plugin in rollback builds
+* club-code spectator view with per-club share dialog
+* initial public release
+* **live:** add grants domain module
+* **live:** add native share button for spectator and grant links
+* **live:** add native share button to club-code share dialog
+* **live:** download PDFs for QR codes and simpler club-code sharing
+* **live:** host auto-resumes hosting on page load from saved session
+* **live:** host broadcasts 'refreshing' hint on pagehide for friendlier viewer UX
+* **live:** mint stable hostId for host refresh recovery
+* **live:** per-permission checkboxes for granting live access
+* **live:** persist grants across session refresh and migrate legacy sessions
+* **live:** replace single-token Domarstyrning with grants list
+* **live:** revoke grants individually and deauthorize their tokens
+* **live:** show disconnect button when connected to another host
+* **live:** viewer keeps host peer alive across refresh and rebinds by hostId
+* **p2p:** host-wide club-code rate limit with escalating lockout
+* **pairing:** guard round pairing with a 10s deadline
+* **pairings:** arrow keys move row selection and focus
+* **pairing:** show a "Lottar..." progress dialog with elapsed timer
+* **pwa:** hide already-installed versions in Vad är nytt by default
+* **pwa:** opt-in changelog view and working update check
+* **pwa:** surface release changes in update prompt and menu
+* **rollback:** add version-picker dialog with forced export gate
+* **rollback:** replace forced-export gate with backup advisory warning
+* seed test players into selected or random tournament
+* **sw:** runtime-cache rollback bundles under /v/**
