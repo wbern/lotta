@@ -1,3 +1,14 @@
+## [1.7.4](https://github.com/wbern/lotta/compare/v1.7.3...v1.7.4) (2026-04-27)
+
+
+### Bug Fixes
+
+* **e2e:** repair Player pool dialog tests for new editor sub-tabs ([39abbe8](https://github.com/wbern/lotta/commit/39abbe88a75a0def301d48244b2d27e1ab14b972))
+* **e2e:** repair Settings dialog tests for theme-select disambiguation and nested clear-db dialog ([97fdec5](https://github.com/wbern/lotta/commit/97fdec511345baf00bf70bd773373aab08a137d2))
+* **e2e:** repair Tournament dialog + Player encoding tests; add Windows-1252 import fallback ([f11d8df](https://github.com/wbern/lotta/commit/f11d8dffc6f4debcd73de19c58315c1918560486))
+* **e2e:** repair Tournament players, EditScore, and Confirm dialog tests ([76f2ef2](https://github.com/wbern/lotta/commit/76f2ef2f6a0a1f90ec2d92e9cb52c8b65f411579))
+* **query:** default to networkMode 'always' for IDB-backed queries ([fd099c1](https://github.com/wbern/lotta/commit/fd099c1722cb6fe3de9aca68676b5823997d9f79))
+
 ## [1.7.3](https://github.com/wbern/lotta/compare/v1.7.2...v1.7.3) (2026-04-26)
 
 
