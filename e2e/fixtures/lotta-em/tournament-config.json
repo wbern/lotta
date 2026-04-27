@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Regionfinal Schackfyran 2",
+    "group": "L\u00f6rdag em",
+    "pairingSystem": "Monrad",
+    "initialPairing": "Slumpad",
+    "nrOfRounds": 9,
+    "barredPairing": "true",
+    "compensateWeakPlayerPP": "false",
+    "chess4": "true",
+    "pointsPerGame": 4,
+    "ratingChoice": "ELO",
+    "showlask": null,
+    "showELO": "false",
+    "showGroup": "false",
+    "city": null,
+    "startDate": null,
+    "endDate": null,
+    "chiefArbiter": null,
+    "deputyArbiter": null,
+    "timeControl": null,
+    "federation": "SWE",
+    "resultsPage": "lottning.htm",
+    "standingsPage": "stallning.htm",
+    "playerListPage": "spelare.htm",
+    "roundForRoundPage": "korstabell.htm",
+    "clubStandingsPage": "klubbstallning.htm"
+  }
+]

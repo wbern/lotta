@@ -1,0 +1,2872 @@
+{
+  "1": [
+    {
+      "boardNr": 1,
+      "whitePlayer": {
+        "lastName": "Spelare_263c837c",
+        "firstName": "Oliver",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_01ffc7fa",
+        "firstName": "Noel",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 2,
+      "whitePlayer": {
+        "lastName": "Spelare_b5f1d7df",
+        "firstName": "Jonah",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_f19cd677",
+        "firstName": "Estrid",
+        "clubName": "Skola_6c1da12e"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 3,
+      "whitePlayer": {
+        "lastName": "Spelare_1df79687",
+        "firstName": "Linnéa Servin",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5c066d2e",
+        "firstName": "Logan",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 4,
+      "whitePlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "William",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_00392518",
+        "firstName": "Minna",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 5,
+      "whitePlayer": {
+        "lastName": "Spelare_23fecf36",
+        "firstName": "Axel",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c0ad52d8",
+        "firstName": "Ahmed",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 6,
+      "whitePlayer": {
+        "lastName": "Spelare_4b248d1d",
+        "firstName": "Elina",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_0d58b4a7",
+        "firstName": "Melker",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 7,
+      "whitePlayer": {
+        "lastName": "Spelare_67e1e573",
+        "firstName": "Marc",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2c4ba077",
+        "firstName": "Ebbe",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 8,
+      "whitePlayer": {
+        "lastName": "Spelare_e89975a4",
+        "firstName": "Aurelia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e952132f",
+        "firstName": "Benjamin",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 9,
+      "whitePlayer": {
+        "lastName": "Spelare_c8744345",
+        "firstName": "Mihnea",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e366c564",
+        "firstName": "Rheo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 10,
+      "whitePlayer": {
+        "lastName": "Spelare_b62e1ff9",
+        "firstName": "Helena",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c5ca3eaa",
+        "firstName": "Ona",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 11,
+      "whitePlayer": {
+        "lastName": "Spelare_9750b7b6",
+        "firstName": "Alicia",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_4b41fc1c",
+        "firstName": "Thea",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 12,
+      "whitePlayer": {
+        "lastName": "Spelare_1747e495",
+        "firstName": "Malte",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_02df5daf",
+        "firstName": "Julian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 13,
+      "whitePlayer": {
+        "lastName": "Spelare_e0cd02e5",
+        "firstName": "Kindah",
+        "clubName": "Skola_20867780"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_fac08dc8",
+        "firstName": "Iris",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 14,
+      "whitePlayer": {
+        "lastName": "Spelare_b0a52cac",
+        "firstName": "Kristian",
+        "clubName": "Skola_8a95c010"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_7323a017",
+        "firstName": "Troy",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 15,
+      "whitePlayer": {
+        "lastName": "Spelare_91cb20c2",
+        "firstName": "Lisa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_525917a9",
+        "firstName": "Abbe",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 16,
+      "whitePlayer": {
+        "lastName": "Spelare_86de3053",
+        "firstName": "Emilio",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_84a7bbc3",
+        "firstName": "Ninorta",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 17,
+      "whitePlayer": {
+        "lastName": "Spelare_34eacc6c",
+        "firstName": "Nils",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Elsa",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 18,
+      "whitePlayer": {
+        "lastName": "Spelare_312874f1",
+        "firstName": "Adele",
+        "clubName": "Skola_e2433108"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2dd1283e",
+        "firstName": "Aran",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 19,
+      "whitePlayer": {
+        "lastName": "Spelare_27985709",
+        "firstName": "Didi",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_79b2d474",
+        "firstName": "Nasrin",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 20,
+      "whitePlayer": {
+        "lastName": "Spelare_5e16493f",
+        "firstName": "Alfred",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b4d6b7a4",
+        "firstName": "Zine",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 21,
+      "whitePlayer": {
+        "lastName": "Spelare_27853687",
+        "firstName": "Isabella",
+        "clubName": "Skola_e2433108"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Liam",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 22,
+      "whitePlayer": {
+        "lastName": "Spelare_a908f17c",
+        "firstName": "Rut",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5376e4e5",
+        "firstName": "Florian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 23,
+      "whitePlayer": {
+        "lastName": "Spelare_5c3f54c0",
+        "firstName": "Enzo",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_88051eb8",
+        "firstName": "Max",
+        "clubName": "Skola_70dcdc33"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 24,
+      "whitePlayer": {
+        "lastName": "Spelare_7458199f",
+        "firstName": "Isabelle",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_14ee6685",
+        "firstName": "Elsa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 25,
+      "whitePlayer": {
+        "lastName": "Spelare_e0c1fd1a",
+        "firstName": "River",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_81afec4b",
+        "firstName": "Stella",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 26,
+      "whitePlayer": {
+        "lastName": "Spelare_6c5ad499",
+        "firstName": "Rishaan",
+        "clubName": "Skola_70dcdc33"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_d7b6e6a9",
+        "firstName": "Freja",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 27,
+      "whitePlayer": {
+        "lastName": "Spelare_d8f67fea",
+        "firstName": "Bowie",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_f273c1b5",
+        "firstName": "Sam",
+        "clubName": "Skola_13c377b5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 28,
+      "whitePlayer": {
+        "lastName": "Spelare_ce31ac3b",
+        "firstName": "Diogo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b1743d5e",
+        "firstName": "Mathias",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 29,
+      "whitePlayer": {
+        "lastName": "Spelare_c49fb58c",
+        "firstName": "Max",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_9c8d8ccc",
+        "firstName": "Èlia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 30,
+      "whitePlayer": {
+        "lastName": "Spelare_9100047e",
+        "firstName": "Nicholas",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_123a4d6f",
+        "firstName": "Judith",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 31,
+      "whitePlayer": {
+        "lastName": "Spelare_57ca1662",
+        "firstName": "Elsa",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "Oscar",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 32,
+      "whitePlayer": {
+        "lastName": "Spelare_2c415eed",
+        "firstName": "Fatima",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b9bf3f2a",
+        "firstName": "Bertil",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 33,
+      "whitePlayer": {
+        "lastName": "Spelare_967340db",
+        "firstName": "Hani",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_81d7f0b2",
+        "firstName": "Bence",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 34,
+      "whitePlayer": {
+        "lastName": "Spelare_570ff8ec",
+        "firstName": "Sonia",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_823edc76",
+        "firstName": "Hugo",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 35,
+      "whitePlayer": {
+        "lastName": "Spelare_1b51ff33",
+        "firstName": "Marissa",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_55585b0f",
+        "firstName": "Adam",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 36,
+      "whitePlayer": {
+        "lastName": "Spelare_eee09be6",
+        "firstName": "Ava",
+        "clubName": "Skola_d6c3323a"
+      },
+      "blackPlayer": null,
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    }
+  ],
+  "2": [
+    {
+      "boardNr": 1,
+      "whitePlayer": {
+        "lastName": "Spelare_01ffc7fa",
+        "firstName": "Noel",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_eee09be6",
+        "firstName": "Ava",
+        "clubName": "Skola_d6c3323a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 2,
+      "whitePlayer": {
+        "lastName": "Spelare_00392518",
+        "firstName": "Minna",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b5f1d7df",
+        "firstName": "Jonah",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 3,
+      "whitePlayer": {
+        "lastName": "Spelare_e952132f",
+        "firstName": "Benjamin",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_23fecf36",
+        "firstName": "Axel",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 4,
+      "whitePlayer": {
+        "lastName": "Spelare_4b41fc1c",
+        "firstName": "Thea",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b0a52cac",
+        "firstName": "Kristian",
+        "clubName": "Skola_8a95c010"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 5,
+      "whitePlayer": {
+        "lastName": "Spelare_02df5daf",
+        "firstName": "Julian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_86de3053",
+        "firstName": "Emilio",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 6,
+      "whitePlayer": {
+        "lastName": "Spelare_79b2d474",
+        "firstName": "Nasrin",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_91cb20c2",
+        "firstName": "Lisa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 7,
+      "whitePlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Liam",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_34eacc6c",
+        "firstName": "Nils",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 8,
+      "whitePlayer": {
+        "lastName": "Spelare_5e16493f",
+        "firstName": "Alfred",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_312874f1",
+        "firstName": "Adele",
+        "clubName": "Skola_e2433108"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 9,
+      "whitePlayer": {
+        "lastName": "Spelare_88051eb8",
+        "firstName": "Max",
+        "clubName": "Skola_70dcdc33"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5376e4e5",
+        "firstName": "Florian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 10,
+      "whitePlayer": {
+        "lastName": "Spelare_14ee6685",
+        "firstName": "Elsa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e0c1fd1a",
+        "firstName": "River",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 11,
+      "whitePlayer": {
+        "lastName": "Spelare_d8f67fea",
+        "firstName": "Bowie",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6c5ad499",
+        "firstName": "Rishaan",
+        "clubName": "Skola_70dcdc33"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 12,
+      "whitePlayer": {
+        "lastName": "Spelare_b1743d5e",
+        "firstName": "Mathias",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c49fb58c",
+        "firstName": "Max",
+        "clubName": "Skola_6c1da12e"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 13,
+      "whitePlayer": {
+        "lastName": "Spelare_b9bf3f2a",
+        "firstName": "Bertil",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_9100047e",
+        "firstName": "Nicholas",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 14,
+      "whitePlayer": {
+        "lastName": "Spelare_55585b0f",
+        "firstName": "Adam",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_81d7f0b2",
+        "firstName": "Bence",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 15,
+      "whitePlayer": {
+        "lastName": "Spelare_5c066d2e",
+        "firstName": "Logan",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_570ff8ec",
+        "firstName": "Sonia",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 16,
+      "whitePlayer": {
+        "lastName": "Spelare_0d58b4a7",
+        "firstName": "Melker",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_1df79687",
+        "firstName": "Linnéa Servin",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 17,
+      "whitePlayer": {
+        "lastName": "Spelare_2c4ba077",
+        "firstName": "Ebbe",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_4b248d1d",
+        "firstName": "Elina",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 18,
+      "whitePlayer": {
+        "lastName": "Spelare_e366c564",
+        "firstName": "Rheo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_67e1e573",
+        "firstName": "Marc",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 19,
+      "whitePlayer": {
+        "lastName": "Spelare_c5ca3eaa",
+        "firstName": "Ona",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c8744345",
+        "firstName": "Mihnea",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 20,
+      "whitePlayer": {
+        "lastName": "Spelare_fac08dc8",
+        "firstName": "Iris",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b62e1ff9",
+        "firstName": "Helena",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 21,
+      "whitePlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "Oscar",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e0cd02e5",
+        "firstName": "Kindah",
+        "clubName": "Skola_20867780"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 22,
+      "whitePlayer": {
+        "lastName": "Spelare_263c837c",
+        "firstName": "Oliver",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_57ca1662",
+        "firstName": "Elsa",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 23,
+      "whitePlayer": {
+        "lastName": "Spelare_f19cd677",
+        "firstName": "Estrid",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "William",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 24,
+      "whitePlayer": {
+        "lastName": "Spelare_c0ad52d8",
+        "firstName": "Ahmed",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e89975a4",
+        "firstName": "Aurelia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 25,
+      "whitePlayer": {
+        "lastName": "Spelare_7323a017",
+        "firstName": "Troy",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_9750b7b6",
+        "firstName": "Alicia",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 26,
+      "whitePlayer": {
+        "lastName": "Spelare_27985709",
+        "firstName": "Didi",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_1747e495",
+        "firstName": "Malte",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 27,
+      "whitePlayer": {
+        "lastName": "Spelare_525917a9",
+        "firstName": "Abbe",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_27853687",
+        "firstName": "Isabella",
+        "clubName": "Skola_e2433108"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 28,
+      "whitePlayer": {
+        "lastName": "Spelare_84a7bbc3",
+        "firstName": "Ninorta",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_a908f17c",
+        "firstName": "Rut",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 29,
+      "whitePlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Elsa",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5c3f54c0",
+        "firstName": "Enzo",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 30,
+      "whitePlayer": {
+        "lastName": "Spelare_81afec4b",
+        "firstName": "Stella",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2dd1283e",
+        "firstName": "Aran",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 31,
+      "whitePlayer": {
+        "lastName": "Spelare_d7b6e6a9",
+        "firstName": "Freja",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b4d6b7a4",
+        "firstName": "Zine",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 32,
+      "whitePlayer": {
+        "lastName": "Spelare_f273c1b5",
+        "firstName": "Sam",
+        "clubName": "Skola_13c377b5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_7458199f",
+        "firstName": "Isabelle",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 33,
+      "whitePlayer": {
+        "lastName": "Spelare_9c8d8ccc",
+        "firstName": "Èlia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_ce31ac3b",
+        "firstName": "Diogo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 34,
+      "whitePlayer": {
+        "lastName": "Spelare_123a4d6f",
+        "firstName": "Judith",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2c415eed",
+        "firstName": "Fatima",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 35,
+      "whitePlayer": {
+        "lastName": "Spelare_823edc76",
+        "firstName": "Hugo",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_967340db",
+        "firstName": "Hani",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 36,
+      "whitePlayer": {
+        "lastName": "Spelare_1b51ff33",
+        "firstName": "Marissa",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": null,
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    }
+  ],
+  "3": [
+    {
+      "boardNr": 1,
+      "whitePlayer": {
+        "lastName": "Spelare_b5f1d7df",
+        "firstName": "Jonah",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_eee09be6",
+        "firstName": "Ava",
+        "clubName": "Skola_d6c3323a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 2,
+      "whitePlayer": {
+        "lastName": "Spelare_02df5daf",
+        "firstName": "Julian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e952132f",
+        "firstName": "Benjamin",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 3,
+      "whitePlayer": {
+        "lastName": "Spelare_79b2d474",
+        "firstName": "Nasrin",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b0a52cac",
+        "firstName": "Kristian",
+        "clubName": "Skola_8a95c010"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 4,
+      "whitePlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Liam",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5e16493f",
+        "firstName": "Alfred",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 5,
+      "whitePlayer": {
+        "lastName": "Spelare_5376e4e5",
+        "firstName": "Florian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e0c1fd1a",
+        "firstName": "River",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 6,
+      "whitePlayer": {
+        "lastName": "Spelare_c49fb58c",
+        "firstName": "Max",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6c5ad499",
+        "firstName": "Rishaan",
+        "clubName": "Skola_70dcdc33"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 7,
+      "whitePlayer": {
+        "lastName": "Spelare_5c066d2e",
+        "firstName": "Logan",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b9bf3f2a",
+        "firstName": "Bertil",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 8,
+      "whitePlayer": {
+        "lastName": "Spelare_1df79687",
+        "firstName": "Linnéa Servin",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_55585b0f",
+        "firstName": "Adam",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 9,
+      "whitePlayer": {
+        "lastName": "Spelare_c8744345",
+        "firstName": "Mihnea",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_4b248d1d",
+        "firstName": "Elina",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 10,
+      "whitePlayer": {
+        "lastName": "Spelare_b62e1ff9",
+        "firstName": "Helena",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_67e1e573",
+        "firstName": "Marc",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 11,
+      "whitePlayer": {
+        "lastName": "Spelare_01ffc7fa",
+        "firstName": "Noel",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "Oscar",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 12,
+      "whitePlayer": {
+        "lastName": "Spelare_23fecf36",
+        "firstName": "Axel",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_00392518",
+        "firstName": "Minna",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 13,
+      "whitePlayer": {
+        "lastName": "Spelare_86de3053",
+        "firstName": "Emilio",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_4b41fc1c",
+        "firstName": "Thea",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 14,
+      "whitePlayer": {
+        "lastName": "Spelare_312874f1",
+        "firstName": "Adele",
+        "clubName": "Skola_e2433108"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_91cb20c2",
+        "firstName": "Lisa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 15,
+      "whitePlayer": {
+        "lastName": "Spelare_88051eb8",
+        "firstName": "Max",
+        "clubName": "Skola_70dcdc33"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_34eacc6c",
+        "firstName": "Nils",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 16,
+      "whitePlayer": {
+        "lastName": "Spelare_14ee6685",
+        "firstName": "Elsa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_d8f67fea",
+        "firstName": "Bowie",
+        "clubName": "Skola_6c1da12e"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 17,
+      "whitePlayer": {
+        "lastName": "Spelare_9100047e",
+        "firstName": "Nicholas",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b1743d5e",
+        "firstName": "Mathias",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 18,
+      "whitePlayer": {
+        "lastName": "Spelare_81d7f0b2",
+        "firstName": "Bence",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_570ff8ec",
+        "firstName": "Sonia",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 19,
+      "whitePlayer": {
+        "lastName": "Spelare_1747e495",
+        "firstName": "Malte",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_263c837c",
+        "firstName": "Oliver",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 20,
+      "whitePlayer": {
+        "lastName": "Spelare_525917a9",
+        "firstName": "Abbe",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e89975a4",
+        "firstName": "Aurelia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 21,
+      "whitePlayer": {
+        "lastName": "Spelare_84a7bbc3",
+        "firstName": "Ninorta",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_7323a017",
+        "firstName": "Troy",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 22,
+      "whitePlayer": {
+        "lastName": "Spelare_2dd1283e",
+        "firstName": "Aran",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5c3f54c0",
+        "firstName": "Enzo",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 23,
+      "whitePlayer": {
+        "lastName": "Spelare_b4d6b7a4",
+        "firstName": "Zine",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_f273c1b5",
+        "firstName": "Sam",
+        "clubName": "Skola_13c377b5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 24,
+      "whitePlayer": {
+        "lastName": "Spelare_967340db",
+        "firstName": "Hani",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_9c8d8ccc",
+        "firstName": "Èlia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 25,
+      "whitePlayer": {
+        "lastName": "Spelare_123a4d6f",
+        "firstName": "Judith",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_1b51ff33",
+        "firstName": "Marissa",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 26,
+      "whitePlayer": {
+        "lastName": "Spelare_2c4ba077",
+        "firstName": "Ebbe",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_0d58b4a7",
+        "firstName": "Melker",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 27,
+      "whitePlayer": {
+        "lastName": "Spelare_c5ca3eaa",
+        "firstName": "Ona",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e366c564",
+        "firstName": "Rheo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 28,
+      "whitePlayer": {
+        "lastName": "Spelare_57ca1662",
+        "firstName": "Elsa",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_fac08dc8",
+        "firstName": "Iris",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 29,
+      "whitePlayer": {
+        "lastName": "Spelare_f19cd677",
+        "firstName": "Estrid",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e0cd02e5",
+        "firstName": "Kindah",
+        "clubName": "Skola_20867780"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 30,
+      "whitePlayer": {
+        "lastName": "Spelare_c0ad52d8",
+        "firstName": "Ahmed",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "William",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 31,
+      "whitePlayer": {
+        "lastName": "Spelare_9750b7b6",
+        "firstName": "Alicia",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_27985709",
+        "firstName": "Didi",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 32,
+      "whitePlayer": {
+        "lastName": "Spelare_27853687",
+        "firstName": "Isabella",
+        "clubName": "Skola_e2433108"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Elsa",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 33,
+      "whitePlayer": {
+        "lastName": "Spelare_81afec4b",
+        "firstName": "Stella",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_a908f17c",
+        "firstName": "Rut",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 34,
+      "whitePlayer": {
+        "lastName": "Spelare_d7b6e6a9",
+        "firstName": "Freja",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_7458199f",
+        "firstName": "Isabelle",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 35,
+      "whitePlayer": {
+        "lastName": "Spelare_2c415eed",
+        "firstName": "Fatima",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_ce31ac3b",
+        "firstName": "Diogo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 36,
+      "whitePlayer": {
+        "lastName": "Spelare_823edc76",
+        "firstName": "Hugo",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": null,
+      "resultType": "WHITE_WIN_WO",
+      "whiteScore": 3,
+      "blackScore": 0
+    }
+  ],
+  "4": [
+    {
+      "boardNr": 1,
+      "whitePlayer": {
+        "lastName": "Spelare_eee09be6",
+        "firstName": "Ava",
+        "clubName": "Skola_d6c3323a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_02df5daf",
+        "firstName": "Julian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 2,
+      "whitePlayer": {
+        "lastName": "Spelare_b0a52cac",
+        "firstName": "Kristian",
+        "clubName": "Skola_8a95c010"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Liam",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 3,
+      "whitePlayer": {
+        "lastName": "Spelare_6c5ad499",
+        "firstName": "Rishaan",
+        "clubName": "Skola_70dcdc33"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5376e4e5",
+        "firstName": "Florian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 4,
+      "whitePlayer": {
+        "lastName": "Spelare_67e1e573",
+        "firstName": "Marc",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b9bf3f2a",
+        "firstName": "Bertil",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 5,
+      "whitePlayer": {
+        "lastName": "Spelare_55585b0f",
+        "firstName": "Adam",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b5f1d7df",
+        "firstName": "Jonah",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 6,
+      "whitePlayer": {
+        "lastName": "Spelare_e952132f",
+        "firstName": "Benjamin",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c8744345",
+        "firstName": "Mihnea",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 7,
+      "whitePlayer": {
+        "lastName": "Spelare_5e16493f",
+        "firstName": "Alfred",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_79b2d474",
+        "firstName": "Nasrin",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 8,
+      "whitePlayer": {
+        "lastName": "Spelare_e0c1fd1a",
+        "firstName": "River",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c49fb58c",
+        "firstName": "Max",
+        "clubName": "Skola_6c1da12e"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 9,
+      "whitePlayer": {
+        "lastName": "Spelare_00392518",
+        "firstName": "Minna",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "Oscar",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 10,
+      "whitePlayer": {
+        "lastName": "Spelare_312874f1",
+        "firstName": "Adele",
+        "clubName": "Skola_e2433108"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_86de3053",
+        "firstName": "Emilio",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 11,
+      "whitePlayer": {
+        "lastName": "Spelare_d8f67fea",
+        "firstName": "Bowie",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_88051eb8",
+        "firstName": "Max",
+        "clubName": "Skola_70dcdc33"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 12,
+      "whitePlayer": {
+        "lastName": "Spelare_81d7f0b2",
+        "firstName": "Bence",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_9100047e",
+        "firstName": "Nicholas",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 13,
+      "whitePlayer": {
+        "lastName": "Spelare_525917a9",
+        "firstName": "Abbe",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_263c837c",
+        "firstName": "Oliver",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 14,
+      "whitePlayer": {
+        "lastName": "Spelare_f273c1b5",
+        "firstName": "Sam",
+        "clubName": "Skola_13c377b5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_84a7bbc3",
+        "firstName": "Ninorta",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 15,
+      "whitePlayer": {
+        "lastName": "Spelare_9c8d8ccc",
+        "firstName": "Èlia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2dd1283e",
+        "firstName": "Aran",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 16,
+      "whitePlayer": {
+        "lastName": "Spelare_1df79687",
+        "firstName": "Linnéa Servin",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_123a4d6f",
+        "firstName": "Judith",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 17,
+      "whitePlayer": {
+        "lastName": "Spelare_4b248d1d",
+        "firstName": "Elina",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5c066d2e",
+        "firstName": "Logan",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 18,
+      "whitePlayer": {
+        "lastName": "Spelare_01ffc7fa",
+        "firstName": "Noel",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b62e1ff9",
+        "firstName": "Helena",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 19,
+      "whitePlayer": {
+        "lastName": "Spelare_e366c564",
+        "firstName": "Rheo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_57ca1662",
+        "firstName": "Elsa",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 20,
+      "whitePlayer": {
+        "lastName": "Spelare_23fecf36",
+        "firstName": "Axel",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_f19cd677",
+        "firstName": "Estrid",
+        "clubName": "Skola_6c1da12e"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 21,
+      "whitePlayer": {
+        "lastName": "Spelare_4b41fc1c",
+        "firstName": "Thea",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "William",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 22,
+      "whitePlayer": {
+        "lastName": "Spelare_b1743d5e",
+        "firstName": "Mathias",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_91cb20c2",
+        "firstName": "Lisa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 23,
+      "whitePlayer": {
+        "lastName": "Spelare_570ff8ec",
+        "firstName": "Sonia",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_34eacc6c",
+        "firstName": "Nils",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 24,
+      "whitePlayer": {
+        "lastName": "Spelare_1747e495",
+        "firstName": "Malte",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_14ee6685",
+        "firstName": "Elsa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 25,
+      "whitePlayer": {
+        "lastName": "Spelare_b4d6b7a4",
+        "firstName": "Zine",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e89975a4",
+        "firstName": "Aurelia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 26,
+      "whitePlayer": {
+        "lastName": "Spelare_5c3f54c0",
+        "firstName": "Enzo",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_7323a017",
+        "firstName": "Troy",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 27,
+      "whitePlayer": {
+        "lastName": "Spelare_0d58b4a7",
+        "firstName": "Melker",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_967340db",
+        "firstName": "Hani",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 28,
+      "whitePlayer": {
+        "lastName": "Spelare_2c4ba077",
+        "firstName": "Ebbe",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_1b51ff33",
+        "firstName": "Marissa",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 29,
+      "whitePlayer": {
+        "lastName": "Spelare_a908f17c",
+        "firstName": "Rut",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_9750b7b6",
+        "firstName": "Alicia",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 30,
+      "whitePlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Elsa",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_823edc76",
+        "firstName": "Hugo",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 31,
+      "whitePlayer": {
+        "lastName": "Spelare_7458199f",
+        "firstName": "Isabelle",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c5ca3eaa",
+        "firstName": "Ona",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 32,
+      "whitePlayer": {
+        "lastName": "Spelare_fac08dc8",
+        "firstName": "Iris",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2c415eed",
+        "firstName": "Fatima",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 33,
+      "whitePlayer": {
+        "lastName": "Spelare_e0cd02e5",
+        "firstName": "Kindah",
+        "clubName": "Skola_20867780"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c0ad52d8",
+        "firstName": "Ahmed",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 34,
+      "whitePlayer": {
+        "lastName": "Spelare_81afec4b",
+        "firstName": "Stella",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_27985709",
+        "firstName": "Didi",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 35,
+      "whitePlayer": {
+        "lastName": "Spelare_d7b6e6a9",
+        "firstName": "Freja",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_27853687",
+        "firstName": "Isabella",
+        "clubName": "Skola_e2433108"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 36,
+      "whitePlayer": {
+        "lastName": "Spelare_ce31ac3b",
+        "firstName": "Diogo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": null,
+      "resultType": "WHITE_WIN_WO",
+      "whiteScore": 3,
+      "blackScore": 0
+    }
+  ],
+  "5": [
+    {
+      "boardNr": 1,
+      "whitePlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Liam",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_eee09be6",
+        "firstName": "Ava",
+        "clubName": "Skola_d6c3323a"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 2,
+      "whitePlayer": {
+        "lastName": "Spelare_67e1e573",
+        "firstName": "Marc",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_6c5ad499",
+        "firstName": "Rishaan",
+        "clubName": "Skola_70dcdc33"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 3,
+      "whitePlayer": {
+        "lastName": "Spelare_b0a52cac",
+        "firstName": "Kristian",
+        "clubName": "Skola_8a95c010"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_02df5daf",
+        "firstName": "Julian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 4,
+      "whitePlayer": {
+        "lastName": "Spelare_b9bf3f2a",
+        "firstName": "Bertil",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5376e4e5",
+        "firstName": "Florian",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 5,
+      "whitePlayer": {
+        "lastName": "Spelare_e952132f",
+        "firstName": "Benjamin",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_55585b0f",
+        "firstName": "Adam",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 6,
+      "whitePlayer": {
+        "lastName": "Spelare_e0c1fd1a",
+        "firstName": "River",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b5f1d7df",
+        "firstName": "Jonah",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 7,
+      "whitePlayer": {
+        "lastName": "Spelare_86de3053",
+        "firstName": "Emilio",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_79b2d474",
+        "firstName": "Nasrin",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 8,
+      "whitePlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "Oscar",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_88051eb8",
+        "firstName": "Max",
+        "clubName": "Skola_70dcdc33"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 9,
+      "whitePlayer": {
+        "lastName": "Spelare_263c837c",
+        "firstName": "Oliver",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_81d7f0b2",
+        "firstName": "Bence",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 10,
+      "whitePlayer": {
+        "lastName": "Spelare_9c8d8ccc",
+        "firstName": "Èlia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_f273c1b5",
+        "firstName": "Sam",
+        "clubName": "Skola_13c377b5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 11,
+      "whitePlayer": {
+        "lastName": "Spelare_123a4d6f",
+        "firstName": "Judith",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c8744345",
+        "firstName": "Mihnea",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 12,
+      "whitePlayer": {
+        "lastName": "Spelare_5c066d2e",
+        "firstName": "Logan",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_01ffc7fa",
+        "firstName": "Noel",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 13,
+      "whitePlayer": {
+        "lastName": "Spelare_6797e434",
+        "firstName": "William",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_e366c564",
+        "firstName": "Rheo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 14,
+      "whitePlayer": {
+        "lastName": "Spelare_c49fb58c",
+        "firstName": "Max",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5e16493f",
+        "firstName": "Alfred",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 15,
+      "whitePlayer": {
+        "lastName": "Spelare_00392518",
+        "firstName": "Minna",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_312874f1",
+        "firstName": "Adele",
+        "clubName": "Skola_e2433108"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 16,
+      "whitePlayer": {
+        "lastName": "Spelare_9100047e",
+        "firstName": "Nicholas",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_d8f67fea",
+        "firstName": "Bowie",
+        "clubName": "Skola_6c1da12e"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 17,
+      "whitePlayer": {
+        "lastName": "Spelare_1df79687",
+        "firstName": "Linnéa Servin",
+        "clubName": "Skola_be211b7c"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_525917a9",
+        "firstName": "Abbe",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 18,
+      "whitePlayer": {
+        "lastName": "Spelare_84a7bbc3",
+        "firstName": "Ninorta",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_23fecf36",
+        "firstName": "Axel",
+        "clubName": "Skola_15fc3dde"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 19,
+      "whitePlayer": {
+        "lastName": "Spelare_2dd1283e",
+        "firstName": "Aran",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_14ee6685",
+        "firstName": "Elsa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 20,
+      "whitePlayer": {
+        "lastName": "Spelare_570ff8ec",
+        "firstName": "Sonia",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b1743d5e",
+        "firstName": "Mathias",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 21,
+      "whitePlayer": {
+        "lastName": "Spelare_7323a017",
+        "firstName": "Troy",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_b4d6b7a4",
+        "firstName": "Zine",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 22,
+      "whitePlayer": {
+        "lastName": "Spelare_a908f17c",
+        "firstName": "Rut",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_0d58b4a7",
+        "firstName": "Melker",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 23,
+      "whitePlayer": {
+        "lastName": "Spelare_7458199f",
+        "firstName": "Isabelle",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2c4ba077",
+        "firstName": "Ebbe",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 24,
+      "whitePlayer": {
+        "lastName": "Spelare_823edc76",
+        "firstName": "Hugo",
+        "clubName": "Skola_96034b7a"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_2c415eed",
+        "firstName": "Fatima",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 25,
+      "whitePlayer": {
+        "lastName": "Spelare_b62e1ff9",
+        "firstName": "Helena",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_4b248d1d",
+        "firstName": "Elina",
+        "clubName": "Skola_be211b7c"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 26,
+      "whitePlayer": {
+        "lastName": "Spelare_f19cd677",
+        "firstName": "Estrid",
+        "clubName": "Skola_6c1da12e"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_57ca1662",
+        "firstName": "Elsa",
+        "clubName": "Skola_19f24874"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 27,
+      "whitePlayer": {
+        "lastName": "Spelare_4b41fc1c",
+        "firstName": "Thea",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_1747e495",
+        "firstName": "Malte",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 28,
+      "whitePlayer": {
+        "lastName": "Spelare_91cb20c2",
+        "firstName": "Lisa",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_5c3f54c0",
+        "firstName": "Enzo",
+        "clubName": "Skola_96034b7a"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 29,
+      "whitePlayer": {
+        "lastName": "Spelare_34eacc6c",
+        "firstName": "Nils",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_967340db",
+        "firstName": "Hani",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 30,
+      "whitePlayer": {
+        "lastName": "Spelare_e89975a4",
+        "firstName": "Aurelia",
+        "clubName": "Skola_3e962cf1"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_1b51ff33",
+        "firstName": "Marissa",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 31,
+      "whitePlayer": {
+        "lastName": "Spelare_9750b7b6",
+        "firstName": "Alicia",
+        "clubName": "Skola_932797f5"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_d7b6e6a9",
+        "firstName": "Freja",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 32,
+      "whitePlayer": {
+        "lastName": "Spelare_ce31ac3b",
+        "firstName": "Diogo",
+        "clubName": "Skola_15fc3dde"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_660927bb",
+        "firstName": "Elsa",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "WHITE_WIN",
+      "whiteScore": 3,
+      "blackScore": 1
+    },
+    {
+      "boardNr": 33,
+      "whitePlayer": {
+        "lastName": "Spelare_c5ca3eaa",
+        "firstName": "Ona",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_c0ad52d8",
+        "firstName": "Ahmed",
+        "clubName": "Skola_932797f5"
+      },
+      "resultType": "BLACK_WIN",
+      "whiteScore": 1,
+      "blackScore": 3
+    },
+    {
+      "boardNr": 34,
+      "whitePlayer": {
+        "lastName": "Spelare_27985709",
+        "firstName": "Didi",
+        "clubName": "Skola_19f24874"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_fac08dc8",
+        "firstName": "Iris",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 35,
+      "whitePlayer": {
+        "lastName": "Spelare_e0cd02e5",
+        "firstName": "Kindah",
+        "clubName": "Skola_20867780"
+      },
+      "blackPlayer": {
+        "lastName": "Spelare_81afec4b",
+        "firstName": "Stella",
+        "clubName": "Skola_3e962cf1"
+      },
+      "resultType": "DRAW",
+      "whiteScore": 2,
+      "blackScore": 2
+    },
+    {
+      "boardNr": 36,
+      "whitePlayer": {
+        "lastName": "Spelare_27853687",
+        "firstName": "Isabella",
+        "clubName": "Skola_e2433108"
+      },
+      "blackPlayer": null,
+      "resultType": "WHITE_WIN_WO",
+      "whiteScore": 3,
+      "blackScore": 0
+    }
+  ]
+}
