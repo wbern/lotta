@@ -1,0 +1,4 @@
+`$fn($args)` where {
+  $fn <: `$_.waitForResponse`,
+  register_diagnostic(span=$fn, message="Do not use page.waitForResponse in e2e tests. Lotta is fully client-side — there is no backend serving /api/* — so this Promise never resolves and the test hangs until timeout. Use the in-browser bridge instead: apiClient(page).get/post (see e2e/api-helpers.ts) or a functional probe like await expect(locator).toHaveText(...). Past regressions: 97fdec5, f11d8df, 76f2ef2.", severity="error")
+}

@@ -342,8 +342,18 @@
       "includes": ["e2e/**/*.ts", "!e2e/reconnection.spec.ts"],
       "plugins": [
         "./biome-plugins/no-wait-for-timeout.grit",
-        "./biome-plugins/no-class-locators.grit"
+        "./biome-plugins/no-class-locators.grit",
+        "./biome-plugins/no-wait-for-response.grit",
+        "./biome-plugins/no-hardcoded-resource-ids.grit"
       ]
+    },
+    {
+      "includes": ["src/**/*.{ts,tsx}", "!src/hooks/useOnlineStatus.ts", "!**/*.test.{ts,tsx}"],
+      "plugins": ["./biome-plugins/no-navigator-online.grit"]
+    },
+    {
+      "includes": ["src/**/*.{ts,tsx}", "!src/hooks/useVersions.ts", "!**/*.test.{ts,tsx}"],
+      "plugins": ["./biome-plugins/no-online-network-mode.grit"]
     }
   ],
   "assist": {

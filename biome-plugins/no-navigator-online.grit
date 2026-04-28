@@ -1,0 +1,3 @@
+`navigator.onLine` as $expr where {
+  register_diagnostic(span=$expr, message="Do not read navigator.onLine directly outside src/hooks/useOnlineStatus.ts. Lotta is offline-first: all data lives in IndexedDB, so logic gated on navigator.onLine will incorrectly disable working features when the browser thinks it's offline (DevTools 'Offline' mode, captive-portal false negatives, sleeping macs). The only legitimate HTTP probe is useVersions, which has its own networkMode handling. If you need an online indicator for UI hints, use the useOnlineStatus hook so the gating stays centralized. Past regression: fd099c1.", severity="error")
+}

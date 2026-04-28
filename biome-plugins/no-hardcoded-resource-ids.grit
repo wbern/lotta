@@ -1,0 +1,4 @@
+`$call($arg)` where {
+  $arg <: r".*/api/(tournaments|players|clubs|games|rounds)/[0-9]+.*",
+  register_diagnostic(span=$arg, message="Do not hardcode numeric resource ids in /api/<resource>/<id> paths. Lotta auto-increments ids; the order in which fixtures seed the DB shifts the ids of the 'hero tournament' and friends, so '/api/tournaments/2' silently targets the wrong row once any other tournament is seeded first. Look the entity up by name instead: const tournaments = await $.get('/api/tournaments'); const id = tournaments.find(t => t.name === 'EM 2024')?.id. Past regressions: 76f2ef2, f11d8df.", severity="error")
+}

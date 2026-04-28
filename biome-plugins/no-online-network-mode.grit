@@ -1,0 +1,4 @@
+`'online'` as $val where {
+  $val <: within `networkMode: $_` ,
+  register_diagnostic(span=$val, message="Do not set networkMode: 'online' outside src/hooks/useVersions.ts. TanStack Query's 'online' mode pauses queries and mutations whenever navigator.onLine === false, which freezes Lotta's UI during DevTools 'Offline', sleeping macs, or captive-portal false negatives — even though all data is local IndexedDB. The global default is 'always' (set in src/query-client.ts) and IDB-backed hooks should leave it alone. The only legitimate exception is useVersions, which is a real HTTP probe to GitHub Pages. Past regression: fd099c1.", severity="error")
+}
