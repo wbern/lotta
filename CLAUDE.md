@@ -139,3 +139,63 @@ pnpm secretlint '**/*'   # Secret scanning
 - HTML publishing: standalone HTML pages with embedded CSS
 - LiveChess export: PGN format for unfinished games
 - TSV import/export: player data with club associations
+
+<claude-commands-template commands="code-review">
+
+## Project-specific recurring-bug checks
+
+Before grading, walk this checklist of bug classes we've actually shipped and had to fix. Each entry says **what to look for** and **how to verify**, with commit SHAs as evidence — `git show <sha>` if you need full context. Skip checks that don't apply. Issues found here are usually MAJOR or CRITICAL.
+
+Note: Biome plugins (`pnpm check`) already catch four mechanically-detectable rules: `no-wait-for-response`, `no-hardcoded-resource-ids`, `no-navigator-online`, `no-online-network-mode`. Don't re-flag what Biome would catch — focus on the semantic checks below.
+
+**1. P2P broadcast coverage on host state changes**
+- Look for: a new host-side mutation (DB write, tournament switch, undo/redo, delete, restore, snapshot, round seed) without a corresponding P2P broadcast.
+- Verify: every host mutation reaches `broadcastDataChanged` (or a more specific page/manifest broadcast). Direct DB writes via `__lottaApi` and backup/restore must trigger it too — not only React Query mutations.
+- History: bbcd024, 3df14d5, 384ea7a, a643603, e0c0277, 37a8aa7, 566af71, 4efb1ba.
+
+**2. Late-joiner / reconnect P2P state-sync**
+- Look for: a new broadcast path that fires on the live mutation only, with nothing in `onPeerReconnected` or `sendCurrentStateToPeer`.
+- Verify: late joiners and reconnecting peers receive the same state. P2P submission paths emit failure acks on disconnect, not silent drops.
+- History: bbcd024, 7b00de8, aadcb1b.
+
+**3. Long-mounted (`display:none`) component side effects**
+- Look for: components like `LiveTab`, `PlayerPoolDialog`, `TournamentPlayersDialog`, dialogs kept mounted when closed.
+- Verify: every `useEffect` is gated by an active flag (`isHosting`, `open`); document-title and live-context writes don't leak when the panel is hidden; state resets via a previous-value ref on the false→true transition when the panel reopens.
+- History: 2177ca0, 8acd05f, c8a3c55.
+
+**4. Permission/role inferred from absence**
+- Look for: code branching on the *lack* of a permission to assign a role (e.g. "no write perm → must be Avläsare → club-scope them").
+- Verify: classification uses positive signals (presence of write perms, redeemed code, sender role validation). Revoking a permission must re-evaluate already-connected peers, not only future handshakes.
+- History: 7b00de8, d84b37b, d777522.
+
+**5. Hardcoded scoring assumptions (chess4 / custom ppg)**
+- Look for: `1`/`0.5`/`0` literals, numeric keybind tables, score→display strings hardcoded outside `src/domain/scoring.ts`.
+- Verify: result mappings derive from the tournament's scoring config. Test mentally with Schackfyran (ppg=2) and custom ppg>1. Scoring-system change after results exist must be blocked at the repo layer, not only the UI.
+- History: c77da46, 73f1c04, d6dff12.
+
+**6. Publish/print grouping & data-source mismatches**
+- Look for: pairings/standings HTML grouping by `playerGroup` when source is `club` (or vice versa), printing `lotNr` instead of `boardNr`, lists of clubs/groups not filtered to the tournament's participants.
+- Verify: published output matches the on-screen source field. Toggle labels describe the actual grouping field. Multi-class chess4 and rounds where lotNr ≠ boardNr render correctly.
+- History: 03eeb47, 4447b34, 26999aa, ebbadfa.
+
+**7. Stale URL/router state across actions**
+- Look for: actions that change context (pair new round, clear DB, switch tournament, delete) without clearing related query params (`?round=N`, `?tournamentId=N`).
+- Verify: obsolete params are cleared on the action. E2E tests that check URL state should use functional probes when params can legitimately persist after a reload.
+- History: 101b723, 97fdec5.
+
+**8. Document-level event handlers firing in wrong context**
+- Look for: `keydown`/`keyup` handlers attached to `document` that mutate data based on a selected row.
+- Verify: handler scopes to `document.activeElement` matching an expected element type, and uses `mousedown` (not `click`) for selection-suppression `preventDefault`.
+- History: b2516f4, a02910a, 5f13489.
+
+**9. Sort order vs. display order**
+- Look for: a table sorted by one field and rendered with another (e.g. sorts by first name, displays "LastName, FirstName"), or lists that include rows not in the current scope (zero-participant clubs in a tournament).
+- Verify: visible primary column matches sort key; tournament-scoped lists filter to that tournament.
+- History: 5889c1e, 9fedf0e, ebbadfa.
+
+**10. E2E selector disambiguation**
+- Look for: new UI introducing duplicate semantic elements (multiple selects, nested dialogs, sibling tabs) without `data-testid`.
+- Verify: when adding a duplicate `<select>`, dialog, or tab, give the new one a `data-testid` so existing locators don't ambiguously match.
+- History: 97fdec5, 39abbe8.
+
+</claude-commands-template>

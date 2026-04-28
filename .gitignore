@@ -53,7 +53,7 @@ log/
 
 # Gas Town (added by gt)
 .runtime/
-.claude/
+.claude/settings.local.json
 .beads/
 .logs/
 __pycache__/
