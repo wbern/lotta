@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/wbern/lotta/compare/v1.9.0...v1.10.0) (2026-04-29)
+
+
+### Features
+
+* **toast:** unified toast system replaces ad-hoc inline notifications ([a3c25a7](https://github.com/wbern/lotta/commit/a3c25a7b6eb551385b3503f45337f3cd6fd991ad))
+
 # [1.9.0](https://github.com/wbern/lotta/compare/v1.8.0...v1.9.0) (2026-04-28)
 
 
