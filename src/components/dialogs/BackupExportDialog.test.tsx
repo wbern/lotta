@@ -4,7 +4,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BackupExportDialog } from './BackupExportDialog'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  localStorage.clear()
+})
 
 describe('BackupExportDialog', () => {
   it('renders with encryption checkbox unchecked by default', () => {
@@ -130,6 +133,28 @@ describe('BackupExportDialog', () => {
     render(<BackupExportDialog open onClose={vi.fn()} onExport={vi.fn()} />)
     const checkbox = screen.getByTestId('legacy-compat-checkbox') as HTMLInputElement
     expect(checkbox.checked).toBe(false)
+  })
+
+  it('restores the legacy-compat checkbox state from localStorage on open', () => {
+    localStorage.setItem('lotta:backup-export:legacy-compat', 'true')
+    render(<BackupExportDialog open onClose={vi.fn()} onExport={vi.fn()} />)
+    const checkbox = screen.getByTestId('legacy-compat-checkbox') as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('persists legacy-compat=true to localStorage on export', () => {
+    render(<BackupExportDialog open onClose={vi.fn()} onExport={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('legacy-compat-checkbox'))
+    fireEvent.click(screen.getByTestId('export-button'))
+    expect(localStorage.getItem('lotta:backup-export:legacy-compat')).toBe('true')
+  })
+
+  it('persists legacy-compat=false to localStorage on export', () => {
+    localStorage.setItem('lotta:backup-export:legacy-compat', 'true')
+    render(<BackupExportDialog open onClose={vi.fn()} onExport={vi.fn()} />)
+    fireEvent.click(screen.getByTestId('legacy-compat-checkbox')) // toggle off
+    fireEvent.click(screen.getByTestId('export-button'))
+    expect(localStorage.getItem('lotta:backup-export:legacy-compat')).toBe('false')
   })
 
   it('passes legacyCompat=false to onExport when unchecked', () => {

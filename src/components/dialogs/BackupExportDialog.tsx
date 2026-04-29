@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Dialog } from './Dialog'
 
+const LEGACY_COMPAT_STORAGE_KEY = 'lotta:backup-export:legacy-compat'
+
 interface Props {
   open: boolean
   onClose: () => void
@@ -9,7 +11,9 @@ interface Props {
 
 export function BackupExportDialog({ open, onClose, onExport }: Props) {
   const [encrypt, setEncrypt] = useState(false)
-  const [legacyCompat, setLegacyCompat] = useState(false)
+  const [legacyCompat, setLegacyCompat] = useState(
+    () => localStorage.getItem(LEGACY_COMPAT_STORAGE_KEY) === 'true',
+  )
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const passwordRef = useRef<HTMLInputElement>(null)
@@ -26,7 +30,7 @@ export function BackupExportDialog({ open, onClose, onExport }: Props) {
 
   const handleClose = () => {
     setEncrypt(false)
-    setLegacyCompat(false)
+    setLegacyCompat(localStorage.getItem(LEGACY_COMPAT_STORAGE_KEY) === 'true')
     setPassword('')
     setConfirmPassword('')
     onClose()
@@ -34,6 +38,7 @@ export function BackupExportDialog({ open, onClose, onExport }: Props) {
 
   const handleExport = () => {
     if (canExport) {
+      localStorage.setItem(LEGACY_COMPAT_STORAGE_KEY, String(legacyCompat))
       onExport(encrypt ? password : undefined, legacyCompat)
       handleClose()
     }
