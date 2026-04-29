@@ -11,7 +11,27 @@ export class TournamentPlayerRepository {
 
   add(tournamentId: number, dto: Partial<PlayerDto>): PlayerDto {
     this.assertCanAdd(tournamentId)
+    // addedAtRound is stamped from the rounds-paired count at insert and is
+    // never updated thereafter — the player's debut round must remain stable
+    // across unpair/repair cycles.
     const roundsPlayed = this.countRoundsPaired(tournamentId)
+    return this.insertRow(tournamentId, dto, roundsPlayed)
+  }
+
+  addMany(tournamentId: number, dtos: Partial<PlayerDto>[]): PlayerDto[] {
+    if (dtos.length === 0) return []
+    this.assertCanAdd(tournamentId)
+    // Bulk inserts share the same debut-round stamp: the count is computed
+    // once for the whole batch instead of once per row.
+    const roundsPlayed = this.countRoundsPaired(tournamentId)
+    return dtos.map((dto) => this.insertRow(tournamentId, dto, roundsPlayed))
+  }
+
+  private insertRow(
+    tournamentId: number,
+    dto: Partial<PlayerDto>,
+    roundsPlayed: number,
+  ): PlayerDto {
     const protect = dto.protectFromByeInDebut ?? true
     this.db.run(
       `INSERT INTO tournamentplayers (
@@ -48,10 +68,6 @@ export class TournamentPlayerRepository {
     const idResult = this.db.exec('SELECT last_insert_rowid()')
     const id = idResult[0].values[0][0] as number
     return this.get(id)!
-  }
-
-  addMany(tournamentId: number, dtos: Partial<PlayerDto>[]): PlayerDto[] {
-    return dtos.map((dto) => this.add(tournamentId, dto))
   }
 
   get(id: number): PlayerDto | null {
@@ -95,7 +111,8 @@ export class TournamentPlayerRepository {
       playerGroup: 'playergroup',
       withdrawnFromRound: 'withdrawnfromround',
       manualTiebreak: 'manualtiebreak',
-      addedAtRound: 'addedatround',
+      // addedAtRound is intentionally absent — it is stamped once at insert
+      // time and pins the player's debut round across unpair/repair cycles.
     }
 
     for (const [dtoField, dbColumn] of Object.entries(fieldMap)) {

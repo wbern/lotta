@@ -90,6 +90,14 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
 
   const isDirty = !samePlayer(editPlayer, baseline)
 
+  // Edit-mode reveal: the protect-from-bye toggle is only meaningful for
+  // late-added players whose debut round (addedAtRound + 1) has not yet been
+  // paired. Once their debut is on the board, flipping the flag has no effect.
+  const editingLateBeforeDebut =
+    !!tournament &&
+    (editPlayer.addedAtRound ?? 0) > 0 &&
+    (editPlayer.addedAtRound ?? 0) >= tournament.roundsPlayed
+
   const wasOpen = useRef(open)
   useEffect(() => {
     if (open && !wasOpen.current) {
@@ -351,7 +359,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
               onRenameClub={(id, name) => renameClub.mutate({ id, dto: { name } })}
               onDeleteClub={(id) => deleteClub.mutate(id)}
             />
-            {isNew && pastDraft && (
+            {((isNew && pastDraft) || (!isNew && editingLateBeforeDebut)) && (
               <label
                 style={{
                   display: 'flex',

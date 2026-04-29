@@ -47,6 +47,16 @@ const withdrawnPlayer = mockPlayer({
   ratingI: 1400,
   withdrawnFromRound: 2,
 })
+const lateAddedPlayer = mockPlayer({
+  id: 203,
+  firstName: 'Late',
+  lastName: 'Joiner',
+  club: 'SK Alfa',
+  clubIndex: 1,
+  ratingI: 1200,
+  addedAtRound: 1,
+  protectFromByeInDebut: true,
+})
 
 const mockMutate = vi.fn()
 const mockMutation = { mutate: mockMutate, mutateAsync: vi.fn() }
@@ -72,7 +82,9 @@ const mockUpdateMutate = vi.fn(
 )
 
 vi.mock('../../hooks/useTournamentPlayers', () => ({
-  useTournamentPlayers: () => ({ data: [tournamentPlayer, tournamentPlayer2, withdrawnPlayer] }),
+  useTournamentPlayers: () => ({
+    data: [tournamentPlayer, tournamentPlayer2, withdrawnPlayer, lateAddedPlayer],
+  }),
   useAddTournamentPlayer: () => mockMutation,
   useAddTournamentPlayers: () => mockBatchMutation,
   useUpdateTournamentPlayer: () => ({
@@ -416,7 +428,9 @@ describe('TournamentPlayersDialog tournament multi-select', () => {
 
     expect(mockBatchRemoveMutate).toHaveBeenCalledTimes(1)
     const [ids] = mockBatchRemoveMutate.mock.calls[0]
-    expect(ids.sort()).toEqual([200, 201])
+    // Sort order: "Erik, Johansson", "Late, Joiner", "Lisa, Persson" — the
+    // shift-range from Erik to Lisa now spans Late as well.
+    expect(ids.sort()).toEqual([200, 201, 203])
   })
 })
 
@@ -507,5 +521,54 @@ describe('TournamentPlayersDialog bye-protection on late-add', () => {
     fireEvent.click(screen.getByTestId('add-player'))
     const dto = mockMutate.mock.calls[0]?.[0] as { protectFromByeInDebut?: boolean }
     expect(dto.protectFromByeInDebut).toBe(false)
+  })
+
+  it('passes protectFromByeInDebut=true when the checkbox is left at its default', () => {
+    phaseMode = 'seeded'
+    renderDialog()
+    openEditTab()
+    fireEvent.change(screen.getByTestId('first-name-input'), { target: { value: 'Late' } })
+    fireEvent.change(screen.getByTestId('last-name-input'), { target: { value: 'Joiner' } })
+    fireEvent.click(screen.getByTestId('add-player'))
+    const dto = mockMutate.mock.calls[0]?.[0] as { protectFromByeInDebut?: boolean }
+    expect(dto.protectFromByeInDebut).toBe(true)
+  })
+
+  it('shows the protect checkbox in edit mode for a late-added player whose debut has not yet been paired', () => {
+    // Tournament is past draft (seeded → roundsPlayed=1). lateAddedPlayer has
+    // addedAtRound=1, so their debut round = 2 has not yet been paired.
+    phaseMode = 'seeded'
+    renderDialog()
+    fireEvent.doubleClick(screen.getByText('Late Joiner'))
+    const checkbox = screen.getByTestId('protect-from-bye-checkbox') as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('does NOT show the protect checkbox in edit mode for an original (addedAtRound=0) player', () => {
+    phaseMode = 'seeded'
+    renderDialog()
+    fireEvent.doubleClick(screen.getByText('Erik Johansson'))
+    expect(screen.queryByTestId('protect-from-bye-checkbox')).toBeNull()
+  })
+
+  it('does NOT show the protect checkbox once the late player’s debut round has been paired', () => {
+    // Finalized phase: roundsPlayed=7. The lateAddedPlayer has addedAtRound=1
+    // (debut R2), so their debut has long since been paired and the
+    // protection no longer applies — the checkbox should be hidden.
+    phaseMode = 'finalized'
+    renderDialog()
+    fireEvent.doubleClick(screen.getByText('Late Joiner'))
+    expect(screen.queryByTestId('protect-from-bye-checkbox')).toBeNull()
+  })
+
+  it('passes protectFromByeInDebut=false through the update mutation when toggled in edit mode', () => {
+    phaseMode = 'seeded'
+    renderDialog()
+    fireEvent.doubleClick(screen.getByText('Late Joiner'))
+    fireEvent.click(screen.getByTestId('protect-from-bye-checkbox'))
+    fireEvent.click(screen.getByTestId('update-player'))
+    const lastCall = mockUpdateMutate.mock.calls.at(-1)
+    const args = lastCall?.[0] as { dto: { protectFromByeInDebut?: boolean } }
+    expect(args.dto.protectFromByeInDebut).toBe(false)
   })
 })

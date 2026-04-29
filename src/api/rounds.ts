@@ -98,6 +98,10 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
   }))
 
   // Berger is a deterministic round-robin; keep the legacy synchronous path.
+  // Note: Berger has its own bye logic (every player byes exactly once across
+  // an N-1 rotation in odd-N), so the late-add bye protection further down
+  // does NOT apply here. Late-adds to a Berger tournament are blocked at the
+  // repository layer (see tournamentplayers.assertCanAdd).
   if (tournament.pairingSystem === 'Berger') {
     return withSave(
       () => pairBerger(tournamentId, tournament, pairingPlayers, roundsPlayed),

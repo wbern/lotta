@@ -106,6 +106,7 @@ export default defineConfig({
         ]
       : []),
     { name: 'late-add-reshuffle', testMatch: 'late-add-reshuffle.spec.ts' },
+    { name: 'late-add-bye-protection', testMatch: 'late-add-bye-protection.spec.ts' },
     { name: 'offline-resilience', testMatch: 'offline-resilience.spec.ts' },
     {
       name: 'late-add-determinism-probe',

@@ -67,6 +67,38 @@ describe.each(PROVIDERS)('tournament-players API (%s)', (_name, factory) => {
     expect(afterAdd).toHaveLength(2)
   })
 
+  it('round-trips addedAtRound and protectFromByeInDebut over the data-provider wire', async () => {
+    // Default add: protectFromByeInDebut defaults to true, addedAtRound to 0.
+    const defaultAdd = await provider.tournamentPlayers.add(tournamentId, {
+      lastName: 'Default',
+      firstName: 'D',
+    })
+    expect(defaultAdd.addedAtRound).toBe(0)
+    expect(defaultAdd.protectFromByeInDebut).toBe(true)
+
+    // Opt-out add: caller explicitly disables protection at insert time.
+    const optOut = await provider.tournamentPlayers.add(tournamentId, {
+      lastName: 'OptOut',
+      firstName: 'O',
+      protectFromByeInDebut: false,
+    })
+    expect(optOut.protectFromByeInDebut).toBe(false)
+
+    // List preserves both fields per row.
+    const list = await provider.tournamentPlayers.list(tournamentId)
+    const fromList = (id: number) => list.find((p) => p.id === id)
+    expect(fromList(defaultAdd.id)?.protectFromByeInDebut).toBe(true)
+    expect(fromList(optOut.id)?.protectFromByeInDebut).toBe(false)
+    expect(fromList(defaultAdd.id)?.addedAtRound).toBe(0)
+    expect(fromList(optOut.id)?.addedAtRound).toBe(0)
+
+    // Update can flip protectFromByeInDebut.
+    const flipped = await provider.tournamentPlayers.update(tournamentId, defaultAdd.id, {
+      protectFromByeInDebut: false,
+    })
+    expect(flipped.protectFromByeInDebut).toBe(false)
+  })
+
   it('removes multiple tournament players in batch', async () => {
     const p1 = await provider.tournamentPlayers.add(tournamentId, {
       lastName: 'A',

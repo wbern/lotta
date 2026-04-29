@@ -229,6 +229,49 @@ describe('TournamentPlayerRepository', () => {
     })
   })
 
+  describe('addedAtRound is immutable post-insert', () => {
+    it('stamps addedAtRound from the rounds-paired count at insert time', () => {
+      const p1 = tournamentPlayers.add(tournamentId, { lastName: 'A', firstName: 'A' })
+      const p2 = tournamentPlayers.add(tournamentId, { lastName: 'B', firstName: 'B' })
+      expect(p1.addedAtRound).toBe(0)
+      expect(p2.addedAtRound).toBe(0)
+
+      db.run(
+        `INSERT INTO tournamentgames
+          (tournament, round, boardnr, whiteplayer, blackplayer, resulttype, whitescore, blackscore)
+          VALUES (?, 1, 1, ?, ?, 0, 0, 0)`,
+        [tournamentId, p1.id, p2.id],
+      )
+
+      const late = tournamentPlayers.add(tournamentId, { lastName: 'L', firstName: 'L' })
+      expect(late.addedAtRound).toBe(1)
+    })
+
+    it('ignores attempts to update addedAtRound — stamp is set once at insert', () => {
+      const p = tournamentPlayers.add(tournamentId, { lastName: 'A', firstName: 'A' })
+      expect(p.addedAtRound).toBe(0)
+
+      const updated = tournamentPlayers.update(p.id, {
+        addedAtRound: 99,
+        firstName: 'Anders',
+      })
+
+      // The firstName change applies; the addedAtRound mutation is a no-op.
+      expect(updated.firstName).toBe('Anders')
+      expect(updated.addedAtRound).toBe(0)
+      expect(tournamentPlayers.get(p.id)?.addedAtRound).toBe(0)
+    })
+
+    it('permits update of protectFromByeInDebut', () => {
+      const p = tournamentPlayers.add(tournamentId, { lastName: 'A', firstName: 'A' })
+      expect(p.protectFromByeInDebut).toBe(true)
+
+      const updated = tournamentPlayers.update(p.id, { protectFromByeInDebut: false })
+      expect(updated.protectFromByeInDebut).toBe(false)
+      expect(tournamentPlayers.get(p.id)?.protectFromByeInDebut).toBe(false)
+    })
+  })
+
   describe('legacy DB without bye-protection columns', () => {
     it('migrates a saved DB on load and lists players without crashing', async () => {
       // Simulate a user's saved DB created by an older app version: drop the

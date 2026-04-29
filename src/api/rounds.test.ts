@@ -1173,6 +1173,143 @@ describe.each(PROVIDERS)('rounds API (%s)', (_name, factory) => {
     expect(byePlayerId).not.toBe(lateAdd.id)
   })
 
+  it('late-added player CAN receive the bye when protectFromByeInDebut is false', async () => {
+    for (const ln of ['A', 'B', 'C', 'D']) {
+      await provider.tournamentPlayers.add(tournamentId, {
+        lastName: ln,
+        firstName: ln,
+        ratingI: 1500,
+      })
+    }
+    const r1 = await provider.rounds.pairNext(tournamentId)
+    for (const g of r1.games) {
+      await provider.results.set(tournamentId, 1, g.boardNr, { resultType: 'DRAW' })
+    }
+
+    const lateAdd = await provider.tournamentPlayers.add(tournamentId, {
+      lastName: 'Late',
+      firstName: 'Late',
+      ratingI: 1000,
+      protectFromByeInDebut: false,
+    })
+    expect(lateAdd.protectFromByeInDebut).toBe(false)
+
+    const r2 = await provider.rounds.pairNext(tournamentId)
+    const byeGame = r2.games.find((g) => g.blackPlayer === null || g.whitePlayer === null)
+    // With protection off, the lowest-rated player (the late-add) is the
+    // natural bye candidate per the original rule.
+    const byePlayerId = byeGame?.whitePlayer?.id ?? byeGame?.blackPlayer?.id
+    expect(byePlayerId).toBe(lateAdd.id)
+  })
+
+  it('falls back to original rule when every active player is a protected debutant', async () => {
+    // 5 players, all added before R1 → all have addedAtRound=0 → at R1 all
+    // are protected debutants. Fallback must still pick someone (lowest rating).
+    const ids: number[] = []
+    for (const [ln, r] of [
+      ['A', 1500],
+      ['B', 1400],
+      ['C', 1300],
+      ['D', 1200],
+      ['E', 1100],
+    ] as [string, number][]) {
+      const p = await provider.tournamentPlayers.add(tournamentId, {
+        lastName: ln,
+        firstName: ln,
+        ratingI: r,
+      })
+      ids.push(p.id)
+    }
+
+    const r1 = await provider.rounds.pairNext(tournamentId)
+    const byeGame = r1.games.find((g) => g.blackPlayer === null || g.whitePlayer === null)
+    expect(byeGame).toBeDefined()
+    const byePlayerId = byeGame?.whitePlayer?.id ?? byeGame?.blackPlayer?.id
+    // Fallback path: someone has to receive the bye, and the original rule
+    // (lowest score+lotNr) picks them. The exact id depends on lot
+    // assignment, but it MUST be one of the players.
+    expect(ids).toContain(byePlayerId)
+  })
+
+  it('debut stamp persists across unpair/repair of the round it was added in', async () => {
+    for (const ln of ['A', 'B', 'C', 'D']) {
+      await provider.tournamentPlayers.add(tournamentId, {
+        lastName: ln,
+        firstName: ln,
+        ratingI: 1500,
+      })
+    }
+    const r1 = await provider.rounds.pairNext(tournamentId)
+    for (const g of r1.games) {
+      await provider.results.set(tournamentId, 1, g.boardNr, { resultType: 'DRAW' })
+    }
+
+    const late = await provider.tournamentPlayers.add(tournamentId, {
+      lastName: 'Late',
+      firstName: 'Late',
+      ratingI: 1000,
+    })
+    expect(late.addedAtRound).toBe(1)
+
+    // Pair R2, then unpair, then re-pair R2 — the debut stamp must still
+    // protect them on the second attempt.
+    await provider.rounds.pairNext(tournamentId)
+    await provider.rounds.unpairLast(tournamentId)
+    const r2 = await provider.rounds.pairNext(tournamentId)
+    const byeGame = r2.games.find((g) => g.blackPlayer === null || g.whitePlayer === null)
+    const byePlayerId = byeGame?.whitePlayer?.id ?? byeGame?.blackPlayer?.id
+    expect(byePlayerId).not.toBe(late.id)
+
+    // And listing the player still reports the original stamp.
+    const stillLate = (await provider.tournamentPlayers.list(tournamentId)).find(
+      (p) => p.id === late.id,
+    )
+    expect(stillLate?.addedAtRound).toBe(1)
+  })
+
+  it('does NOT re-protect a late-added player past their debut round', async () => {
+    // 4 originals + 1 late-add (total 5, odd). Late-add debuts in R2 (protected),
+    // then in R3 they should be eligible for the bye like anyone else.
+    for (const [ln, r] of [
+      ['A', 1500],
+      ['B', 1400],
+      ['C', 1300],
+      ['D', 1200],
+    ] as [string, number][]) {
+      await provider.tournamentPlayers.add(tournamentId, {
+        lastName: ln,
+        firstName: ln,
+        ratingI: r,
+      })
+    }
+    const r1 = await provider.rounds.pairNext(tournamentId)
+    for (const g of r1.games) {
+      await provider.results.set(tournamentId, 1, g.boardNr, { resultType: 'DRAW' })
+    }
+
+    const late = await provider.tournamentPlayers.add(tournamentId, {
+      lastName: 'Late',
+      firstName: 'Late',
+      ratingI: 1000,
+    })
+
+    const r2 = await provider.rounds.pairNext(tournamentId)
+    for (const g of r2.games) {
+      await provider.results.set(tournamentId, 2, g.boardNr, { resultType: 'DRAW' })
+    }
+    // R2 sanity: late did not get the bye.
+    const r2Bye = r2.games.find((g) => g.blackPlayer === null || g.whitePlayer === null)
+    expect(r2Bye?.whitePlayer?.id ?? r2Bye?.blackPlayer?.id).not.toBe(late.id)
+
+    // R3: addedAtRound (1) + 1 = 2, nextRoundNr = 3 → no longer protected.
+    // The late-add hasn't had a bye yet and is the lowest-rated → expect them
+    // to be the natural choice now. (At minimum, protection no longer
+    // disqualifies them from the first pass.)
+    const r3 = await provider.rounds.pairNext(tournamentId)
+    const r3Bye = r3.games.find((g) => g.blackPlayer === null || g.whitePlayer === null)
+    expect(r3Bye?.whitePlayer?.id ?? r3Bye?.blackPlayer?.id).toBe(late.id)
+  })
+
   it('unpairLastRound removes the last round', async () => {
     await provider.tournamentPlayers.add(tournamentId, {
       lastName: 'A',
