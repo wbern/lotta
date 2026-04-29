@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/wbern/lotta/compare/v1.13.0...v1.14.0) (2026-04-29)
+
+
+### Features
+
+* **tournament-players:** toggle bye protection in edit mode + harden coverage ([108a023](https://github.com/wbern/lotta/commit/108a02353233664fa840a0b9cfa6e46da33019b9))
+
 # [1.13.0](https://github.com/wbern/lotta/compare/v1.12.0...v1.13.0) (2026-04-29)
 
 
