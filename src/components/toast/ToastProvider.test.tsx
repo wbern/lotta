@@ -274,6 +274,127 @@ describe('ToastProvider', () => {
     expect(screen.getByTestId('toast').getAttribute('role')).toBe('status')
   })
 
+  it('caps visible toasts at maxVisible and queues the rest', () => {
+    function MaxTrigger() {
+      const { show } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            show({ message: 'first' })
+            show({ message: 'second' })
+            show({ message: 'third' })
+            show({ message: 'fourth' })
+          }}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider maxVisible={2}>
+        <MaxTrigger />
+      </ToastProvider>,
+    )
+    act(() => {
+      screen.getByText('trigger').click()
+    })
+
+    let visible = screen.getAllByTestId('toast')
+    expect(visible).toHaveLength(2)
+    expect(visible[0].textContent).toContain('first')
+    expect(visible[1].textContent).toContain('second')
+
+    const dismissFirst = visible[0].querySelector(
+      '[data-testid="toast-dismiss"]',
+    ) as HTMLButtonElement
+    act(() => {
+      dismissFirst.click()
+    })
+    visible = screen.getAllByTestId('toast')
+    expect(visible).toHaveLength(2)
+    expect(visible[0].textContent).toContain('second')
+    expect(visible[1].textContent).toContain('third')
+  })
+
+  it('pauses auto-dismiss while the document is hidden', () => {
+    vi.useFakeTimers()
+    function VisibilityTrigger() {
+      const { show } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => show({ message: 'pauses on hide', autoDismissMs: 1000 })}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <VisibilityTrigger />
+      </ToastProvider>,
+    )
+    act(() => {
+      screen.getByText('trigger').click()
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(500)
+    })
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true })
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(screen.queryByTestId('toast')).toBeTruthy()
+
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false })
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    act(() => {
+      vi.advanceTimersByTime(499)
+    })
+    expect(screen.queryByTestId('toast')).toBeTruthy()
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(screen.queryByTestId('toast')).toBeNull()
+  })
+
+  it('replaces an existing toast when show() is called with the same id', () => {
+    function DedupTrigger() {
+      const { show } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            show({ id: 'save', message: 'Sparar...' })
+            show({ id: 'save', message: 'Sparat', variant: 'success' })
+          }}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <DedupTrigger />
+      </ToastProvider>,
+    )
+    act(() => {
+      screen.getByText('trigger').click()
+    })
+
+    const toasts = screen.getAllByTestId('toast')
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0].textContent).toContain('Sparat')
+    expect(toasts[0].className).toContain('toast--success')
+  })
+
   it('stacks multiple toasts in the order they were shown', () => {
     function MultiTrigger() {
       const { show } = useToast()

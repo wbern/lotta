@@ -14,6 +14,8 @@ export interface ShowToastInput {
   variant?: ToastVariant
   /** Fired when the toast is removed for any reason (× click, action click, auto-dismiss, programmatic dismiss). */
   onDismiss?: () => void
+  /** Stable id. Calling show() again with the same id replaces the existing toast in place. */
+  id?: string
 }
 
 interface ToastContextValue {
