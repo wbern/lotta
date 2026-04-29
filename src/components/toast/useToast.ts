@@ -18,8 +18,19 @@ export interface ShowToastInput {
   id?: string
 }
 
+type MessageOrFn<T> = string | ((value: T) => string)
+
+export interface ShowPromiseOptions<T> {
+  loading: string
+  success: MessageOrFn<T>
+  error: MessageOrFn<unknown>
+  successDismissMs?: number
+  errorDismissMs?: number
+}
+
 interface ToastContextValue {
   show: (input: ShowToastInput) => () => void
+  promise: <T>(p: Promise<T>, opts: ShowPromiseOptions<T>) => Promise<T>
 }
 
 export const ToastContext = createContext<ToastContextValue | null>(null)

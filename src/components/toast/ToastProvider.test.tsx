@@ -274,6 +274,193 @@ describe('ToastProvider', () => {
     expect(screen.getByTestId('toast').getAttribute('role')).toBe('status')
   })
 
+  it('shows loading then replaces with success message when promise resolves', async () => {
+    let resolveFn: (v: string) => void = () => {}
+    const pending = new Promise<string>((resolve) => {
+      resolveFn = resolve
+    })
+
+    function PromiseTrigger() {
+      const { promise } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            promise(pending, {
+              loading: 'Sparar...',
+              success: (v) => `Sparat: ${v}`,
+              error: 'Kunde inte spara',
+            })
+          }}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <PromiseTrigger />
+      </ToastProvider>,
+    )
+
+    act(() => {
+      screen.getByText('trigger').click()
+    })
+
+    let toasts = screen.getAllByTestId('toast')
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0].textContent).toContain('Sparar...')
+
+    await act(async () => {
+      resolveFn('OK')
+      await pending
+    })
+
+    toasts = screen.getAllByTestId('toast')
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0].textContent).toContain('Sparat: OK')
+    expect(toasts[0].className).toContain('toast--success')
+  })
+
+  it('replaces loading with error toast when promise rejects, and rethrows', async () => {
+    let rejectFn: (e: Error) => void = () => {}
+    const pending = new Promise<string>((_, reject) => {
+      rejectFn = reject
+    })
+
+    let caught: unknown
+    function FailTrigger() {
+      const { promise } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            promise(pending, {
+              loading: 'Sparar...',
+              success: 'ok',
+              error: (e) => `Fel: ${(e as Error).message}`,
+            }).catch((e) => {
+              caught = e
+            })
+          }}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <FailTrigger />
+      </ToastProvider>,
+    )
+
+    act(() => {
+      screen.getByText('trigger').click()
+    })
+
+    await act(async () => {
+      rejectFn(new Error('disk full'))
+      await pending.catch(() => {})
+    })
+
+    const toasts = screen.getAllByTestId('toast')
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0].textContent).toContain('Fel: disk full')
+    expect(toasts[0].className).toContain('toast--error')
+    expect((caught as Error).message).toBe('disk full')
+  })
+
+  it('returns the original resolved value so callers can chain', async () => {
+    const pending = Promise.resolve(42)
+    let received: number | undefined
+    function Trigger() {
+      const { promise } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            promise(pending, {
+              loading: 'l',
+              success: 'ok',
+              error: 'no',
+            }).then((v) => {
+              received = v
+            })
+          }}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <Trigger />
+      </ToastProvider>,
+    )
+    await act(async () => {
+      screen.getByText('trigger').click()
+      await pending
+    })
+    expect(received).toBe(42)
+  })
+
+  it('keeps concurrent promise toasts independent', async () => {
+    let resolveA: (v: string) => void = () => {}
+    let resolveB: (v: string) => void = () => {}
+    const pendingA = new Promise<string>((r) => {
+      resolveA = r
+    })
+    const pendingB = new Promise<string>((r) => {
+      resolveB = r
+    })
+
+    function Trigger() {
+      const { promise } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            promise(pendingA, { loading: 'A loading', success: 'A done', error: 'A err' })
+            promise(pendingB, { loading: 'B loading', success: 'B done', error: 'B err' })
+          }}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <Trigger />
+      </ToastProvider>,
+    )
+
+    act(() => {
+      screen.getByText('trigger').click()
+    })
+
+    let toasts = screen.getAllByTestId('toast')
+    expect(toasts).toHaveLength(2)
+    expect(toasts[0].textContent).toContain('A loading')
+    expect(toasts[1].textContent).toContain('B loading')
+
+    await act(async () => {
+      resolveB('B-val')
+      await pendingB
+    })
+    toasts = screen.getAllByTestId('toast')
+    expect(toasts).toHaveLength(2)
+    expect(toasts[0].textContent).toContain('A loading')
+    expect(toasts[1].textContent).toContain('B done')
+
+    await act(async () => {
+      resolveA('A-val')
+      await pendingA
+    })
+    toasts = screen.getAllByTestId('toast')
+    expect(toasts[0].textContent).toContain('A done')
+    expect(toasts[1].textContent).toContain('B done')
+  })
+
   it('caps visible toasts at maxVisible and queues the rest', () => {
     function MaxTrigger() {
       const { show } = useToast()

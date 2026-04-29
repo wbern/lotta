@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { type ShowToastInput, ToastContext } from './useToast'
+import { type ShowPromiseOptions, type ShowToastInput, ToastContext } from './useToast'
 
 interface ActiveToast extends ShowToastInput {
   internalId: number
@@ -145,7 +145,38 @@ export function ToastProvider({
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [pause, resume])
 
-  const contextValue = useMemo(() => ({ show }), [show])
+  const promiseSeq = useRef(0)
+  const promise = useCallback(
+    <T,>(p: Promise<T>, opts: ShowPromiseOptions<T>): Promise<T> => {
+      const toastId = `__promise_${promiseSeq.current++}`
+      show({ id: toastId, message: opts.loading, variant: 'info' })
+      return p.then(
+        (value) => {
+          const message = typeof opts.success === 'function' ? opts.success(value) : opts.success
+          show({
+            id: toastId,
+            message,
+            variant: 'success',
+            autoDismissMs: opts.successDismissMs ?? 4000,
+          })
+          return value
+        },
+        (err) => {
+          const message = typeof opts.error === 'function' ? opts.error(err) : opts.error
+          show({
+            id: toastId,
+            message,
+            variant: 'error',
+            autoDismissMs: opts.errorDismissMs,
+          })
+          throw err
+        },
+      )
+    },
+    [show],
+  )
+
+  const contextValue = useMemo(() => ({ show, promise }), [show, promise])
 
   return (
     <ToastContext.Provider value={contextValue}>
