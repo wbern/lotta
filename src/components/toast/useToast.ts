@@ -12,6 +12,8 @@ export interface ShowToastInput {
   autoDismissMs?: number
   action?: ToastAction
   variant?: ToastVariant
+  /** Fired when the toast is removed for any reason (× click, action click, auto-dismiss, programmatic dismiss). */
+  onDismiss?: () => void
 }
 
 interface ToastContextValue {

@@ -16,11 +16,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const nextId = useRef(0)
   const timersRef = useRef<Map<number, AutoDismiss>>(new Map())
 
+  const toastsRef = useRef<ActiveToast[]>([])
+  toastsRef.current = toasts
+
   const dismiss = useCallback((id: number) => {
     const existing = timersRef.current.get(id)
     if (existing) clearTimeout(existing.timer)
     timersRef.current.delete(id)
+    const target = toastsRef.current.find((t) => t.id === id)
     setToasts((prev) => prev.filter((t) => t.id !== id))
+    target?.onDismiss?.()
   }, [])
 
   const scheduleDismiss = useCallback(

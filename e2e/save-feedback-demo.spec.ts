@@ -61,7 +61,9 @@ test.describe('Save-action feedback demo', () => {
 
     await dialog.getByTestId('update-player').click()
 
-    const toast = page.getByTestId('toast')
+    // Filter to the error variant — a benign storage-warning toast may be
+    // present too, depending on jsdom's storage.persist() behavior.
+    const toast = page.locator('[data-testid="toast"].toast--error')
     await expect(toast).toBeVisible()
     await expect(toast).toHaveText(/kunde inte spara/i)
   })
@@ -132,7 +134,8 @@ test.describe('Save-action feedback demo', () => {
       .fill('Ragnarsson')
 
     const updateBtn = dialog.getByTestId('update-player')
-    const toasts = page.getByTestId('toast')
+    // Scope to error toasts so the optional storage-warning toast can't skew counts.
+    const toasts = page.locator('[data-testid="toast"].toast--error')
 
     await updateBtn.click()
     await expect(toasts).toHaveCount(1)

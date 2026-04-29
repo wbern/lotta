@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ToastProvider } from '../toast/ToastProvider'
 
 const { mockDeleteGames, mockMutate, mockMutationState } = vi.hoisted(() => ({
   mockDeleteGames: vi.fn(),
@@ -67,12 +68,14 @@ function renderTab(props?: {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={qc}>
-      <PairingsTab
-        tournamentId={1}
-        round={1}
-        rounds={[{ roundNr: 1, hasAllResults: false, gameCount: 0, games: [] }]}
-        {...props}
-      />
+      <ToastProvider>
+        <PairingsTab
+          tournamentId={1}
+          round={1}
+          rounds={[{ roundNr: 1, hasAllResults: false, gameCount: 0, games: [] }]}
+          {...props}
+        />
+      </ToastProvider>
     </QueryClientProvider>,
   )
 }
@@ -526,9 +529,10 @@ describe('PairingsTab conflict notification', () => {
 
     renderTab()
 
-    const notification = screen.getByTestId('conflict-notification')
-    expect(notification.textContent).toContain('Bord 1')
-    expect(notification.textContent).toContain('1-0')
+    const toast = screen.getByTestId('toast')
+    expect(toast.textContent).toContain('Bord 1')
+    expect(toast.textContent).toContain('1-0')
+    expect(toast.className).toContain('toast--error')
   })
 
   it('uses chess4 labels in conflict notification so Schack4an shows 3-1 not 1-0', async () => {
@@ -538,16 +542,16 @@ describe('PairingsTab conflict notification', () => {
 
     renderTab({ chess4: true, pointsPerGame: 4 })
 
-    const notification = screen.getByTestId('conflict-notification')
-    expect(notification.textContent).toContain('3-1')
-    expect(notification.textContent).not.toContain('1-0')
+    const toast = screen.getByTestId('toast')
+    expect(toast.textContent).toContain('3-1')
+    expect(toast.textContent).not.toContain('1-0')
   })
 
   it('does not show notification when no conflict error', () => {
     mockMutationState.error = null
     renderTab()
 
-    expect(screen.queryByTestId('conflict-notification')).toBeNull()
+    expect(screen.queryByTestId('toast')).toBeNull()
   })
 
   it('does not auto-dismiss the conflict notification', async () => {
@@ -558,25 +562,23 @@ describe('PairingsTab conflict notification', () => {
       mockMutationState.variables = { boardNr: 1 }
 
       renderTab()
-      expect(screen.getByTestId('conflict-notification')).toBeTruthy()
+      expect(screen.getByTestId('toast')).toBeTruthy()
 
-      // Old behavior auto-dismissed at 5s; the notification must now stick
-      // around until the user acknowledges it.
       vi.advanceTimersByTime(30_000)
       expect(mockMutationState.reset).not.toHaveBeenCalled()
-      expect(screen.getByTestId('conflict-notification')).toBeTruthy()
+      expect(screen.getByTestId('toast')).toBeTruthy()
     } finally {
       vi.useRealTimers()
     }
   })
 
-  it('dismisses the conflict notification when the close button is clicked', async () => {
+  it('resets the mutation when the toast is dismissed', async () => {
     const { ResultConflictError } = await import('../../api/result-command')
     mockMutationState.error = new ResultConflictError('WHITE_WIN')
     mockMutationState.variables = { boardNr: 1 }
 
     renderTab()
-    const dismiss = screen.getByTestId('conflict-notification-dismiss')
+    const dismiss = screen.getByTestId('toast-dismiss')
     dismiss.click()
     expect(mockMutationState.reset).toHaveBeenCalled()
   })

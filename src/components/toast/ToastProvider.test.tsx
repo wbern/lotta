@@ -211,6 +211,45 @@ describe('ToastProvider', () => {
     expect(screen.queryByTestId('toast')).toBeNull()
   })
 
+  it('pauses auto-dismiss while the toast has keyboard focus', () => {
+    vi.useFakeTimers()
+    function FocusTrigger() {
+      const { show } = useToast()
+      return (
+        <button
+          type="button"
+          onClick={() => show({ message: 'should pause on focus', autoDismissMs: 1000 })}
+        >
+          trigger
+        </button>
+      )
+    }
+    render(
+      <ToastProvider>
+        <FocusTrigger />
+      </ToastProvider>,
+    )
+    act(() => {
+      screen.getByText('trigger').click()
+    })
+    const toast = screen.getByTestId('toast')
+
+    act(() => {
+      vi.advanceTimersByTime(500)
+    })
+    fireEvent.focus(toast)
+    act(() => {
+      vi.advanceTimersByTime(2000)
+    })
+    expect(screen.queryByTestId('toast')).toBeTruthy()
+
+    fireEvent.blur(toast)
+    act(() => {
+      vi.advanceTimersByTime(500)
+    })
+    expect(screen.queryByTestId('toast')).toBeNull()
+  })
+
   it('uses role="status" for non-error variants so screen readers announce politely', () => {
     function WarningTrigger() {
       const { show } = useToast()

@@ -17,6 +17,7 @@ import { sv } from '../../lib/swedish-text'
 import type { GameDto, ResultType, RoundDto } from '../../types/api'
 import { EditScoreDialog } from '../dialogs/EditScoreDialog'
 import { EmptyState } from '../EmptyState'
+import { useToast } from '../toast/useToast'
 
 interface Props {
   tournamentId: number
@@ -70,6 +71,21 @@ export function PairingsTab({
     ? (setResultMutation.variables as { boardNr: number } | undefined)?.boardNr
     : null
   const dismissConflict = setResultMutation.reset
+  const { show: showToast } = useToast()
+
+  useEffect(() => {
+    if (!conflictError || conflictBoardNr == null) return
+    const message = `Bord ${conflictBoardNr} har redan resultat ${formatResultLabel(
+      conflictError.current,
+      { chess4, pointsPerGame },
+    )}`
+    const dismissToast = showToast({
+      message,
+      variant: 'error',
+      onDismiss: dismissConflict,
+    })
+    return dismissToast
+  }, [conflictError, conflictBoardNr, chess4, pointsPerGame, showToast, dismissConflict])
 
   const games = useMemo(() => roundData?.games || [], [roundData?.games])
 
@@ -236,23 +252,6 @@ export function PairingsTab({
 
   return (
     <>
-      {conflictError && (
-        <div className="conflict-notification" role="alert" data-testid="conflict-notification">
-          <span>
-            Bord {conflictBoardNr} har redan resultat{' '}
-            {formatResultLabel(conflictError.current, { chess4, pointsPerGame })}
-          </span>
-          <button
-            type="button"
-            className="conflict-notification-dismiss"
-            data-testid="conflict-notification-dismiss"
-            aria-label="Stäng"
-            onClick={() => dismissConflict()}
-          >
-            ×
-          </button>
-        </div>
-      )}
       <div className="table-scroll" data-testid="scroll-container">
         <table className="data-table" data-testid="data-table">
           <thead>
