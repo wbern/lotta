@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/wbern/lotta/compare/v1.10.0...v1.11.0) (2026-04-29)
+
+
+### Features
+
+* **toast:** migrate result-conflict notification to unified toast ([42e8604](https://github.com/wbern/lotta/commit/42e86047a8554dba93ea928886eac9f690c047b6))
+
 # [1.10.0](https://github.com/wbern/lotta/compare/v1.9.0...v1.10.0) (2026-04-29)
 
 
