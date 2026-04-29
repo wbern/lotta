@@ -183,6 +183,7 @@ export const sv = {
       'Du har osparade ändringar i formuläret. Ladda vald spelare och kasta dina ändringar?',
     removeBlockedUseWithdraw:
       'Du kan inte ta bort en spelare som är inlottad i turneringen — använd "utgår från rond" istället.',
+    protectFromByeInDebut: 'Skydda från frirond i debutronden',
   },
   club: {
     enterName: 'Ange klubbnamn:',

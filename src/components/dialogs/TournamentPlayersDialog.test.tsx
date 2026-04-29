@@ -476,3 +476,36 @@ describe('TournamentPlayersDialog phase gating', () => {
     expect(removeButton.disabled).toBe(true)
   })
 })
+
+describe('TournamentPlayersDialog bye-protection on late-add', () => {
+  function openEditTab() {
+    fireEvent.click(screen.getByText('Skapa eller editera spelare'))
+  }
+
+  it('renders the protect-from-bye checkbox checked by default in the edit tab past draft', () => {
+    phaseMode = 'seeded'
+    renderDialog()
+    openEditTab()
+    const checkbox = screen.getByTestId('protect-from-bye-checkbox') as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+  })
+
+  it('does not render the protect-from-bye checkbox in the draft phase', () => {
+    phaseMode = 'draft'
+    renderDialog()
+    openEditTab()
+    expect(screen.queryByTestId('protect-from-bye-checkbox')).toBeNull()
+  })
+
+  it('passes protectFromByeInDebut=false to the add mutation when unchecked', () => {
+    phaseMode = 'seeded'
+    renderDialog()
+    openEditTab()
+    fireEvent.change(screen.getByTestId('first-name-input'), { target: { value: 'Late' } })
+    fireEvent.change(screen.getByTestId('last-name-input'), { target: { value: 'Joiner' } })
+    fireEvent.click(screen.getByTestId('protect-from-bye-checkbox'))
+    fireEvent.click(screen.getByTestId('add-player'))
+    const dto = mockMutate.mock.calls[0]?.[0] as { protectFromByeInDebut?: boolean }
+    expect(dto.protectFromByeInDebut).toBe(false)
+  })
+})

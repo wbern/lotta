@@ -7,7 +7,7 @@ import { GameRepository } from './repositories/games.ts'
 import { SettingsRepository } from './repositories/settings.ts'
 import { TournamentPlayerRepository } from './repositories/tournament-players.ts'
 import { TournamentRepository } from './repositories/tournaments.ts'
-import { createSchema } from './schema.ts'
+import { createSchema, migrateSchema } from './schema.ts'
 
 export class DatabaseService {
   readonly clubs: ClubRepository
@@ -32,6 +32,7 @@ export class DatabaseService {
     const saved = await loadDatabase()
     if (saved) {
       const db = await initDatabase(saved)
+      migrateSchema(db)
       return new DatabaseService(db)
     }
     const db = await initDatabase()
@@ -41,6 +42,7 @@ export class DatabaseService {
 
   static async createFromData(data: Uint8Array): Promise<DatabaseService> {
     const db = await initDatabase(data)
+    migrateSchema(db)
     return new DatabaseService(db)
   }
 

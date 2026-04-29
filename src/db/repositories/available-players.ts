@@ -84,7 +84,7 @@ export class AvailablePlayerRepository {
       const value = dto[dtoField as keyof PlayerDto]
       if (value !== undefined) {
         fields.push(`${dbColumn} = ?`)
-        values.push(value)
+        values.push(value as string | number | null)
       }
     }
 

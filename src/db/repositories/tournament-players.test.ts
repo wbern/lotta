@@ -228,4 +228,29 @@ describe('TournamentPlayerRepository', () => {
       expect(added.id).toEqual(expect.any(Number))
     })
   })
+
+  describe('legacy DB without bye-protection columns', () => {
+    it('migrates a saved DB on load and lists players without crashing', async () => {
+      // Simulate a user's saved DB created by an older app version: drop the
+      // two new columns from the live schema, then re-export and re-load.
+      db.run(
+        'INSERT INTO tournamentplayers (lastname, firstname, tournamentindex) VALUES (?, ?, ?)',
+        ['Pre', 'Existing', tournamentId],
+      )
+      db.run('ALTER TABLE tournamentplayers DROP COLUMN addedatround')
+      db.run('ALTER TABLE tournamentplayers DROP COLUMN protectfrombyeindebut')
+      const oldData = db.export()
+      db.close()
+
+      const { migrateSchema } = await import('../schema.ts')
+      db = await initDatabase(oldData)
+      migrateSchema(db)
+      tournamentPlayers = new TournamentPlayerRepository(db)
+
+      const list = tournamentPlayers.list(tournamentId)
+      expect(list).toHaveLength(1)
+      expect(list[0].addedAtRound).toBe(0)
+      expect(list[0].protectFromByeInDebut).toBe(true)
+    })
+  })
 })

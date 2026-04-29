@@ -22,6 +22,8 @@ const defaults: PlayerDto = {
   playerGroup: '',
   withdrawnFromRound: -1,
   manualTiebreak: 0,
+  addedAtRound: 0,
+  protectFromByeInDebut: true,
   lotNr: 2147483647,
 }
 

@@ -11,12 +11,15 @@ export class TournamentPlayerRepository {
 
   add(tournamentId: number, dto: Partial<PlayerDto>): PlayerDto {
     this.assertCanAdd(tournamentId)
+    const roundsPlayed = this.countRoundsPaired(tournamentId)
+    const protect = dto.protectFromByeInDebut ?? true
     this.db.run(
       `INSERT INTO tournamentplayers (
         lastname, firstname, clubindex, ratingn, ratingi, ratingq, ratingb,
         ratingk, ratingkq, ratingkb, title, sex, federation, fideid, ssfid,
-        birthdate, playergroup, tournamentindex, withdrawnfromround, manualtiebreak
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        birthdate, playergroup, tournamentindex, withdrawnfromround, manualtiebreak,
+        addedatround, protectfrombyeindebut
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         dto.lastName ?? '',
         dto.firstName ?? '',
@@ -38,6 +41,8 @@ export class TournamentPlayerRepository {
         tournamentId,
         dto.withdrawnFromRound ?? -1,
         dto.manualTiebreak ?? 0,
+        roundsPlayed,
+        protect ? 1 : 0,
       ],
     )
     const idResult = this.db.exec('SELECT last_insert_rowid()')
@@ -55,7 +60,8 @@ export class TournamentPlayerRepository {
         p."index", p.lastname, p.firstname, c.club, COALESCE(p.clubindex, 0),
         p.ratingn, p.ratingi, p.ratingq, p.ratingb, p.ratingk, p.ratingkq, p.ratingkb,
         p.title, p.sex, p.federation, p.fideid, p.ssfid, p.birthdate, p.playergroup,
-        COALESCE(p.withdrawnfromround, -1), COALESCE(p.manualtiebreak, 0)
+        COALESCE(p.withdrawnfromround, -1), COALESCE(p.manualtiebreak, 0),
+        COALESCE(p.addedatround, 0), COALESCE(p.protectfrombyeindebut, 1)
       FROM tournamentplayers p
       LEFT JOIN clubs c ON c."index" = p.clubindex
       WHERE p."index" = ?`,
@@ -89,14 +95,19 @@ export class TournamentPlayerRepository {
       playerGroup: 'playergroup',
       withdrawnFromRound: 'withdrawnfromround',
       manualTiebreak: 'manualtiebreak',
+      addedAtRound: 'addedatround',
     }
 
     for (const [dtoField, dbColumn] of Object.entries(fieldMap)) {
       const value = dto[dtoField as keyof PlayerDto]
       if (value !== undefined) {
         fields.push(`${dbColumn} = ?`)
-        values.push(value)
+        values.push(value as string | number | null)
       }
+    }
+    if (dto.protectFromByeInDebut !== undefined) {
+      fields.push('protectfrombyeindebut = ?')
+      values.push(dto.protectFromByeInDebut ? 1 : 0)
     }
 
     if (fields.length > 0) {
@@ -105,6 +116,14 @@ export class TournamentPlayerRepository {
     }
 
     return this.get(id)!
+  }
+
+  private countRoundsPaired(tournamentId: number): number {
+    const result = this.db.exec(
+      'SELECT COUNT(DISTINCT round) FROM tournamentgames WHERE tournament = ?',
+      [tournamentId],
+    )
+    return (result[0]?.values[0]?.[0] as number) ?? 0
   }
 
   private assertCanAdd(tournamentId: number): void {
@@ -193,7 +212,8 @@ export class TournamentPlayerRepository {
         p."index", p.lastname, p.firstname, c.club, COALESCE(p.clubindex, 0),
         p.ratingn, p.ratingi, p.ratingq, p.ratingb, p.ratingk, p.ratingkq, p.ratingkb,
         p.title, p.sex, p.federation, p.fideid, p.ssfid, p.birthdate, p.playergroup,
-        COALESCE(p.withdrawnfromround, -1), COALESCE(p.manualtiebreak, 0)
+        COALESCE(p.withdrawnfromround, -1), COALESCE(p.manualtiebreak, 0),
+        COALESCE(p.addedatround, 0), COALESCE(p.protectfrombyeindebut, 1)
       FROM tournamentplayers p
       LEFT JOIN clubs c ON c."index" = p.clubindex
       WHERE p.tournamentindex = ?

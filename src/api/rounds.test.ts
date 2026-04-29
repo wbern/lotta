@@ -1138,6 +1138,41 @@ describe.each(PROVIDERS)('rounds API (%s)', (_name, factory) => {
     }
   })
 
+  it('late-added player does not get the bye in their debut round (default protection)', async () => {
+    // 4 players (even, no bye in R1)
+    for (const [ln, r] of [
+      ['A', 1500],
+      ['B', 1400],
+      ['C', 1300],
+      ['D', 1200],
+    ] as [string, number][]) {
+      await provider.tournamentPlayers.add(tournamentId, {
+        lastName: ln,
+        firstName: ln,
+        ratingI: r,
+      })
+    }
+
+    const r1 = await provider.rounds.pairNext(tournamentId)
+    for (const g of r1.games) {
+      await provider.results.set(tournamentId, 1, g.boardNr, { resultType: 'DRAW' })
+    }
+
+    // Late-add a 5th player after R1 has been paired and resulted.
+    // Default behavior: this player must NOT receive the bye in R2 (their debut).
+    const lateAdd = await provider.tournamentPlayers.add(tournamentId, {
+      lastName: 'Late',
+      firstName: 'Late',
+      ratingI: 1000,
+    })
+
+    const r2 = await provider.rounds.pairNext(tournamentId)
+    const byeGame = r2.games.find((g) => g.blackPlayer === null || g.whitePlayer === null)
+    expect(byeGame).toBeDefined()
+    const byePlayerId = byeGame?.whitePlayer?.id ?? byeGame?.blackPlayer?.id
+    expect(byePlayerId).not.toBe(lateAdd.id)
+  })
+
   it('unpairLastRound removes the last round', async () => {
     await provider.tournamentPlayers.add(tournamentId, {
       lastName: 'A',

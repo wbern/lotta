@@ -29,6 +29,8 @@ const basePlayer = {
   playerGroup: '',
   withdrawnFromRound: 0,
   manualTiebreak: 0,
+  addedAtRound: 0,
+  protectFromByeInDebut: true,
 }
 
 const mockPlayers: PlayerDto[] = [

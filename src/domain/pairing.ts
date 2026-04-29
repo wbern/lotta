@@ -3,6 +3,8 @@ export interface PairingPlayerInfo {
   rating: number
   withdrawnFromRound: number
   lotNr: number
+  addedAtRound?: number
+  protectFromByeInDebut?: boolean
 }
 
 export interface PairingInput {

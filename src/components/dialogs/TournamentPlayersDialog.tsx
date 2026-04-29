@@ -48,6 +48,7 @@ const emptyPlayer: Partial<PlayerDto> = {
   playerGroup: '',
   withdrawnFromRound: -1,
   manualTiebreak: 0,
+  protectFromByeInDebut: true,
 }
 
 export function TournamentPlayersDialog({ open, tournamentId, tournamentName, onClose }: Props) {
@@ -57,13 +58,15 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
   const { data: clubs } = useClubs()
   // While `tournament` is loading, treat the gate as engaged so the destructive
   // button stays disabled rather than briefly flashing enabled before resolving.
-  const removeBlocked = tournament
+  const lockState = tournament
     ? tournamentLockState({
         roundsPlayed: tournament.roundsPlayed,
         hasRecordedResults: tournament.hasRecordedResults,
         nrOfRounds: tournament.nrOfRounds,
-      }) !== 'draft'
-    : true
+      })
+    : null
+  const removeBlocked = lockState === null || lockState !== 'draft'
+  const pastDraft = lockState !== null && lockState !== 'draft'
   const addPlayer = useAddTournamentPlayer(tournamentId)
   const addPlayers = useAddTournamentPlayers(tournamentId)
   const updatePlayer = useUpdateTournamentPlayer(tournamentId)
@@ -240,7 +243,12 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                 <button className="btn" onClick={handleNew}>
                   {sv.player.reset}
                 </button>
-                <button className="btn btn-primary" onClick={handleAdd} disabled={!isNew}>
+                <button
+                  className="btn btn-primary"
+                  data-testid="add-player"
+                  onClick={handleAdd}
+                  disabled={!isNew}
+                >
                   {sv.common.add}
                 </button>
                 <button
@@ -343,6 +351,26 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
               onRenameClub={(id, name) => renameClub.mutate({ id, dto: { name } })}
               onDeleteClub={(id) => deleteClub.mutate(id)}
             />
+            {isNew && pastDraft && (
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  margin: '8px 0',
+                }}
+              >
+                <input
+                  data-testid="protect-from-bye-checkbox"
+                  type="checkbox"
+                  checked={editPlayer.protectFromByeInDebut ?? true}
+                  onChange={(e) =>
+                    setEditPlayer({ ...editPlayer, protectFromByeInDebut: e.target.checked })
+                  }
+                />
+                {sv.player.protectFromByeInDebut}
+              </label>
+            )}
             <div
               style={{
                 fontSize: 'var(--font-size-small)',

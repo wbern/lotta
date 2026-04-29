@@ -4,8 +4,8 @@ import type { PlayerDto } from '../../types/api.ts'
  * Maps a SQL result row to a PlayerDto.
  *
  * Columns 0-18 are shared between availableplayers and tournamentplayers queries.
- * When `extended` is true, columns 19 (withdrawnFromRound) and 20 (manualTiebreak)
- * are read from the row. Otherwise defaults are used.
+ * When `extended` is true, columns 19-22 are tournamentplayers-specific
+ * (withdrawnFromRound, manualTiebreak, addedAtRound, protectFromByeInDebut).
  */
 export function mapPlayerRow(row: unknown[], extended: boolean): PlayerDto {
   return {
@@ -30,6 +30,8 @@ export function mapPlayerRow(row: unknown[], extended: boolean): PlayerDto {
     playerGroup: (row[18] as string) ?? '',
     withdrawnFromRound: extended ? (row[19] as number) : -1,
     manualTiebreak: extended ? (row[20] as number) : 0,
+    addedAtRound: extended ? ((row[21] as number) ?? 0) : 0,
+    protectFromByeInDebut: extended ? ((row[22] as number) ?? 1) === 1 : true,
     lotNr: 2147483647,
   }
 }

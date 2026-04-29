@@ -93,6 +93,8 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
     rating: getPlayerRating(p, tournament.ratingChoice),
     withdrawnFromRound: p.withdrawnFromRound,
     lotNr: p.lotNr,
+    addedAtRound: p.addedAtRound,
+    protectFromByeInDebut: p.protectFromByeInDebut,
   }))
 
   // Berger is a deterministic round-robin; keep the legacy synchronous path.
@@ -145,7 +147,7 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
 
   let bye: PairingPlayerInfo | null = null
   if (activePlayers.length % 2 === 1) {
-    bye = findByePlayer(activePlayers, rounds)
+    bye = findByePlayer(activePlayers, rounds, nextRoundNr)
     if (bye) {
       const idx = activePlayers.indexOf(bye)
       activePlayers.splice(idx, 1)
@@ -255,10 +257,16 @@ function restoreLotNrsFromRound(players: PairingPlayerInfo[], round: RoundDto): 
 /**
  * From the end of the score+lotNr-sorted list, pick the first player
  * who has NOT already had a bye.
+ *
+ * A late-added player whose first paired round is `nextRoundNr` and who
+ * has `protectFromByeInDebut` set is excluded on the first pass — it's
+ * unkind to give a newcomer a bye in the first round they actually play.
+ * If protection eliminates every candidate, fall back to the original rule.
  */
 function findByePlayer(
   sortedPlayers: PairingPlayerInfo[],
   rounds: RoundDto[],
+  nextRoundNr: number,
 ): PairingPlayerInfo | null {
   const hadBye = new Set<number>()
   for (const round of rounds) {
@@ -269,6 +277,16 @@ function findByePlayer(
       if (g.blackPlayer && !g.whitePlayer) {
         hadBye.add(g.blackPlayer.id)
       }
+    }
+  }
+
+  const isProtectedDebut = (p: PairingPlayerInfo): boolean =>
+    p.protectFromByeInDebut === true && (p.addedAtRound ?? 0) + 1 === nextRoundNr
+
+  for (let i = sortedPlayers.length - 1; i >= 0; i--) {
+    const p = sortedPlayers[i]
+    if (!hadBye.has(p.id) && !isProtectedDebut(p)) {
+      return p
     }
   }
 

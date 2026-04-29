@@ -90,6 +90,8 @@ const mockPlayers: PlayerDto[] = [
     playerGroup: '',
     withdrawnFromRound: 0,
     manualTiebreak: 0,
+    addedAtRound: 0,
+    protectFromByeInDebut: true,
     lotNr: 1,
   },
   {
@@ -114,6 +116,8 @@ const mockPlayers: PlayerDto[] = [
     playerGroup: '',
     withdrawnFromRound: 0,
     manualTiebreak: 0,
+    addedAtRound: 0,
+    protectFromByeInDebut: true,
     lotNr: 2,
   },
   {
@@ -138,6 +142,8 @@ const mockPlayers: PlayerDto[] = [
     playerGroup: '',
     withdrawnFromRound: 0,
     manualTiebreak: 0,
+    addedAtRound: 0,
+    protectFromByeInDebut: true,
     lotNr: 3,
   },
   {
@@ -162,6 +168,8 @@ const mockPlayers: PlayerDto[] = [
     playerGroup: '',
     withdrawnFromRound: 0,
     manualTiebreak: 0,
+    addedAtRound: 0,
+    protectFromByeInDebut: true,
     lotNr: 4,
   },
   {
@@ -186,6 +194,8 @@ const mockPlayers: PlayerDto[] = [
     playerGroup: '',
     withdrawnFromRound: 0,
     manualTiebreak: 0,
+    addedAtRound: 0,
+    protectFromByeInDebut: true,
     lotNr: 5,
   },
 ]

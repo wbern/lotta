@@ -86,6 +86,8 @@ CREATE TABLE tournamentplayers (
   tournamentindex INTEGER NOT NULL,
   withdrawnfromround INTEGER,
   manualtiebreak INTEGER,
+  addedatround INTEGER NOT NULL DEFAULT 0,
+  protectfrombyeindebut INTEGER NOT NULL DEFAULT 1,
   FOREIGN KEY (tournamentindex) REFERENCES tournaments("index"),
   FOREIGN KEY (clubindex) REFERENCES clubs("index")
 );
@@ -139,4 +141,18 @@ CREATE TABLE stringsettings (
 
 export function createSchema(db: Database): void {
   db.run(SCHEMA_SQL)
+}
+
+export function migrateSchema(db: Database): void {
+  const cols = db.exec('PRAGMA table_info(tournamentplayers)')
+  if (!cols[0]) return
+  const present = new Set(cols[0].values.map((r) => r[1] as string))
+  if (!present.has('addedatround')) {
+    db.run('ALTER TABLE tournamentplayers ADD COLUMN addedatround INTEGER NOT NULL DEFAULT 0')
+  }
+  if (!present.has('protectfrombyeindebut')) {
+    db.run(
+      'ALTER TABLE tournamentplayers ADD COLUMN protectfrombyeindebut INTEGER NOT NULL DEFAULT 1',
+    )
+  }
 }

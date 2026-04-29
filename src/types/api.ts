@@ -76,6 +76,8 @@ export interface PlayerDto {
   playerGroup: string
   withdrawnFromRound: number
   manualTiebreak: number
+  addedAtRound: number
+  protectFromByeInDebut: boolean
   lotNr: number
 }
 
