@@ -187,6 +187,7 @@ body,
   font: inherit;
   cursor: pointer;
   color: var(--color-text);
+  touch-action: manipulation;
 }
 
 .menu-item > button:disabled {
@@ -234,6 +235,7 @@ body,
   cursor: pointer;
   color: var(--color-text);
   white-space: nowrap;
+  touch-action: manipulation;
 }
 
 .menu-dropdown button:hover {

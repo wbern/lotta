@@ -268,6 +268,21 @@ describe('MenuBar pairing error', () => {
   })
 })
 
+describe('MenuBar outside-tap dismissal', () => {
+  it('closes the open dropdown when a pointerdown fires outside the menu bar', () => {
+    renderMenuBar({ tournamentId: 1 })
+
+    openMenu('Turnering')
+    expect(screen.getByTestId('menu-dropdown')).toBeTruthy()
+
+    const outside = document.createElement('div')
+    document.body.appendChild(outside)
+    fireEvent.pointerDown(outside)
+
+    expect(screen.queryByTestId('menu-dropdown')).toBeNull()
+  })
+})
+
 describe('MenuBar pairing success callback', () => {
   it('invokes onPaired when pairing succeeds', () => {
     let capturedOpts: { onSuccess?: () => void } = {}
