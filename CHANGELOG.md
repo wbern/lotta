@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/wbern/lotta/compare/v1.16.0...v1.16.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* **menu:** use pointerdown + touch-action so iOS taps register reliably ([784693b](https://github.com/wbern/lotta/commit/784693b0b6527bde7791f39192a21aa48f5504e9))
+
 # [1.16.0](https://github.com/wbern/lotta/compare/v1.15.0...v1.16.0) (2026-04-29)
 
 
