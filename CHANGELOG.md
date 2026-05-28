@@ -1,3 +1,10 @@
+## [1.20.2](https://github.com/wbern/lotta/compare/v1.20.1...v1.20.2) (2026-05-28)
+
+
+### Bug Fixes
+
+* **recovery:** clear stale countdown on action error, cap diagnostics list height ([5e54a55](https://github.com/wbern/lotta/commit/5e54a55b66fbb0af77a9201432154e6075b8e5b2))
+
 ## [1.20.1](https://github.com/wbern/lotta/compare/v1.20.0...v1.20.1) (2026-05-28)
 
 
