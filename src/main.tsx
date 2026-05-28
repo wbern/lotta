@@ -22,6 +22,7 @@ import { DatabaseService } from './db/database-service'
 import { UndoManager } from './db/undo-manager'
 import { setUndoManager } from './db/undo-provider'
 import { queryClient } from './query-client'
+import { runKillswitchIfRequested } from './recovery/killswitch'
 import { prefetchTurnServers } from './services/p2p-service'
 import './styles/global.css'
 
@@ -100,6 +101,14 @@ declare module '@tanstack/react-router' {
 }
 
 async function main() {
+  await runKillswitchIfRequested({
+    location: window.location,
+    swContainer: navigator.serviceWorker ?? null,
+    cacheStorage: typeof caches !== 'undefined' ? caches : null,
+    reload: () => window.location.reload(),
+    replaceUrl: (url) => window.history.replaceState(null, '', url),
+  })
+
   const service = await DatabaseService.create()
   setDatabaseService(service)
 
