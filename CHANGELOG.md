@@ -1,3 +1,10 @@
+## [1.20.1](https://github.com/wbern/lotta/compare/v1.20.0...v1.20.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* **recovery:** action panel now hides, cancel + nuke get their colors, no duplicate 'om' ([e7c3cf0](https://github.com/wbern/lotta/commit/e7c3cf09c0cfb58981c670890d9219e5cd8ac62b)), closes [#root](https://github.com/wbern/lotta/issues/root) [#root](https://github.com/wbern/lotta/issues/root)
+
 # [1.20.0](https://github.com/wbern/lotta/compare/v1.19.0...v1.20.0) (2026-05-28)
 
 
