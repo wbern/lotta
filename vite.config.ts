@@ -114,6 +114,14 @@ const useMqtt = process.env.VITE_P2P_STRATEGY === 'mqtt'
 export default defineConfig({
   base: process.env.BASE_PATH || rollback?.base || '/',
   server: useHttps ? { https: { cert: readFileSync(certPath), key: readFileSync(keyPath) } } : {},
+  build: {
+    rollupOptions: {
+      input: {
+        main: join(__dirname, 'index.html'),
+        recovery: join(__dirname, 'recovery.html'),
+      },
+    },
+  },
   resolve: {
     alias: {
       ...(useMqtt ? { trystero: '@trystero-p2p/mqtt' } : {}),
@@ -153,6 +161,7 @@ export default defineConfig({
             workbox: {
               globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg,ico}'],
               globIgnores: ['version.json', 'changelog.json', 'versions.json'],
+              navigateFallbackDenylist: [/^\/recovery\.html$/],
               maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
               // Runtime-cache older deployed versions under /v/<version>/ so
               // users can switch to a previous build and keep it available
