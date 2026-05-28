@@ -1,3 +1,14 @@
+# [1.19.0](https://github.com/wbern/lotta/compare/v1.18.0...v1.19.0) (2026-05-28)
+
+
+### Features
+
+* **#lt-0ux:** link 'Säkert läge' from 'Om Lotta' dialog to /recovery.html ([6cccb59](https://github.com/wbern/lotta/commit/6cccb5927d0c14df0abc01ab5b99acfecd6c40d4)), closes [#lt-0ux](https://github.com/wbern/lotta/issues/lt-0ux)
+* **#lt-3jw:** detect iOS PWA standalone mode ([b3e43ad](https://github.com/wbern/lotta/commit/b3e43ada1b0924da26f70dcda33107334533be1d)), closes [#lt-3jw](https://github.com/wbern/lotta/issues/lt-3jw)
+* **#lt-79g:** gather PWA diagnostics (version, SW count, caches, storage) ([6a0ce65](https://github.com/wbern/lotta/commit/6a0ce65ece80f7dc5d267dc381039265a8605fff)), closes [#lt-79g](https://github.com/wbern/lotta/issues/lt-79g)
+* **#lt-gqt,#lt-79g,#lt-l88,#lt-y0g,#lt-15v,#lt-3jw:** rebuild recovery page as safe-mode panel ([371be21](https://github.com/wbern/lotta/commit/371be218cd126d2b0c36ef42dbfcb37efb5d55d6)), closes [#lt-gqt](https://github.com/wbern/lotta/issues/lt-gqt) [#lt-79g](https://github.com/wbern/lotta/issues/lt-79g) [#lt-l88](https://github.com/wbern/lotta/issues/lt-l88) [#lt-y0g](https://github.com/wbern/lotta/issues/lt-y0g) [#lt-15v](https://github.com/wbern/lotta/issues/lt-15v) [#lt-3jw](https://github.com/wbern/lotta/issues/lt-3jw) [#lt-l88](https://github.com/wbern/lotta/issues/lt-l88) [#lt-79g](https://github.com/wbern/lotta/issues/lt-79g) [#lt-gqt](https://github.com/wbern/lotta/issues/lt-gqt) [#lt-y0g](https://github.com/wbern/lotta/issues/lt-y0g) [#lt-15v](https://github.com/wbern/lotta/issues/lt-15v) [#lt-3jw](https://github.com/wbern/lotta/issues/lt-3jw)
+* **#lt-gqt:** read raw SQLite backup bytes from IndexedDB ([32be738](https://github.com/wbern/lotta/commit/32be73838c345e04bc41f5dd395327f26504f4c0)), closes [#lt-gqt](https://github.com/wbern/lotta/issues/lt-gqt)
+
 # [1.18.0](https://github.com/wbern/lotta/compare/v1.17.0...v1.18.0) (2026-05-28)
 
 
