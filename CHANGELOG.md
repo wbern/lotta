@@ -1,3 +1,10 @@
+## [1.20.3](https://github.com/wbern/lotta/compare/v1.20.2...v1.20.3) (2026-05-28)
+
+
+### Bug Fixes
+
+* **recovery:** retry/back buttons after action error, brighter error red in dark mode ([065c054](https://github.com/wbern/lotta/commit/065c05492b2220c01402ac05684ab9723f522fe8))
+
 ## [1.20.2](https://github.com/wbern/lotta/compare/v1.20.1...v1.20.2) (2026-05-28)
 
 
