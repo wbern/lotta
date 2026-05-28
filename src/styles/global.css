@@ -3251,6 +3251,17 @@ button.btn-danger {
   color: var(--color-text-muted);
 }
 
+.about-recovery {
+  margin-top: 16px;
+}
+
+.about-recovery a {
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+  touch-action: manipulation;
+}
+
 /* Mobile floor: raise all hardcoded sub-16px rules (10/12/14/15px and
    em-based sizes) that don't already go through --font-size-* vars, so
    every UI text size is at least 1rem on phones. This block MUST live at

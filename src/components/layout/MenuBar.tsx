@@ -372,6 +372,11 @@ export function MenuBar({
             )}
           </p>
         )}
+        <p className="about-recovery">
+          <a data-testid="about-safe-mode-link" href="/recovery.html">
+            Säkert läge / Återställning
+          </a>
+        </p>
       </Dialog>
 
       <WhatsNewDialog open={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
