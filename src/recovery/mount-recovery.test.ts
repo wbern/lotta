@@ -173,6 +173,56 @@ describe('mountRecovery', () => {
 
     const countdownEl = root.querySelector<HTMLElement>('[data-testid="recovery-countdown"]')
     expect(countdownEl?.hidden).toBe(true)
+
+    const cancelBtn = root.querySelector<HTMLButtonElement>('[data-testid="recovery-cancel"]')
+    expect(cancelBtn?.textContent).toBe('Tillbaka')
+
+    const retryBtn = root.querySelector<HTMLButtonElement>('[data-testid="recovery-retry"]')
+    expect(retryBtn?.hidden).toBe(false)
+  })
+
+  it('retry button after error reruns the same action via a fresh countdown', async () => {
+    const root = document.createElement('div')
+    const captured: { onComplete: (() => void) | null } = { onComplete: null }
+    const startCountdown = vi.fn((opts) => {
+      captured.onComplete = opts.onComplete
+      return () => {}
+    })
+    const clearCaches = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('SecurityError'))
+      .mockResolvedValue(undefined)
+
+    mountRecovery(root, buildDeps({ startCountdown, clearCaches }))
+
+    root.querySelector<HTMLButtonElement>('[data-testid="recovery-action-clear-caches"]')?.click()
+    captured.onComplete?.()
+
+    await vi.waitFor(() => {
+      const retry = root.querySelector<HTMLButtonElement>('[data-testid="recovery-retry"]')
+      expect(retry?.hidden).toBe(false)
+    })
+
+    root.querySelector<HTMLButtonElement>('[data-testid="recovery-retry"]')?.click()
+    expect(startCountdown).toHaveBeenCalledTimes(2)
+
+    const countdownEl = root.querySelector<HTMLElement>('[data-testid="recovery-countdown"]')
+    expect(countdownEl?.hidden).toBe(false)
+    const err = root.querySelector<HTMLElement>('[data-testid="recovery-action-error"]')
+    expect(err?.hidden).toBe(true)
+  })
+
+  it('cancel label is Avbryt during active countdown', () => {
+    const root = document.createElement('div')
+    const startCountdown = vi.fn(() => () => {})
+
+    mountRecovery(root, buildDeps({ startCountdown }))
+    root.querySelector<HTMLButtonElement>('[data-testid="recovery-action-clear-caches"]')?.click()
+
+    const cancelBtn = root.querySelector<HTMLButtonElement>('[data-testid="recovery-cancel"]')
+    expect(cancelBtn?.textContent).toBe('Avbryt')
+    const retryBtn = root.querySelector<HTMLButtonElement>('[data-testid="recovery-retry"]')
+    expect(retryBtn?.hidden).toBe(true)
   })
 
   it('cancel button stops the active countdown and hides the panel', () => {

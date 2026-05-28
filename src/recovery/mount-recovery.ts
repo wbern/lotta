@@ -130,6 +130,13 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
   cancelBtn.textContent = 'Avbryt'
   countdownPanel.appendChild(cancelBtn)
 
+  const retryBtn = document.createElement('button')
+  retryBtn.setAttribute('data-testid', 'recovery-retry')
+  retryBtn.type = 'button'
+  retryBtn.textContent = 'Försök igen'
+  retryBtn.hidden = true
+  countdownPanel.appendChild(retryBtn)
+
   const actionError = document.createElement('p')
   actionError.setAttribute('data-testid', 'recovery-action-error')
   actionError.hidden = true
@@ -137,14 +144,19 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
 
   let activeCancel: (() => void) | null = null
 
+  let lastAction: RecoveryAction | null = null
+
   const startActionCountdown = (action: RecoveryAction): void => {
     if (activeCancel) activeCancel()
+    lastAction = action
     countdownLabel.textContent = `${action.description} om`
     countdownLabel.hidden = false
     countdownEl.textContent = String(deps.countdownFrom)
     countdownEl.hidden = false
     actionError.hidden = true
     actionError.textContent = ''
+    retryBtn.hidden = true
+    cancelBtn.textContent = 'Avbryt'
     countdownPanel.hidden = false
     actionsPanel.hidden = true
     activeCancel = deps.startCountdown({
@@ -160,10 +172,16 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
             err instanceof Error ? err.message : String(err)
           }`
           actionError.hidden = false
+          retryBtn.hidden = false
+          cancelBtn.textContent = 'Tillbaka'
         })
       },
     })
   }
+
+  retryBtn.addEventListener('click', () => {
+    if (lastAction) startActionCountdown(lastAction)
+  })
 
   cancelBtn.addEventListener('click', () => {
     if (activeCancel) activeCancel()
