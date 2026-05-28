@@ -66,11 +66,13 @@ async function copyToClipboard(text: string): Promise<void> {
   textarea.style.opacity = '0'
   document.body.appendChild(textarea)
   textarea.select()
+  let ok = false
   try {
-    document.execCommand('copy')
+    ok = document.execCommand('copy')
   } finally {
     document.body.removeChild(textarea)
   }
+  if (!ok) throw new Error('copy failed')
 }
 
 async function copyDiagnostics(): Promise<void> {

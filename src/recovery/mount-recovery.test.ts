@@ -26,6 +26,7 @@ function buildDeps(overrides: Partial<Parameters<typeof mountRecovery>[1]> = {})
     downloadBackup: vi.fn().mockResolvedValue(undefined),
     getDiagnostics: vi.fn().mockResolvedValue(fakeDiagnostics()),
     copyDiagnostics: vi.fn().mockResolvedValue(undefined),
+    isIosStandalone: () => false,
     ...overrides,
   }
 }
@@ -148,6 +149,27 @@ describe('mountRecovery', () => {
     captured.onComplete?.()
 
     expect(nukeAndReload).toHaveBeenCalledTimes(1)
+  })
+
+  it('surfaces an error message when an action throws on completion', async () => {
+    const root = document.createElement('div')
+    const captured: { onComplete: (() => void) | null } = { onComplete: null }
+    const startCountdown = vi.fn((opts) => {
+      captured.onComplete = opts.onComplete
+      return () => {}
+    })
+    const clearCaches = vi.fn().mockRejectedValue(new Error('SecurityError'))
+
+    mountRecovery(root, buildDeps({ startCountdown, clearCaches }))
+
+    root.querySelector<HTMLButtonElement>('[data-testid="recovery-action-clear-caches"]')?.click()
+    captured.onComplete?.()
+
+    await vi.waitFor(() => {
+      const err = root.querySelector<HTMLElement>('[data-testid="recovery-action-error"]')
+      expect(err?.hidden).toBe(false)
+      expect(err?.textContent).toContain('SecurityError')
+    })
   })
 
   it('cancel button stops the active countdown and hides the panel', () => {

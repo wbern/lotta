@@ -11,7 +11,7 @@ interface MountRecoveryDeps {
   downloadBackup: () => Promise<void>
   getDiagnostics: () => Promise<Diagnostics>
   copyDiagnostics: () => Promise<void>
-  isIosStandalone?: () => boolean
+  isIosStandalone: () => boolean
 }
 
 interface RecoveryAction {
@@ -84,7 +84,7 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
 
   void deps.getDiagnostics().then((d) => renderDiagnostics(diagPanel, d))
 
-  if (deps.isIosStandalone?.()) {
+  if (deps.isIosStandalone()) {
     const note = document.createElement('aside')
     note.setAttribute('data-testid', 'recovery-ios-standalone-note')
     note.innerHTML = `
@@ -129,12 +129,19 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
   cancelBtn.textContent = 'Avbryt'
   countdownPanel.appendChild(cancelBtn)
 
+  const actionError = document.createElement('p')
+  actionError.setAttribute('data-testid', 'recovery-action-error')
+  actionError.hidden = true
+  countdownPanel.appendChild(actionError)
+
   let activeCancel: (() => void) | null = null
 
   const startActionCountdown = (action: RecoveryAction): void => {
     if (activeCancel) activeCancel()
     countdownLabel.textContent = `${action.description} om`
     countdownEl.textContent = String(deps.countdownFrom)
+    actionError.hidden = true
+    actionError.textContent = ''
     countdownPanel.hidden = false
     actionsPanel.hidden = true
     activeCancel = deps.startCountdown({
@@ -143,7 +150,12 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
         countdownEl.textContent = String(remaining)
       },
       onComplete: () => {
-        void action.run()
+        action.run().catch((err: unknown) => {
+          actionError.textContent = `Åtgärden misslyckades: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+          actionError.hidden = false
+        })
       },
     })
   }

@@ -37,6 +37,36 @@ men rör inte IndexedDB.
 
 **Bevarar tävlingsdata:** ✅ Ja.
 
+## Säkert läge — när användaren vill se diagnostik först
+
+```
+https://lotta.bernting.se/recovery.html
+```
+
+Säkert läge är en fristående sida som inte laddar resten av Lotta. Den
+fungerar även när huvudappen inte startar. Sidan visar:
+
+- Version och commit som webbläsaren faktiskt har cachat
+- Antal service workers och deras scope
+- Cachelagringens innehåll och storlek
+- iOS-specifik vägledning om appen körs från hemskärmen
+
+Tre knappar för rensning, från minst till mest ingripande:
+
+1. **Rensa cache** — tar bara bort Cache Storage. Snabbast och oftast nog.
+2. **Avregistrera service workers** — tvingar en helt ny SW-installation.
+3. **Återställ allt** — kombinerar de två ovan.
+
+Ingen av knapparna startar automatiskt — användaren måste klicka. Efter
+klick startar en 10-sekunders nedräkning som kan avbrytas. Knappen
+**Säkerhetskopiera databas först** laddar ner råa SQLite-bytes utan att
+röra något annat — be alltid användaren göra det innan rensning.
+**Kopiera diagnostik** lägger en JSON-bild av tillståndet i urklipp som
+användaren kan klistra in i ett supportmeddelande.
+
+**Bevarar tävlingsdata:** ✅ Ja — alla tre rensningsåtgärderna lämnar
+IndexedDB ifred.
+
 ## Om länken inte fungerar — manuell väg
 
 Skicka instruktioner beroende på vilken webbläsare användaren har.
@@ -94,6 +124,7 @@ i Steg 2 så ja, annars nej.
 | ---- | ---------------- | ----------------- |
 | Vänta 24h | Inget | ✅ |
 | `?reset=1`-länk | Klick | ✅ |
+| `/recovery.html` Säkert läge | Klick + välj åtgärd | ✅ |
 | Starta om webbläsaren | Stäng appen | ✅ |
 | Rensa webbplatsdata | Inställningar | ❌ |
 | Hemskärm + rensa | Hemskärm + inställningar | ❌ |
@@ -103,7 +134,7 @@ föregående steget bevisligen inte fungerade.
 
 ## Relaterat
 
-- Killswitch-URL och `/recovery.html` — se `src/recovery/` och
-  `recovery.html`.
+- Källa: `src/recovery/` (Säkert läge), `recovery.html` (skal/styling),
+  `index.html` (inline `?reset=1`-killswitch).
 - Sista utvägen för utvecklaren (inte slutanvändaren) — se
   [`emergency-pwa-reset.md`](emergency-pwa-reset.md).

@@ -10,8 +10,13 @@ cached build that lower-impact recovery paths cannot fix:
 
 1. **`?reset=1` URL** (lt-4d9) — inline killswitch in `index.html`. Works
    if the user can load any page on the site at all.
-2. **`/recovery.html`** (lt-n7z) — standalone lifeboat page that bypasses
-   the SW navigation route. Works if the user can be told the URL.
+2. **`/recovery.html` Säkert läge** (lt-n7z + lt-gqt/79g/l88/y0g/15v/3jw)
+   — standalone lifeboat page that bypasses the SW navigation route.
+   Renders a diagnostics panel, lets users download a raw SQLite backup
+   first, copy diagnostics to clipboard, and choose between three
+   granular destructive actions (clear caches / unregister SWs / full
+   nuke). Linked from "Om Lotta → Säkert läge / Återställning" (lt-0ux).
+   Works if the user can be told the URL or open the in-app dialog.
 3. **selfDestroying release** — this document. The nuclear option, shipped
    to all users automatically.
 
