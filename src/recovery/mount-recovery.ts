@@ -117,6 +117,7 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
   root.appendChild(countdownPanel)
 
   const countdownLabel = document.createElement('p')
+  countdownLabel.setAttribute('data-testid', 'recovery-countdown-label')
   countdownPanel.appendChild(countdownLabel)
 
   const countdownEl = document.createElement('div')
@@ -139,7 +140,9 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
   const startActionCountdown = (action: RecoveryAction): void => {
     if (activeCancel) activeCancel()
     countdownLabel.textContent = `${action.description} om`
+    countdownLabel.hidden = false
     countdownEl.textContent = String(deps.countdownFrom)
+    countdownEl.hidden = false
     actionError.hidden = true
     actionError.textContent = ''
     countdownPanel.hidden = false
@@ -151,6 +154,8 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
       },
       onComplete: () => {
         action.run().catch((err: unknown) => {
+          countdownLabel.hidden = true
+          countdownEl.hidden = true
           actionError.textContent = `Åtgärden misslyckades: ${
             err instanceof Error ? err.message : String(err)
           }`

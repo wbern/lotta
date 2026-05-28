@@ -170,6 +170,9 @@ describe('mountRecovery', () => {
       expect(err?.hidden).toBe(false)
       expect(err?.textContent).toContain('SecurityError')
     })
+
+    const countdownEl = root.querySelector<HTMLElement>('[data-testid="recovery-countdown"]')
+    expect(countdownEl?.hidden).toBe(true)
   })
 
   it('cancel button stops the active countdown and hides the panel', () => {
