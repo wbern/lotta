@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/wbern/lotta/compare/v1.19.0...v1.20.0) (2026-05-28)
+
+
+### Features
+
+* **#lt-gqt,#lt-79g,#lt-l88,#lt-y0g,#lt-15v,#lt-3jw:** polish recovery safe-mode panel ([ba779ee](https://github.com/wbern/lotta/commit/ba779ee90dc5381346c2b735d1fe284357a6cd23)), closes [#lt-gqt](https://github.com/wbern/lotta/issues/lt-gqt) [#lt-79g](https://github.com/wbern/lotta/issues/lt-79g) [#lt-l88](https://github.com/wbern/lotta/issues/lt-l88) [#lt-y0g](https://github.com/wbern/lotta/issues/lt-y0g) [#lt-15v](https://github.com/wbern/lotta/issues/lt-15v) [#lt-3jw](https://github.com/wbern/lotta/issues/lt-3jw)
+
 # [1.19.0](https://github.com/wbern/lotta/compare/v1.18.0...v1.19.0) (2026-05-28)
 
 
