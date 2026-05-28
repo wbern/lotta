@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/wbern/lotta/compare/v1.16.2...v1.17.0) (2026-05-28)
+
+
+### Features
+
+* **#lt-4d9:** add ?reset=1 killswitch URL to unstick broken installs ([c10cce8](https://github.com/wbern/lotta/commit/c10cce8c735ccd364a7307d29bbd92d4b5673c74)), closes [#lt-4d9](https://github.com/wbern/lotta/issues/lt-4d9)
+
 ## [1.16.2](https://github.com/wbern/lotta/compare/v1.16.1...v1.16.2) (2026-05-28)
 
 
