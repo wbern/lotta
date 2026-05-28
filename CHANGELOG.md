@@ -1,3 +1,10 @@
+## [1.16.2](https://github.com/wbern/lotta/compare/v1.16.1...v1.16.2) (2026-05-28)
+
+
+### Bug Fixes
+
+* **context-menu:** use pointerdown, cleanup keydown listener, .btn touch-action ([03a4bee](https://github.com/wbern/lotta/commit/03a4beea740a5bd4063b97daf6c078feea95c095))
+
 ## [1.16.1](https://github.com/wbern/lotta/compare/v1.16.0...v1.16.1) (2026-05-27)
 
 
