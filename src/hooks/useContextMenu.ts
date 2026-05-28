@@ -18,13 +18,15 @@ export function useContextMenu() {
 
   useEffect(() => {
     if (state) {
-      const handler = () => close()
-      document.addEventListener('click', handler)
-      document.addEventListener('keydown', (e) => {
+      const pointerHandler = () => close()
+      const keyHandler = (e: KeyboardEvent) => {
         if (e.key === 'Escape') close()
-      })
+      }
+      document.addEventListener('pointerdown', pointerHandler)
+      document.addEventListener('keydown', keyHandler)
       return () => {
-        document.removeEventListener('click', handler)
+        document.removeEventListener('pointerdown', pointerHandler)
+        document.removeEventListener('keydown', keyHandler)
       }
     }
   }, [state, close])

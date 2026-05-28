@@ -1046,6 +1046,7 @@ button.btn {
   font: inherit;
   cursor: pointer;
   background: var(--color-surface);
+  touch-action: manipulation;
 }
 
 button.btn:hover {
