@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/wbern/lotta/compare/v1.17.0...v1.18.0) (2026-05-28)
+
+
+### Features
+
+* **#lt-n7z:** add /recovery.html safe-mode lifeboat page ([dd55ef5](https://github.com/wbern/lotta/commit/dd55ef50c5e5ffd66b7eaa02ac884c6cc60591d2)), closes [#lt-n7z](https://github.com/wbern/lotta/issues/lt-n7z)
+
 # [1.17.0](https://github.com/wbern/lotta/compare/v1.16.2...v1.17.0) (2026-05-28)
 
 
