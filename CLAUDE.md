@@ -6,7 +6,7 @@ Swedish chess tournament management app. A fully client-side web application.
 
 - **Frontend-only:** React 19 + Vite + TanStack Router/Query + TypeScript. Plain CSS. No backend server required.
 - **Database:** sql.js (SQLite compiled to WebAssembly) running in-browser, persisted to IndexedDB. All data lives locally in the user's browser.
-- **PWA:** Service worker (vite-plugin-pwa) precaches all assets including WASM for offline use. Uses `registerType: 'prompt'` so users choose when to update.
+- **PWA:** Service worker (vite-plugin-pwa) precaches all assets including WASM for offline use. Uses `registerType: 'prompt'` so users choose when to update. Recovery paths for stuck installs: `?reset=1` URL (inline killswitch in `index.html`), `/recovery.html` lifeboat page, and as a last resort an emergency `selfDestroying: true` release — see [`docs/emergency-pwa-reset.md`](docs/emergency-pwa-reset.md). For frontline support, the Swedish cheatsheet for stuck users is [`docs/support-stuck-app.md`](docs/support-stuck-app.md).
 - **Always use pnpm** (never npm) — the project uses `pnpm-lock.yaml` and CI builds with `pnpm install --frozen-lockfile`.
 - **Encoding:** Player TSV export includes UTF-8 BOM for Windows compatibility. Import auto-detects encoding (tries UTF-8, falls back to Windows-1252).
 
