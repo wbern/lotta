@@ -183,7 +183,7 @@ export function mountRecovery(root: HTMLElement, deps: MountRecoveryDeps): void 
     {
       id: 'nuke',
       label: 'Återställ allt (cache + service workers)',
-      description: 'Återställer allt och laddar om',
+      description: 'Återställer allt',
       run: deps.nukeAndReload,
     },
   ]
