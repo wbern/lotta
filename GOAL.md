@@ -11,13 +11,14 @@ for the session.
 - ✅ **ADR-0003** — repository-boundary validation (nrOfRounds, pointsPerGame, blank names). Done.
 - ✅ **ADR-0002** — active round derived & validated against data; URL self-heals. Done.
 - ✅ **ADR-0004** — showELO/showGroup in the LockableField set, enforced in the repo. Done.
-- ⏸️ **ADR-0006** — scoring decoupled from chess4. **Not started — large fork.** Needs a
-  scoring representation decision (point-system enum vs win/draw/loss triple) and a
-  schema + data migration for existing chess4 tournaments. Stopped here for that call.
+- ✅ **ADR-0006** — scoring decoupled from chess4. Stored as `(pointsPerGame,
+  maxPointsForWin)`; NULLable column + read-time fallback for backwards compat. Done.
 
-Acceptance status: 25 acceptance tests green; the 3 remaining reds are all ADR-0006
-(`schack4an-points-locks-settings` ×2 and the `edit-untoggle` restore in
-`schack4an-coupling-edge-cases`). Unit suite (1367) and all quality gates green.
+Acceptance status: all 28 acceptance tests green. Unit suite (1368, incl. the new
+3-2-1 scoring test) and all quality gates green. e2e regression (chess4 / dialogs /
+pairings / em-replay) green.
+
+**All six ADRs implemented.**
 
 ## Prime directive
 
