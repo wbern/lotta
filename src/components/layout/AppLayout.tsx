@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Outlet, useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   downloadBackup,
   downloadEncryptedBackup,
@@ -82,9 +82,28 @@ export function AppLayout() {
   const currentRound = search.round
   const currentTab = search.tab === 'domare' ? 'live' : search.tab || 'pairings'
 
-  // Derive latest round number
+  // Derive the active round, validated against the rounds that actually exist
+  // (ADR-0002). A ?round that points at a non-existent round (after switching
+  // tournaments, unpairing, or undo/redo/restore) falls back to the latest round.
   const latestRoundNr = rounds && rounds.length > 0 ? rounds[rounds.length - 1].roundNr : undefined
-  const activeRound = currentRound ?? latestRoundNr
+  const roundExists =
+    currentRound != null && (rounds?.some((r) => r.roundNr === currentRound) ?? false)
+  const activeRound = roundExists ? currentRound : latestRoundNr
+
+  // Keep the URL in sync with the data: if ?round dangles at a round that no
+  // longer exists, replace it with the nearest valid round (or clear it). This
+  // self-heals the view for every cause — switch, unpair, undo, redo, restore —
+  // instead of each action having to remember to clear the param.
+  useEffect(() => {
+    if (tournamentId == null || rounds == null) return
+    if (currentRound != null && !rounds.some((r) => r.roundNr === currentRound)) {
+      navigate({
+        to: '/',
+        replace: true,
+        search: { tournamentId, round: activeRound, tab: currentTab },
+      })
+    }
+  }, [tournamentId, rounds, currentRound, activeRound, currentTab, navigate])
 
   // Dialog state
   const [showTournamentDialog, setShowTournamentDialog] = useState(false)
