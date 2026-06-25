@@ -42,7 +42,8 @@ test('showELO/showGroup cannot be enabled on a locked chess4 tournament via the 
   await pairRound($, tid)
 
   // Direct api PUT flipping the presentation flags, keeping every locked scoring
-  // field identical (so the existing guards don't reject the whole update).
+  // field identical. The locked tournament must reject the change (the update may
+  // throw); either way the value must not persist.
   const showELOAfter = await page.evaluate(async (id) => {
     const api = (
       window as unknown as {
@@ -52,26 +53,30 @@ test('showELO/showGroup cannot be enabled on a locked chess4 tournament via the 
         }
       }
     ).__lottaApi
-    await api.updateTournament(id, {
-      name: 'Lås-test',
-      group: 'A',
-      pairingSystem: 'Monrad',
-      initialPairing: 'Slumpad',
-      nrOfRounds: 5,
-      barredPairing: true,
-      compensateWeakPlayerPP: false,
-      pointsPerGame: 4,
-      chess4: true,
-      ratingChoice: 'ELO',
-      showELO: true,
-      showGroup: true,
-      federation: 'SWE',
-      selectedTiebreaks: ['SSF Buchholz'],
-    })
+    try {
+      await api.updateTournament(id, {
+        name: 'Lås-test',
+        group: 'A',
+        pairingSystem: 'Monrad',
+        initialPairing: 'Slumpad',
+        nrOfRounds: 5,
+        barredPairing: true,
+        compensateWeakPlayerPP: false,
+        pointsPerGame: 4,
+        chess4: true,
+        ratingChoice: 'ELO',
+        showELO: true,
+        showGroup: true,
+        federation: 'SWE',
+        selectedTiebreaks: ['SSF Buchholz'],
+      })
+    } catch {
+      // rejection is an acceptable way to enforce the lock
+    }
     const t = await api.getTournament(id)
     return t.showELO
   }, tid)
 
-  // Expected: the locked tournament rejects the presentation change.
+  // Expected: the locked tournament did not persist the presentation change.
   expect(showELOAfter).toBe(false)
 })

@@ -15,6 +15,12 @@ export type LockableField =
   | 'selectedTiebreaks'
   | 'chess4'
   | 'pointsPerGame'
+  | 'showELO'
+  | 'showGroup'
+
+// The LockableField union is the single source of truth for which tournament
+// fields lock once the tournament leaves draft (ADR-0004): the dialog disables
+// each via isFieldLocked, and TournamentRepository.update enforces the same set.
 
 export function isFieldLocked(_field: LockableField, state: TournamentLockState): boolean {
   return state !== 'draft'

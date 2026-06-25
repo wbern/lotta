@@ -140,6 +140,9 @@ export class TournamentRepository {
       if (current.ratingChoice !== req.ratingChoice) {
         throw new Error('Kan inte ändra ratingval efter att rond 1 har lottats.')
       }
+      if (current.showELO !== req.showELO || current.showGroup !== req.showGroup) {
+        throw new Error('Kan inte ändra visningsinställningar efter att rond 1 har lottats.')
+      }
       if (req.nrOfRounds < current.roundsPlayed) {
         throw new Error('Kan inte minska antal ronder under antalet redan lottade ronder.')
       }

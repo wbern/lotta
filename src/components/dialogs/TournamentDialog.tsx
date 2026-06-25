@@ -476,7 +476,7 @@ export function TournamentDialog({
                 type="checkbox"
                 checked={form.showELO}
                 onChange={(e) => update({ showELO: e.target.checked })}
-                disabled={form.chess4}
+                disabled={form.chess4 || isFieldLocked('showELO', lockState)}
               />
               {sv.tournament.showELO}
             </label>
@@ -493,7 +493,7 @@ export function TournamentDialog({
                 type="checkbox"
                 checked={form.showGroup}
                 onChange={(e) => update({ showGroup: e.target.checked })}
-                disabled={form.chess4}
+                disabled={form.chess4 || isFieldLocked('showGroup', lockState)}
               />
               {sv.tournament.showGroup}
             </label>
