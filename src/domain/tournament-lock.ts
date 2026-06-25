@@ -15,6 +15,7 @@ export type LockableField =
   | 'selectedTiebreaks'
   | 'chess4'
   | 'pointsPerGame'
+  | 'maxPointsForWin'
   | 'showELO'
   | 'showGroup'
 

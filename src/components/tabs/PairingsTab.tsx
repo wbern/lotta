@@ -29,6 +29,7 @@ interface Props {
   pointsPerGame?: number
   maxPointsImmediately?: boolean
   chess4?: boolean
+  maxPointsForWin?: number
 }
 
 function resultTypeFromScores(ws: number, bs: number): ResultType {
@@ -56,6 +57,7 @@ export function PairingsTab({
   pointsPerGame = 1,
   maxPointsImmediately = false,
   chess4 = false,
+  maxPointsForWin,
 }: Props) {
   const roundNr = round ?? (rounds.length > 0 ? rounds[rounds.length - 1].roundNr : undefined)
   const { data: roundData } = useRound(tournamentId, roundNr)
@@ -77,7 +79,7 @@ export function PairingsTab({
     if (!conflictError || conflictBoardNr == null) return
     const message = `Bord ${conflictBoardNr} har redan resultat ${formatResultLabel(
       conflictError.current,
-      { chess4, pointsPerGame },
+      { chess4, pointsPerGame, maxPointsForWin },
     )}`
     const dismissToast = showToast({
       message,
@@ -85,7 +87,15 @@ export function PairingsTab({
       onDismiss: dismissConflict,
     })
     return dismissToast
-  }, [conflictError, conflictBoardNr, chess4, pointsPerGame, showToast, dismissConflict])
+  }, [
+    conflictError,
+    conflictBoardNr,
+    chess4,
+    pointsPerGame,
+    maxPointsForWin,
+    showToast,
+    dismissConflict,
+  ])
 
   const games = useMemo(() => roundData?.games || [], [roundData?.games])
 
@@ -152,8 +162,8 @@ export function PairingsTab({
   // pressing `3` or `2` matches the on-screen result labels.
   const effectivePpg = chess4 || pointsPerGame > 1 || maxPointsImmediately ? pointsPerGame : 1
   const scoringConfig = useMemo(
-    () => ({ pointsPerGame: effectivePpg, chess4 }),
-    [effectivePpg, chess4],
+    () => ({ pointsPerGame: effectivePpg, chess4, maxPointsForWin }),
+    [effectivePpg, chess4, maxPointsForWin],
   )
   const keybinds = useMemo(() => getResultKeybinds(scoringConfig), [scoringConfig])
 

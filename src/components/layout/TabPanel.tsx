@@ -24,6 +24,7 @@ interface Props {
   showELO?: boolean
   showGroup?: boolean
   pointsPerGame?: number
+  maxPointsForWin?: number
   maxPointsImmediately?: boolean
   alphaPrintGroupByClass?: boolean
   alphaPrintCompact?: boolean
@@ -43,6 +44,7 @@ export function TabPanel({
   showELO,
   showGroup,
   pointsPerGame,
+  maxPointsForWin,
   maxPointsImmediately,
   alphaPrintGroupByClass,
   alphaPrintCompact,
@@ -107,6 +109,7 @@ export function TabPanel({
                 onEditBoard={onEditBoard}
                 showELO={showELO}
                 pointsPerGame={pointsPerGame}
+                maxPointsForWin={maxPointsForWin}
                 maxPointsImmediately={maxPointsImmediately}
                 chess4={chess4}
               />

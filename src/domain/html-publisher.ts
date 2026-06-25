@@ -195,7 +195,11 @@ interface ResultLabels {
  * actual stored scores — including chess4 (3-2-1 splits), non-chess4
  * pointsPerGame=2 (Skollags-DM style 2-1-0), and standard 1-½-0.
  */
-function getResultLabels(config: { chess4?: boolean; pointsPerGame?: number }): ResultLabels {
+function getResultLabels(config: {
+  chess4?: boolean
+  pointsPerGame?: number
+  maxPointsForWin?: number
+}): ResultLabels {
   return {
     whiteWin: formatResultLabel('WHITE_WIN', config),
     draw: formatResultLabel('DRAW', config),
@@ -491,6 +495,7 @@ export interface RefereePairingsPublishInput {
   roundNr: number
   chess4?: boolean
   pointsPerGame?: number
+  maxPointsForWin?: number
   games: {
     boardNr: number
     whiteName: string | null
@@ -523,6 +528,7 @@ export function publishRefereePairings(input: RefereePairingsPublishInput): stri
   const labels = getResultLabels({
     chess4: input.chess4,
     pointsPerGame: input.pointsPerGame,
+    maxPointsForWin: input.maxPointsForWin,
   })
   const results = [
     { type: 'WHITE_WIN', label: labels.whiteWin },

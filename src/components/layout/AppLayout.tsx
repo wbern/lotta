@@ -511,6 +511,7 @@ export function AppLayout() {
         showELO={tournament?.showELO}
         showGroup={tournament?.showGroup}
         pointsPerGame={tournament?.pointsPerGame}
+        maxPointsForWin={tournament?.maxPointsForWin}
         maxPointsImmediately={settings?.maxPointsImmediately}
         alphaPrintGroupByClass={alphaPrintOptions.groupByClass}
         alphaPrintCompact={alphaPrintOptions.compact}

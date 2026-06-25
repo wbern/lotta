@@ -31,6 +31,8 @@ export interface TournamentDto {
   compensateWeakPlayerPP: boolean
   pointsPerGame: number
   chess4: boolean
+  /** Winner's points; loser gets pointsPerGame - this, draw gets pointsPerGame/2. */
+  maxPointsForWin: number
   ratingChoice: string
   showELO: boolean
   showGroup: boolean
@@ -162,6 +164,8 @@ export interface CreateTournamentRequest {
   compensateWeakPlayerPP: boolean
   pointsPerGame: number
   chess4: boolean
+  /** Winner's points. Absent on create = derive from chess4/pointsPerGame (backwards-compat). */
+  maxPointsForWin?: number
   ratingChoice: string
   showELO: boolean
   showGroup: boolean

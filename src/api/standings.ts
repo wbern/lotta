@@ -20,6 +20,7 @@ function buildStandingsInput(tournamentId: number, round?: number): StandingsInp
     return {
       roundNr: 0,
       pointsPerGame: tournament.pointsPerGame,
+      maxPointsForWin: tournament.maxPointsForWin,
       chess4: tournament.chess4,
       compensateWeakPlayerPP: tournament.compensateWeakPlayerPP,
       selectedTiebreaks: tournament.selectedTiebreaks,
@@ -59,6 +60,7 @@ function buildStandingsInput(tournamentId: number, round?: number): StandingsInp
   return {
     roundNr,
     pointsPerGame: tournament.pointsPerGame,
+    maxPointsForWin: tournament.maxPointsForWin,
     chess4: tournament.chess4,
     compensateWeakPlayerPP: tournament.compensateWeakPlayerPP,
     selectedTiebreaks: tournament.selectedTiebreaks,

@@ -75,6 +75,7 @@ export class TournamentRepository {
       req.playerListPage ?? null,
       req.roundForRoundPage ?? null,
       req.clubStandingsPage ?? null,
+      req.maxPointsForWin ?? null,
     ]
   }
 
@@ -87,8 +88,8 @@ export class TournamentRepository {
         pointspergame, ratingchoice, showelo, showgroup,
         city, startdate, enddate, chiefarbiter, deputyarbiter,
         timecontrol, federation, resultspage, standingspage,
-        playerlistpage, roundforroundpage, clubstandingspage
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        playerlistpage, roundforroundpage, clubstandingspage, maxpointsforwin
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       this.tournamentParams(req),
     )
     const idResult = this.db.exec('SELECT last_insert_rowid()')
@@ -120,7 +121,11 @@ export class TournamentRepository {
     const current = this.get(id)
 
     if (current && tournamentLockState(current) !== 'draft') {
-      if (current.chess4 !== req.chess4 || current.pointsPerGame !== req.pointsPerGame) {
+      if (
+        current.chess4 !== req.chess4 ||
+        current.pointsPerGame !== req.pointsPerGame ||
+        (req.maxPointsForWin != null && current.maxPointsForWin !== req.maxPointsForWin)
+      ) {
         throw new Error('Kan inte ändra poängsystem efter att rond 1 har lottats.')
       }
       if (current.pairingSystem !== req.pairingSystem) {
@@ -159,7 +164,7 @@ export class TournamentRepository {
         pointspergame = ?, ratingchoice = ?, showelo = ?, showgroup = ?,
         city = ?, startdate = ?, enddate = ?, chiefarbiter = ?, deputyarbiter = ?,
         timecontrol = ?, federation = ?, resultspage = ?, standingspage = ?,
-        playerlistpage = ?, roundforroundpage = ?, clubstandingspage = ?
+        playerlistpage = ?, roundforroundpage = ?, clubstandingspage = ?, maxpointsforwin = ?
       WHERE "index" = ?`,
       [...this.tournamentParams(req), id],
     )
@@ -203,7 +208,7 @@ export class TournamentRepository {
         t.pointspergame, t.chess4, t.ratingchoice, t.showelo, t.showgroup,
         t.city, t.startdate, t.enddate, t.chiefarbiter, t.deputyarbiter,
         t.timecontrol, t.federation, t.resultspage, t.standingspage,
-        t.playerlistpage, t.roundforroundpage, t.clubstandingspage,
+        t.playerlistpage, t.roundforroundpage, t.clubstandingspage, t.maxpointsforwin,
         (SELECT COUNT(DISTINCT g.round) FROM tournamentgames g WHERE g.tournament = t."index") as roundsPlayed,
         (SELECT COUNT(*) FROM tournamentplayers p WHERE p.tournamentindex = t."index") as playerCount,
         (SELECT COUNT(*) FROM tournamentgames g WHERE g.tournament = t."index" AND g.resulttype != 0) as resultCount
@@ -233,9 +238,15 @@ export class TournamentRepository {
           }))
         : []
 
-    const roundsPlayed = row[25] as number
-    const resultCount = row[27] as number
+    const roundsPlayed = row[26] as number
+    const resultCount = row[28] as number
     const nrOfRounds = row[5] as number
+    const pointsPerGame = row[8] as number
+    const chess4 = row[9] === 'true'
+    // Backwards compat (ADR-0006): NULL maxpointsforwin means the row predates the
+    // scoring/format split — derive it from the legacy (chess4, pointsPerGame).
+    const maxPointsForWin =
+      row[25] != null ? (row[25] as number) : chess4 ? pointsPerGame - 1 : pointsPerGame
 
     return {
       id: row[0] as number,
@@ -246,8 +257,9 @@ export class TournamentRepository {
       nrOfRounds,
       barredPairing: row[6] === 'true',
       compensateWeakPlayerPP: row[7] === 'true',
-      pointsPerGame: row[8] as number,
-      chess4: row[9] === 'true',
+      pointsPerGame,
+      chess4,
+      maxPointsForWin,
       ratingChoice: row[10] as string,
       showELO: row[11] === 'true',
       showGroup: row[12] === 'true',
@@ -264,7 +276,7 @@ export class TournamentRepository {
       roundForRoundPage: (row[23] as string) ?? '',
       clubStandingsPage: (row[24] as string) ?? '',
       roundsPlayed,
-      playerCount: row[26] as number,
+      playerCount: row[27] as number,
       finished: roundsPlayed >= nrOfRounds && nrOfRounds > 0,
       hasRecordedResults: resultCount > 0,
       selectedTiebreaks,

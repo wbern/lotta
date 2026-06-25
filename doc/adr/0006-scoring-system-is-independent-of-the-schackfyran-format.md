@@ -52,16 +52,30 @@ separate dimension that was incorrectly welded to it.
 ## Decision
 
 We will model the **scoring system as its own dimension**, independent of the
-`chess4` format flag. `calculateScores` / `getResultKeybinds` derive the
-result→points mapping from a scoring configuration (a result-points mapping or a
-point-system value), **not** from the `chess4` boolean. Any scoring system —
-standard 1-½-0, 3-2-1, 2-1-0, custom — is selectable for any tournament.
+`chess4` format flag. Scoring is stored as **`(pointsPerGame, maxPointsForWin)`** —
+one extra integer, the winner's points. The loser gets `pointsPerGame -
+maxPointsForWin` and a draw gets `pointsPerGame / 2`, so this losslessly captures
+every system (standard = (1,1), 3-2-1 = (4,3), Skollags = (2,2), custom = (N,N)).
+`calculateScores` / `getResultKeybinds` derive from `maxPointsForWin`, **not** from
+`chess4`. (Investigated vs a `pointSystem` enum and a full win/draw/loss triple;
+the integer is the minimal faithful generalisation — the triple is only needed for
+asymmetric-total systems like football 3-1-0, which nothing uses and which would
+ripple into the finished-check, EditScore validation and tiebreaks.)
 
 - The Poängsystem selector sets **scoring only**; it never toggles `chess4` and
   never locks unrelated pairing settings.
 - `chess4` ("Detta är en schack4an-tävling") keeps the Schackfyran *format*
   concerns. It may **default** the scoring to 3-2-1, but it does not own or gate
   the scoring choice — a non-chess4 tournament may still be 3-2-1.
+
+**Backwards compatibility (read-time fallback).** The `maxpointsforwin` column is
+added NULLable. There is no created-at column to key off, so existing rows keep
+NULL and the repository's `get()` derives the effective value from the legacy
+`(chess4, pointsPerGame)` — i.e. the NULL itself means "predates the split,
+interpret with the old semantics." So every existing tournament behaves
+identically with **zero data rewrite**. The domain also keeps `chess4` as an
+optional fallback (`effectiveMaxPointsForWin`) so callers/tests passing only
+`chess4` stay correct.
 
 **Forbidden pattern:**
 ```typescript
@@ -73,10 +87,11 @@ if (preset === 'schack4an') handleChess4Toggle(true)
 
 **Required pattern:**
 ```typescript
-// ✅ GOOD — scoring derived from a config independent of chess4
-const { win, draw, loss } = resultPoints(scoring) // 3-2-1 available with chess4=false
+// ✅ GOOD — scoring derived from the explicit winner-points (chess4-independent)
+const maxWin = effectiveMaxPointsForWin(config) // prefers config.maxPointsForWin
+const loser = pointsPerGame - maxWin            // 3-2-1 available with chess4=false
 // ✅ GOOD — picking a scoring preset sets scoring only
-if (preset === 'three-two-one') update({ scoring: THREE_TWO_ONE }) // chess4 untouched
+if (preset === 'schack4an') update({ pointsPerGame: 4, maxPointsForWin: 3 }) // chess4 untouched
 ```
 
 Acceptance is pinned by `e2e/schack4an-points-locks-settings.spec.ts` (choosing

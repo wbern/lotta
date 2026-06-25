@@ -58,7 +58,8 @@ CREATE TABLE tournaments (
   chiefarbiter TEXT,
   deputyarbiter TEXT,
   timecontrol TEXT,
-  federation TEXT
+  federation TEXT,
+  maxpointsforwin INTEGER
 );
 
 CREATE UNIQUE INDEX tournaments_idx
@@ -143,16 +144,30 @@ export function createSchema(db: Database): void {
   db.run(SCHEMA_SQL)
 }
 
+function columnNames(db: Database, table: string): Set<string> {
+  const cols = db.exec(`PRAGMA table_info(${table})`)
+  if (!cols[0]) return new Set()
+  return new Set(cols[0].values.map((r) => r[1] as string))
+}
+
 export function migrateSchema(db: Database): void {
-  const cols = db.exec('PRAGMA table_info(tournamentplayers)')
-  if (!cols[0]) return
-  const present = new Set(cols[0].values.map((r) => r[1] as string))
-  if (!present.has('addedatround')) {
-    db.run('ALTER TABLE tournamentplayers ADD COLUMN addedatround INTEGER NOT NULL DEFAULT 0')
+  const tp = columnNames(db, 'tournamentplayers')
+  if (tp.size > 0) {
+    if (!tp.has('addedatround')) {
+      db.run('ALTER TABLE tournamentplayers ADD COLUMN addedatround INTEGER NOT NULL DEFAULT 0')
+    }
+    if (!tp.has('protectfrombyeindebut')) {
+      db.run(
+        'ALTER TABLE tournamentplayers ADD COLUMN protectfrombyeindebut INTEGER NOT NULL DEFAULT 1',
+      )
+    }
   }
-  if (!present.has('protectfrombyeindebut')) {
-    db.run(
-      'ALTER TABLE tournamentplayers ADD COLUMN protectfrombyeindebut INTEGER NOT NULL DEFAULT 1',
-    )
+
+  // Scoring decoupled from the chess4 format flag (ADR-0006). NULLable: existing
+  // tournaments keep NULL and fall back to the legacy (chess4, pointspergame)
+  // scoring at read time, so their behaviour is unchanged.
+  const t = columnNames(db, 'tournaments')
+  if (t.size > 0 && !t.has('maxpointsforwin')) {
+    db.run('ALTER TABLE tournaments ADD COLUMN maxpointsforwin INTEGER')
   }
 }

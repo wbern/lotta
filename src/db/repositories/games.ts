@@ -181,14 +181,17 @@ export class GameRepository {
     tournamentId: number,
     resultType: ResultType,
   ): [number, number] {
-    const rc = this.db.exec('SELECT chess4, pointspergame FROM tournaments WHERE "index" = ?', [
-      tournamentId,
-    ])
+    const rc = this.db.exec(
+      'SELECT chess4, pointspergame, maxpointsforwin FROM tournaments WHERE "index" = ?',
+      [tournamentId],
+    )
     if (rc.length === 0 || rc[0].values.length === 0) return DEFAULT_SCORES[resultType]
     const row = rc[0].values[0]
     const chess4 = row[0] === 'true'
     const pointsPerGame = row[1] as number
-    const scores = calculateScores(resultType, { chess4, pointsPerGame })
+    // NULL maxpointsforwin falls back to the legacy chess4 derivation (ADR-0006).
+    const maxPointsForWin = row[2] != null ? (row[2] as number) : undefined
+    const scores = calculateScores(resultType, { chess4, pointsPerGame, maxPointsForWin })
     return [scores.whiteScore, scores.blackScore]
   }
 

@@ -40,10 +40,25 @@ const RATING_CHOICES = [
 
 type PointSystemPreset = 'standard' | 'schack4an' | 'skollags' | 'manual'
 
-function detectPointSystemPreset(chess4: boolean, pointsPerGame: number): PointSystemPreset {
-  if (!chess4 && pointsPerGame === 1) return 'standard'
-  if (chess4 && pointsPerGame === 4) return 'schack4an'
-  if (!chess4 && pointsPerGame === 2) return 'skollags'
+// Scoring is (pointsPerGame, maxPointsForWin), independent of the chess4 format
+// flag (ADR-0006). Presets map to those pairs; "Anpassad" lets the user set ppg
+// with a winner-takes-all split (maxPointsForWin = pointsPerGame).
+const PRESET_SCORING: Record<
+  'standard' | 'schack4an' | 'skollags',
+  { ppg: number; maxWin: number }
+> = {
+  standard: { ppg: 1, maxWin: 1 },
+  schack4an: { ppg: 4, maxWin: 3 },
+  skollags: { ppg: 2, maxWin: 2 },
+}
+
+function detectPointSystemPreset(
+  maxPointsForWin: number,
+  pointsPerGame: number,
+): PointSystemPreset {
+  for (const [name, s] of Object.entries(PRESET_SCORING)) {
+    if (pointsPerGame === s.ppg && maxPointsForWin === s.maxWin) return name as PointSystemPreset
+  }
   return 'manual'
 }
 
@@ -56,6 +71,7 @@ const defaults: CreateTournamentRequest = {
   barredPairing: false,
   compensateWeakPlayerPP: false,
   pointsPerGame: 1,
+  maxPointsForWin: 1,
   chess4: false,
   ratingChoice: 'ELO',
   showELO: true,
@@ -109,6 +125,7 @@ export function TournamentDialog({
         barredPairing: existing.barredPairing,
         compensateWeakPlayerPP: existing.compensateWeakPlayerPP,
         pointsPerGame: existing.pointsPerGame,
+        maxPointsForWin: existing.maxPointsForWin,
         chess4: existing.chess4,
         ratingChoice: existing.ratingChoice,
         showELO: existing.showELO,
@@ -128,7 +145,9 @@ export function TournamentDialog({
         clubStandingsPage: existing.clubStandingsPage,
         roundDates: existing.roundDates,
       })
-      setManualMode(detectPointSystemPreset(existing.chess4, existing.pointsPerGame) === 'manual')
+      setManualMode(
+        detectPointSystemPreset(existing.maxPointsForWin, existing.pointsPerGame) === 'manual',
+      )
     } else if (!isEdit) {
       if (presetTournament) {
         setForm({
@@ -140,6 +159,7 @@ export function TournamentDialog({
           barredPairing: presetTournament.barredPairing,
           compensateWeakPlayerPP: presetTournament.compensateWeakPlayerPP,
           pointsPerGame: presetTournament.pointsPerGame,
+          maxPointsForWin: presetTournament.maxPointsForWin,
           chess4: presetTournament.chess4,
           ratingChoice: presetTournament.ratingChoice,
           showELO: presetTournament.showELO,
@@ -160,8 +180,10 @@ export function TournamentDialog({
           roundDates: presetTournament.roundDates,
         })
         setManualMode(
-          detectPointSystemPreset(presetTournament.chess4, presetTournament.pointsPerGame) ===
-            'manual',
+          detectPointSystemPreset(
+            presetTournament.maxPointsForWin,
+            presetTournament.pointsPerGame,
+          ) === 'manual',
         )
       } else {
         setForm({ ...defaults, name: initialName ?? '' })
@@ -176,33 +198,40 @@ export function TournamentDialog({
     if (saveError) setSaveError('')
   }
 
+  // The Poängsystem selector sets SCORING only (ppg + maxPointsForWin). It never
+  // touches the chess4 format flag or the pairing settings (ADR-0006).
   const handlePresetChange = (preset: PointSystemPreset) => {
     if (preset === 'manual') {
       setManualMode(true)
       return
     }
     setManualMode(false)
-    if (preset === 'schack4an') {
-      handleChess4Toggle(true)
-    } else if (preset === 'skollags') {
-      update({ chess4: false, ...(preChess4 || {}), pointsPerGame: 2 })
-      if (preChess4) setPreChess4(null)
-    } else if (preset === 'standard') {
-      update({ chess4: false, ...(preChess4 || {}), pointsPerGame: 1 })
-      if (preChess4) setPreChess4(null)
-    }
+    const scoring = PRESET_SCORING[preset]
+    update({ pointsPerGame: scoring.ppg, maxPointsForWin: scoring.maxWin })
   }
 
   const currentPreset: PointSystemPreset = manualMode
     ? 'manual'
-    : detectPointSystemPreset(form.chess4, form.pointsPerGame)
+    : detectPointSystemPreset(form.maxPointsForWin ?? form.pointsPerGame, form.pointsPerGame)
 
+  // Non-chess4 pairing defaults, restored when the Schackfyran format is turned off.
+  const NON_CHESS4_PAIRING: Partial<CreateTournamentRequest> = {
+    pairingSystem: 'Nordisk Schweizer',
+    initialPairing: 'Rating',
+    ratingChoice: 'ELO',
+    showELO: true,
+    showGroup: false,
+    selectedTiebreaks: [],
+    barredPairing: false,
+    compensateWeakPlayerPP: false,
+  }
+
+  // The "Detta är en schack4an-tävling" checkbox sets the Schackfyran FORMAT: its
+  // pairing rules + tabs. It defaults the scoring to 3-2-1 as a convenience but
+  // does not own it — the Poängsystem selector stays editable.
   const handleChess4Toggle = (checked: boolean) => {
-    setManualMode(false)
     if (checked) {
-      // Only snapshot on the false→true edge. Re-entering chess4 from a
-      // detour through Anpassad would otherwise overwrite the original
-      // pre-chess4 snapshot with the current chess4-mode form.
+      // Only snapshot the pairing settings on the false→true edge.
       if (!form.chess4) {
         setPreChess4({
           pairingSystem: form.pairingSystem,
@@ -213,9 +242,9 @@ export function TournamentDialog({
           selectedTiebreaks: form.selectedTiebreaks,
           barredPairing: form.barredPairing,
           compensateWeakPlayerPP: form.compensateWeakPlayerPP,
-          pointsPerGame: form.pointsPerGame,
         })
       }
+      setManualMode(false)
       update({
         chess4: true,
         pairingSystem: 'Monrad',
@@ -226,13 +255,17 @@ export function TournamentDialog({
         selectedTiebreaks: ['SSF Buchholz'],
         barredPairing: true,
         compensateWeakPlayerPP: false,
-        pointsPerGame: 4,
+        // default scoring to 3-2-1 (the selector can still change it)
+        pointsPerGame: PRESET_SCORING.schack4an.ppg,
+        maxPointsForWin: PRESET_SCORING.schack4an.maxWin,
       })
     } else {
-      // Restore saved values, falling back to standard 1 ppg if none saved
+      // Restore the pairing snapshot, falling back to the non-chess4 defaults when
+      // none was taken (e.g. editing an existing chess4 tournament). Scoring is
+      // left untouched — 3-2-1 is valid without the Schackfyran format.
       update({
         chess4: false,
-        pointsPerGame: 1,
+        ...NON_CHESS4_PAIRING,
         ...(preChess4 || {}),
       })
       setPreChess4(null)
@@ -634,8 +667,12 @@ export function TournamentDialog({
                 type="number"
                 value={form.pointsPerGame}
                 min={1}
-                onChange={(e) => update({ pointsPerGame: Number(e.target.value) })}
-                disabled={form.chess4 || scoringLocked}
+                onChange={(e) => {
+                  const ppg = Number(e.target.value)
+                  // Custom = winner takes all (loser 0); draw stays ppg/2.
+                  update({ pointsPerGame: ppg, maxPointsForWin: ppg })
+                }}
+                disabled={scoringLocked}
                 style={{ width: 80 }}
               />
             </div>

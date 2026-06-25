@@ -38,7 +38,8 @@ export interface StandingsGameInfo {
 export interface StandingsInput {
   roundNr: number
   pointsPerGame: number
-  chess4: boolean
+  maxPointsForWin?: number
+  chess4?: boolean
   compensateWeakPlayerPP: boolean
   selectedTiebreaks: string[]
   players: StandingsPlayerInfo[]
@@ -180,6 +181,7 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
   const {
     roundNr,
     pointsPerGame,
+    maxPointsForWin,
     chess4,
     compensateWeakPlayerPP,
     selectedTiebreaks,
@@ -207,6 +209,7 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
   // Build tiebreak context
   const ctx: TiebreakContext = {
     pointsPerGame,
+    maxPointsForWin,
     chess4,
     compensateWeakPlayerPP,
     getPlayerGames: (playerId: number) => allPlayerData.get(playerId)?.games ?? [],

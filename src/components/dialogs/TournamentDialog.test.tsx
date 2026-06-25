@@ -35,6 +35,7 @@ const baseTournament: TournamentDto = {
   barredPairing: false,
   compensateWeakPlayerPP: false,
   pointsPerGame: 1,
+  maxPointsForWin: 1,
   chess4: false,
   ratingChoice: 'ELO',
   showELO: true,
@@ -121,6 +122,7 @@ describe('TournamentDialog preset prefill', () => {
       group: 'X',
       chess4: true,
       pointsPerGame: 4,
+      maxPointsForWin: 3,
       nrOfRounds: 5,
     }
 
@@ -184,7 +186,7 @@ describe('TournamentDialog point system preset', () => {
     expect(select.value).toBe('standard')
   })
 
-  it('picking schack4an preset stores chess4=true with pointsPerGame=4 on save', () => {
+  it('picking schack4an preset stores 3-2-1 scoring WITHOUT enabling chess4 (ADR-0006)', () => {
     render(<TournamentDialog open tournamentId={undefined} onClose={vi.fn()} />)
 
     fireEvent.change(screen.getByTestId('tournament-name-input'), { target: { value: 'S4' } })
@@ -196,8 +198,10 @@ describe('TournamentDialog point system preset', () => {
 
     expect(mockMutate).toHaveBeenCalledTimes(1)
     const payload = mockMutate.mock.calls[0][0]
-    expect(payload.chess4).toBe(true)
+    // Scoring is decoupled from the Schackfyran format: 3-2-1 scoring, chess4 off.
+    expect(payload.chess4).toBe(false)
     expect(payload.pointsPerGame).toBe(4)
+    expect(payload.maxPointsForWin).toBe(3)
   })
 
   it('picking skollags preset stores chess4=false with pointsPerGame=2 on save', () => {

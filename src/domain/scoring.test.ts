@@ -22,6 +22,15 @@ describe('calculateScores', () => {
     expect(scores).toEqual({ whiteScore: 3, blackScore: 1 })
   })
 
+  it('produces 3-2-1 scoring from maxPointsForWin without chess4 (ADR-0006)', () => {
+    // Scoring is decoupled from the Schackfyran format flag: an explicit
+    // maxPointsForWin yields 3-1 / 2-2 / 1-3 even though chess4 is false.
+    const config = { pointsPerGame: 4, maxPointsForWin: 3, chess4: false }
+    expect(calculateScores('WHITE_WIN', config)).toEqual({ whiteScore: 3, blackScore: 1 })
+    expect(calculateScores('DRAW', config)).toEqual({ whiteScore: 2, blackScore: 2 })
+    expect(calculateScores('BLACK_WIN', config)).toEqual({ whiteScore: 1, blackScore: 3 })
+  })
+
   it('calculates draw scores', () => {
     const scores = calculateScores('DRAW', { pointsPerGame: 2, chess4: false })
     expect(scores).toEqual({ whiteScore: 1, blackScore: 1 })

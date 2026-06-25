@@ -1,9 +1,10 @@
 import type { ResultType } from '../types/api.ts'
-import { getActualScores, isPlayed, isToBePlayed } from './scoring.ts'
+import { effectiveMaxPointsForWin, getActualScores, isPlayed, isToBePlayed } from './scoring.ts'
 
 export interface TiebreakContext {
   pointsPerGame: number
-  chess4: boolean
+  maxPointsForWin?: number
+  chess4?: boolean
   compensateWeakPlayerPP: boolean
   getPlayerGames: (playerId: number) => TiebreakGameInfo[]
 }
@@ -145,9 +146,8 @@ function opponentSSFTiebreakScore(
   opponentGames: TiebreakGameInfo[],
   roundNr: number,
   pointsPerGame: number,
-  chess4: boolean,
+  maxPointsForWin: number,
 ): number {
-  const maxPointsForWin = chess4 ? pointsPerGame - 1 : pointsPerGame
   let score = 0
   for (const game of gamesUpToRound(opponentGames, roundNr)) {
     if (game.isBye) {
@@ -166,13 +166,16 @@ export function tiebreakSSFBuchholz(
   roundNr: number,
   ctx: TiebreakContext,
 ): number {
+  const maxPointsForWin = effectiveMaxPointsForWin(ctx)
   const scores: number[] = []
   for (const game of gamesUpToRound(games, roundNr)) {
     if (game.isBye) {
       scores.push(0)
     } else if (game.opponentId != null) {
       const opponentGames = ctx.getPlayerGames(game.opponentId)
-      scores.push(opponentSSFTiebreakScore(opponentGames, roundNr, ctx.pointsPerGame, ctx.chess4))
+      scores.push(
+        opponentSSFTiebreakScore(opponentGames, roundNr, ctx.pointsPerGame, maxPointsForWin),
+      )
     }
   }
 

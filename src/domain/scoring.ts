@@ -2,7 +2,10 @@ import type { ResultType } from '../types/api.ts'
 
 interface ScoringConfig {
   pointsPerGame: number
-  chess4: boolean
+  /** Winner's points. If omitted, derived from chess4 (legacy/backwards-compat). */
+  maxPointsForWin?: number
+  /** Legacy Schackfyran scoring flag; only used to derive maxPointsForWin when absent. */
+  chess4?: boolean
 }
 
 interface Scores {
@@ -15,9 +18,19 @@ interface GamePlayers {
   hasBlackPlayer: boolean
 }
 
+/**
+ * The winner's points for a game. Prefers the explicit `maxPointsForWin`; falls
+ * back to the legacy `chess4 ? pointsPerGame - 1 : pointsPerGame` so old data and
+ * callers that still pass `chess4` keep their exact behaviour (ADR-0006).
+ */
+export function effectiveMaxPointsForWin(config: ScoringConfig): number {
+  if (config.maxPointsForWin != null) return config.maxPointsForWin
+  return config.chess4 ? config.pointsPerGame - 1 : config.pointsPerGame
+}
+
 export function calculateScores(resultType: ResultType, config: ScoringConfig): Scores {
-  const { pointsPerGame, chess4 } = config
-  const maxPointsForWin = chess4 ? pointsPerGame - 1 : pointsPerGame
+  const { pointsPerGame } = config
+  const maxPointsForWin = effectiveMaxPointsForWin(config)
 
   switch (resultType) {
     case 'WHITE_WIN':
@@ -49,7 +62,8 @@ interface PairingScoreContext {
   hasBlackPlayer: boolean
   compensateWeakPlayerPP: boolean
   pointsPerGame: number
-  chess4: boolean
+  maxPointsForWin?: number
+  chess4?: boolean
 }
 
 /**
@@ -64,6 +78,7 @@ export function getPairingScore(side: 'white' | 'black', ctx: PairingScoreContex
     if (compensate && ctx.hasBlackPlayer && ctx.blackRating - ctx.whiteRating > 200) {
       const drawScores = calculateScores('DRAW', {
         pointsPerGame: ctx.pointsPerGame,
+        maxPointsForWin: ctx.maxPointsForWin,
         chess4: ctx.chess4,
       })
       return drawScores.whiteScore
@@ -73,6 +88,7 @@ export function getPairingScore(side: 'white' | 'black', ctx: PairingScoreContex
     if (compensate && ctx.hasWhitePlayer && ctx.whiteRating - ctx.blackRating > 200) {
       const drawScores = calculateScores('DRAW', {
         pointsPerGame: ctx.pointsPerGame,
+        maxPointsForWin: ctx.maxPointsForWin,
         chess4: ctx.chess4,
       })
       return drawScores.blackScore
@@ -115,7 +131,7 @@ export function isToBePlayed(resultType: ResultType): boolean {
  */
 export function formatResultLabel(
   resultType: ResultType,
-  config?: { chess4?: boolean; pointsPerGame?: number },
+  config?: { chess4?: boolean; pointsPerGame?: number; maxPointsForWin?: number },
 ): string {
   if (resultType === 'POSTPONED') return 'uppskj'
   if (resultType === 'CANCELLED') return 'inställd'
@@ -124,6 +140,7 @@ export function formatResultLabel(
   const scoringConfig = {
     chess4: config?.chess4 ?? false,
     pointsPerGame: config?.pointsPerGame ?? 1,
+    maxPointsForWin: config?.maxPointsForWin,
   }
   const s = calculateScores(resultType, scoringConfig)
   const base = `${formatScore(s.whiteScore)}-${formatScore(s.blackScore)}`
@@ -160,10 +177,7 @@ export interface ResultKeybinds {
  * so they line up with the visible button labels (Schackfyran `3` → 3-1,
  * Skollags-DM `2` → 2-0, etc.). Semantic keys (V/R/F) always work.
  */
-export function getResultKeybinds(config: {
-  chess4: boolean
-  pointsPerGame: number
-}): ResultKeybinds {
+export function getResultKeybinds(config: ScoringConfig): ResultKeybinds {
   const keys: ResultKeybinds = {
     whiteWin: ['V'],
     draw: ['R', 'Ö'],
@@ -171,26 +185,19 @@ export function getResultKeybinds(config: {
     noResult: ['Space'],
   }
 
-  const ppg = config.pointsPerGame
-  if (config.chess4) {
-    const white = calculateScores('WHITE_WIN', config).whiteScore
-    const black = calculateScores('BLACK_WIN', config).whiteScore
-    const drawScore = ppg / 2
-    keys.whiteWin.push(String(white))
-    keys.draw.push(String(drawScore))
-    keys.blackWin.push(String(black))
-    keys.noResult.push('0')
-    return keys
-  }
+  // Numeric keys map to each side's points in the decisive/drawn result, derived
+  // generically from the scoring config (winner = maxPointsForWin, loser =
+  // pointsPerGame - maxPointsForWin, draw = pointsPerGame / 2).
+  const win = calculateScores('WHITE_WIN', config)
+  const winnerPoints = win.whiteScore
+  const loserPoints = win.blackScore
+  const drawScore = config.pointsPerGame / 2
 
-  if (ppg >= 2) {
-    keys.whiteWin.push(String(ppg))
-    keys.blackWin.push('0')
-    if (ppg % 2 === 0) keys.draw.push(String(ppg / 2))
-  } else {
-    keys.whiteWin.push('1')
-    keys.blackWin.push('0')
-  }
+  keys.whiteWin.push(String(winnerPoints))
+  keys.blackWin.push(String(loserPoints))
+  if (Number.isInteger(drawScore)) keys.draw.push(String(drawScore))
+  // When the loser still scores (e.g. 3-2-1), '0' is free to mean "not played".
+  if (loserPoints !== 0) keys.noResult.push('0')
 
   return keys
 }
