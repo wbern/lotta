@@ -72,6 +72,50 @@ export default defineConfig({
     { name: 'add-group', testMatch: 'add-group.spec.ts' },
     { name: 'app', testMatch: 'app.spec.ts' },
     { name: 'dialogs', testMatch: 'dialogs.spec.ts' },
+    {
+      name: 'schack4an-points-locks-settings',
+      testMatch: 'schack4an-points-locks-settings.spec.ts',
+    },
+    {
+      name: 'create-tournament-save-no-feedback',
+      testMatch: 'create-tournament-save-no-feedback.spec.ts',
+    },
+    {
+      name: 'save-failure-feedback',
+      testMatch: 'save-failure-feedback.spec.ts',
+    },
+    {
+      name: 'save-failure-pool',
+      testMatch: 'save-failure-pool.spec.ts',
+    },
+    {
+      name: 'save-failure-tournament-players',
+      testMatch: 'save-failure-tournament-players.spec.ts',
+    },
+    {
+      name: 'save-failure-actions',
+      testMatch: 'save-failure-actions.spec.ts',
+    },
+    {
+      name: 'view-state-invariant',
+      testMatch: 'view-state-invariant.spec.ts',
+    },
+    {
+      name: 'input-validation',
+      testMatch: 'input-validation.spec.ts',
+    },
+    {
+      name: 'tournament-lock-enforcement',
+      testMatch: 'tournament-lock-enforcement.spec.ts',
+    },
+    {
+      name: 'keybind-modal-context',
+      testMatch: 'keybind-modal-context.spec.ts',
+    },
+    {
+      name: 'schack4an-coupling-edge-cases',
+      testMatch: 'schack4an-coupling-edge-cases.spec.ts',
+    },
     { name: 'menus', testMatch: 'menus.spec.ts' },
     { name: 'navigation', testMatch: 'navigation.spec.ts' },
     { name: 'pairings', testMatch: 'pairings.spec.ts' },

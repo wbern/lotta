@@ -100,6 +100,7 @@ export function PlayerEditor({
         <label>{sv.player.club}</label>
         <div className="club-row">
           <select
+            data-testid="club-select"
             value={player.clubIndex || 0}
             onChange={(e) => update({ clubIndex: Number(e.target.value) })}
           >
@@ -112,12 +113,18 @@ export function PlayerEditor({
           </select>
           {onAddClub && (
             <div className="club-buttons">
-              <button type="button" className="btn btn-small" onClick={handleAddClub}>
+              <button
+                type="button"
+                className="btn btn-small"
+                data-testid="club-add"
+                onClick={handleAddClub}
+              >
                 {sv.common.add}
               </button>
               <button
                 type="button"
                 className="btn btn-small"
+                data-testid="club-rename"
                 onClick={handleRenameClub}
                 disabled={!player.clubIndex}
               >
@@ -126,6 +133,7 @@ export function PlayerEditor({
               <button
                 type="button"
                 className="btn btn-small"
+                data-testid="club-delete"
                 onClick={handleDeleteClub}
                 disabled={!player.clubIndex}
               >

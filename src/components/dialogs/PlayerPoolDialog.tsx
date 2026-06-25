@@ -158,7 +158,12 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
               <button className="btn" onClick={handleNew}>
                 {sv.player.reset}
               </button>
-              <button className="btn btn-primary" onClick={handleAdd} disabled={!isNew}>
+              <button
+                className="btn btn-primary"
+                data-testid="pool-add-player"
+                onClick={handleAdd}
+                disabled={!isNew}
+              >
                 {sv.common.add}
               </button>
               <button
