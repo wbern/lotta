@@ -1,5 +1,6 @@
 import type { Database } from 'sql.js'
 import { tournamentLockState } from '../../domain/tournament-lock.ts'
+import { validateTournamentRequest } from '../../domain/validation.ts'
 import type {
   CreateTournamentRequest,
   TournamentDto,
@@ -78,6 +79,7 @@ export class TournamentRepository {
   }
 
   create(req: CreateTournamentRequest): TournamentDto {
+    validateTournamentRequest(req)
     this.db.run(
       `INSERT INTO tournaments (
         tournament, tournamentgroup, pairingsystem, initialpairing,
@@ -114,6 +116,7 @@ export class TournamentRepository {
   }
 
   update(id: number, req: CreateTournamentRequest): TournamentDto {
+    validateTournamentRequest(req)
     const current = this.get(id)
 
     if (current && tournamentLockState(current) !== 'draft') {

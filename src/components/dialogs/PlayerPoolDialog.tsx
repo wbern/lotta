@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { hasPlayerName } from '../../domain/validation'
 import { useAddClub, useClubs, useDeleteClub, useRenameClub } from '../../hooks/useClubs'
 import {
   useAddPoolPlayer,
@@ -108,7 +109,7 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
   }
 
   const handleAdd = () => {
-    if (editPlayer.firstName || editPlayer.lastName) {
+    if (hasPlayerName(editPlayer.firstName, editPlayer.lastName)) {
       setNameError('')
       addPlayer.mutate(editPlayer, {
         onSuccess: () => {

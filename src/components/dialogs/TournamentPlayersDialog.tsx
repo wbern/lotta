@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { tournamentLockState } from '../../domain/tournament-lock'
+import { hasPlayerName } from '../../domain/validation'
 import { useAddClub, useClubs, useDeleteClub, useRenameClub } from '../../hooks/useClubs'
 import { usePoolPlayers } from '../../hooks/usePlayers'
 import { useShiftSelect } from '../../hooks/useShiftSelect'
@@ -176,7 +177,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
   }
 
   const handleAdd = () => {
-    if (editPlayer.firstName || editPlayer.lastName) {
+    if (hasPlayerName(editPlayer.firstName, editPlayer.lastName)) {
       setNameError('')
       addPlayer.mutate(editPlayer, {
         onSuccess: () => {
