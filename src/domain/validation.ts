@@ -12,14 +12,17 @@ export function hasPlayerName(firstName?: string | null, lastName?: string | nul
 }
 
 /**
- * Validate a tournament create/update request. Throws (with a Swedish message)
- * when a value would corrupt pairing or scoring.
+ * Validate and normalise a tournament create/update request at the repository
+ * boundary (ADR-0003). Throws (with a Swedish message) when a value would corrupt
+ * pairing or scoring; returns the normalised request (trimmed name/group) that the
+ * caller must persist, so invalid/untrimmed data cannot reach the DB from any path.
  */
-export function validateTournamentRequest(req: CreateTournamentRequest): void {
+export function validateTournamentRequest(req: CreateTournamentRequest): CreateTournamentRequest {
   if (!Number.isInteger(req.nrOfRounds) || req.nrOfRounds < 1) {
     throw new Error('Antal ronder måste vara minst 1.')
   }
   if (!Number.isInteger(req.pointsPerGame) || req.pointsPerGame < 1) {
     throw new Error('Poäng per match måste vara minst 1.')
   }
+  return { ...req, name: req.name.trim(), group: req.group.trim() }
 }

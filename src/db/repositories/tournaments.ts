@@ -1,5 +1,5 @@
 import type { Database } from 'sql.js'
-import { tournamentLockState } from '../../domain/tournament-lock.ts'
+import { LOCK_GUARDS, tournamentLockState } from '../../domain/tournament-lock.ts'
 import { validateTournamentRequest } from '../../domain/validation.ts'
 import type {
   CreateTournamentRequest,
@@ -80,7 +80,7 @@ export class TournamentRepository {
   }
 
   create(req: CreateTournamentRequest): TournamentDto {
-    validateTournamentRequest(req)
+    const validated = validateTournamentRequest(req)
     this.db.run(
       `INSERT INTO tournaments (
         tournament, tournamentgroup, pairingsystem, initialpairing,
@@ -90,7 +90,7 @@ export class TournamentRepository {
         timecontrol, federation, resultspage, standingspage,
         playerlistpage, roundforroundpage, clubstandingspage, maxpointsforwin
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      this.tournamentParams(req),
+      this.tournamentParams(validated),
     )
     const idResult = this.db.exec('SELECT last_insert_rowid()')
     const id = idResult[0].values[0][0] as number
@@ -117,36 +117,12 @@ export class TournamentRepository {
   }
 
   update(id: number, req: CreateTournamentRequest): TournamentDto {
-    validateTournamentRequest(req)
+    const validated = validateTournamentRequest(req)
     const current = this.get(id)
 
     if (current && tournamentLockState(current) !== 'draft') {
-      if (
-        current.chess4 !== req.chess4 ||
-        current.pointsPerGame !== req.pointsPerGame ||
-        (req.maxPointsForWin != null && current.maxPointsForWin !== req.maxPointsForWin)
-      ) {
-        throw new Error('Kan inte ändra poängsystem efter att rond 1 har lottats.')
-      }
-      if (current.pairingSystem !== req.pairingSystem) {
-        throw new Error('Kan inte ändra lottningssystem efter att rond 1 har lottats.')
-      }
-      if (current.initialPairing !== req.initialPairing) {
-        throw new Error('Kan inte ändra startlottning efter att rond 1 har lottats.')
-      }
-      if (current.barredPairing !== req.barredPairing) {
-        throw new Error('Kan inte ändra lottningsregler efter att rond 1 har lottats.')
-      }
-      if (current.compensateWeakPlayerPP !== req.compensateWeakPlayerPP) {
-        throw new Error(
-          'Kan inte ändra kompensation för svagare spelare efter att rond 1 har lottats.',
-        )
-      }
-      if (current.ratingChoice !== req.ratingChoice) {
-        throw new Error('Kan inte ändra ratingval efter att rond 1 har lottats.')
-      }
-      if (current.showELO !== req.showELO || current.showGroup !== req.showGroup) {
-        throw new Error('Kan inte ändra visningsinställningar efter att rond 1 har lottats.')
+      for (const guard of LOCK_GUARDS) {
+        if (guard.changed(current, req)) throw new Error(guard.message)
       }
       if (req.nrOfRounds < current.roundsPlayed) {
         throw new Error('Kan inte minska antal ronder under antalet redan lottade ronder.')
@@ -166,7 +142,7 @@ export class TournamentRepository {
         timecontrol = ?, federation = ?, resultspage = ?, standingspage = ?,
         playerlistpage = ?, roundforroundpage = ?, clubstandingspage = ?, maxpointsforwin = ?
       WHERE "index" = ?`,
-      [...this.tournamentParams(req), id],
+      [...this.tournamentParams(validated), id],
     )
 
     this.db.run('DELETE FROM tournamenttiebreaks WHERE tournamentindex = ?', [id])
