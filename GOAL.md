@@ -4,6 +4,21 @@ Implement the six architectural decisions in `doc/adr/0001`–`0006` as **system
 changes, turning their failing acceptance specs green. This file is the contract
 for the session.
 
+## Progress
+
+- ✅ **ADR-0001** — shared save-error surface (save() emits, one toast subscriber). Done.
+- ✅ **ADR-0005** — Dialog owns focus; background keybinds suppressed under a modal. Done.
+- ✅ **ADR-0003** — repository-boundary validation (nrOfRounds, pointsPerGame, blank names). Done.
+- ✅ **ADR-0002** — active round derived & validated against data; URL self-heals. Done.
+- ✅ **ADR-0004** — showELO/showGroup in the LockableField set, enforced in the repo. Done.
+- ⏸️ **ADR-0006** — scoring decoupled from chess4. **Not started — large fork.** Needs a
+  scoring representation decision (point-system enum vs win/draw/loss triple) and a
+  schema + data migration for existing chess4 tournaments. Stopped here for that call.
+
+Acceptance status: 25 acceptance tests green; the 3 remaining reds are all ADR-0006
+(`schack4an-points-locks-settings` ×2 and the `edit-untoggle` restore in
+`schack4an-coupling-edge-cases`). Unit suite (1367) and all quality gates green.
+
 ## Prime directive
 
 Fix each concern **once, at the right layer** — never a hardcoded per-action
