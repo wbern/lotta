@@ -1,3 +1,15 @@
+# [1.21.0](https://github.com/wbern/lotta/compare/v1.20.3...v1.21.0) (2026-06-25)
+
+
+### Features
+
+* decouple the scoring system from the Schackfyran (chess4) format ([251d3e2](https://github.com/wbern/lotta/commit/251d3e274352e7a2030fb5aab52845b1e59b035e))
+* derive and validate the active round against existing data ([42d7113](https://github.com/wbern/lotta/commit/42d7113781567d79141627483f7619cd01273947))
+* lock showELO/showGroup with a single source of truth for lock fields ([aa85b17](https://github.com/wbern/lotta/commit/aa85b17248e3075e7f9064acaca261b17573367a))
+* make dialogs own focus so global keybinds don't act behind a modal ([83fa1f7](https://github.com/wbern/lotta/commit/83fa1f70b3467cb92aec986bb31737aee5b28ab6))
+* surface all persistence failures via a shared save-error toast ([0461f6d](https://github.com/wbern/lotta/commit/0461f6d33c17c9c29b358d702f16093f37503078))
+* validate domain invariants at the repository boundary ([5077c15](https://github.com/wbern/lotta/commit/5077c15606b9672b9bec9c91b9b4914a716cde92))
+
 ## [1.20.3](https://github.com/wbern/lotta/compare/v1.20.2...v1.20.3) (2026-05-28)
 
 
