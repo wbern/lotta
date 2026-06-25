@@ -15,6 +15,7 @@ import { setDatabaseService } from './api/service-provider'
 import { LivePage } from './components/LivePage'
 import { AppLayout } from './components/layout/AppLayout'
 import { ReloadPrompt } from './components/ReloadPrompt'
+import { SaveErrorToaster } from './components/SaveErrorToaster'
 import { SharedView } from './components/SharedView'
 import { StorageWarning } from './components/StorageWarning'
 import { ToastProvider } from './components/toast/ToastProvider'
@@ -135,6 +136,7 @@ async function main() {
         <RouterProvider router={router} />
         <ReloadPrompt />
         <StorageWarning />
+        <SaveErrorToaster />
       </ToastProvider>
     </QueryClientProvider>,
   )

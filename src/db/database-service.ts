@@ -1,4 +1,5 @@
 import type { Database } from 'sql.js'
+import { emitSaveError } from '../lib/save-error-bus.ts'
 import { initDatabase } from './db.ts'
 import { loadDatabase, saveDatabase } from './persistence.ts'
 import { AvailablePlayerRepository } from './repositories/available-players.ts'
@@ -48,7 +49,14 @@ export class DatabaseService {
 
   async save(): Promise<void> {
     const data = this.db.export()
-    await saveDatabase(data)
+    try {
+      await saveDatabase(data)
+    } catch (e) {
+      // Announce the failure on the shared bus (ADR-0001) so the UI surfaces it,
+      // then re-throw so callers still see the rejection for flow control.
+      emitSaveError(e)
+      throw e
+    }
   }
 
   export(): Uint8Array {

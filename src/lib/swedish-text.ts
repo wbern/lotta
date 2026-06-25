@@ -90,6 +90,8 @@ export const sv = {
   },
   common: {
     save: 'Spara',
+    saveFailed:
+      'Kunde inte spara ändringarna. Kontrollera att det finns ledigt lagringsutrymme och försök igen.',
     cancel: 'Avbryt',
     delete: 'Ta bort',
     add: 'Lägg till',
