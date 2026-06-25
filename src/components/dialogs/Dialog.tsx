@@ -24,6 +24,7 @@ export function Dialog({
   isDirty,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -33,6 +34,23 @@ export function Dialog({
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [open, onClose, isDirty])
+
+  // Move focus into the dialog on open and restore it on close. This makes the
+  // dialog own focus, so document-level keyboard shortcuts (e.g. result entry on
+  // the pairings table) cannot act on the element behind the modal (ADR-0005).
+  useEffect(() => {
+    if (!open) return
+    previousFocusRef.current = document.activeElement as HTMLElement | null
+    // Only pull focus into the dialog if it isn't already there — a child may
+    // have autofocused a specific control (e.g. a password input).
+    const dialog = dialogRef.current
+    if (dialog && !dialog.contains(document.activeElement)) {
+      dialog.focus()
+    }
+    return () => {
+      previousFocusRef.current?.focus?.()
+    }
+  }, [open])
 
   if (!open) return null
 
@@ -49,6 +67,8 @@ export function Dialog({
           ...(height ? { height } : undefined),
         }}
         ref={dialogRef}
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: focus target for the modal focus-trap (ADR-0005)
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="dialog-title" data-testid="dialog-title">
