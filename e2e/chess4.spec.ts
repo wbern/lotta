@@ -90,7 +90,7 @@ test.describe('Chess4 mode', () => {
     expect(gameSummaries).toEqual(CHESS4_GAME_SCORING)
   })
 
-  test('Chess4 standings final round', async ({ page }) => {
+  test('Chess4 standings final round', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -122,7 +122,7 @@ test.describe('Chess4 mode', () => {
     expect(snapshot).toEqual(CHESS4_STANDINGS_FINAL)
   })
 
-  test('Chess4 standings round-by-round', async ({ page }) => {
+  test('Chess4 standings round-by-round', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -196,7 +196,7 @@ test.describe('Chess4 mode', () => {
     ])
   })
 
-  test('Publish chess4 standings HTML', async ({ page }) => {
+  test('Publish chess4 standings HTML', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)

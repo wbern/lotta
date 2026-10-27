@@ -52,7 +52,7 @@ function snapshotStanding(s: any) {
 }
 
 test.describe('Standings with tiebreakers', () => {
-  test('All 8 tiebreakers, round-by-round', async ({ page }) => {
+  test('All 8 tiebreakers, round-by-round', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -79,7 +79,7 @@ test.describe('Standings with tiebreakers', () => {
     expect(allStandings).toEqual(STANDINGS_8TB_BY_ROUND)
   })
 
-  test('Inbördes möte (Internal Meeting)', async ({ page }) => {
+  test('Inbördes möte (Internal Meeting)', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -122,7 +122,7 @@ test.describe('Standings with tiebreakers', () => {
     expect(snapshot).toEqual(STANDINGS_INBORDES)
   })
 
-  test('Manuell tiebreak', async ({ page }) => {
+  test('Manuell tiebreak', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)

@@ -39,7 +39,7 @@ async function setupClubTournament($: ApiClient) {
 }
 
 test.describe('Club standings', () => {
-  test('Club standings round-by-round', async ({ page }) => {
+  test('Club standings round-by-round', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -74,7 +74,7 @@ test.describe('Club standings', () => {
     expect(allStandings).toEqual(CLUB_STANDINGS_BY_ROUND)
   })
 
-  test('Club standings with all draws', async ({ page }) => {
+  test('Club standings with all draws', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)

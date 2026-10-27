@@ -12,9 +12,14 @@ test.describe('Vad är nytt dialog', () => {
     await page.waitForTimeout(500)
 
     await expect(page.getByTestId('dialog-title').filter({ hasText: 'Vad är nytt' })).toBeVisible()
-    await expect(page.getByTestId('changelog-group').first()).toBeVisible()
-
-    await page.waitForTimeout(1500)
+    // Only releases newer than the running version are listed. When HEAD is the
+    // latest tag there are none, which is a valid state, not an empty dialog.
+    await expect(
+      page
+        .getByTestId('changelog-group')
+        .first()
+        .or(page.getByText('Inga nya ändringar sedan din version.')),
+    ).toBeVisible()
   })
 
   test('reveals older entries when clicking "Visa tidigare versioner"', async ({ page }) => {
@@ -27,7 +32,6 @@ test.describe('Vad är nytt dialog', () => {
     await page.waitForTimeout(500)
 
     await expect(page.getByTestId('dialog-title').filter({ hasText: 'Vad är nytt' })).toBeVisible()
-    await expect(page.getByTestId('changelog-group').first()).toBeVisible()
 
     const expandLink = page.getByRole('button', { name: 'Visa tidigare versioner' })
     await expect(expandLink).toBeVisible()
@@ -51,11 +55,10 @@ test.describe('Vad är nytt dialog', () => {
     await page.getByTestId('menu-dropdown').getByText('Sök efter uppdateringar').click()
     await page.waitForTimeout(500)
 
+    // The update check reports through toasts (a3c25a7), not a dialog. The dev
+    // server registers no service worker, so this is the expected outcome here.
     await expect(
-      page.getByTestId('dialog-title').filter({ hasText: 'Sök efter uppdateringar' }),
+      page.getByTestId('toast').filter({ hasText: 'Ingen uppdateringstjänst registrerad ännu.' }),
     ).toBeVisible()
-    await expect(page.getByTestId('update-check-status')).toBeVisible()
-
-    await page.waitForTimeout(1500)
   })
 })

@@ -30,7 +30,7 @@ function snapshotStanding(s: any) {
 }
 
 test.describe('Settings that change API output', () => {
-  test('playerPresentation LAST_FIRST vs FIRST_LAST', async ({ page }) => {
+  test('playerPresentation LAST_FIRST vs FIRST_LAST', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -62,7 +62,7 @@ test.describe('Settings that change API output', () => {
     await $.put('/api/settings', { playerPresentation: 'FIRST_LAST' })
   })
 
-  test('ratingChoice QUICK', async ({ page }) => {
+  test('ratingChoice QUICK', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -90,7 +90,7 @@ test.describe('Settings that change API output', () => {
     expect(snapshot).toEqual(SETTINGS_QUICK_RATING)
   })
 
-  test('ratingChoice QUICK_THEN_ELO fallback', async ({ page }) => {
+  test('ratingChoice QUICK_THEN_ELO fallback', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)

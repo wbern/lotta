@@ -51,7 +51,7 @@ function extractClubPairings(round: any) {
 }
 
 test.describe('Barred pairing', () => {
-  test('Monrad — no same-club matches', async ({ page }) => {
+  test('Monrad — no same-club matches', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -117,7 +117,7 @@ test.describe('Barred pairing', () => {
     expect(allRoundPairings).toEqual(BARRED_NS_PAIRINGS)
   })
 
-  test('Majority club returns error', async ({ page }) => {
+  test('Majority club returns error', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)

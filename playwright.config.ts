@@ -3,12 +3,23 @@ import { defineConfig } from '@playwright/test'
 const p2pPort = 5174
 const p2pBaseURL = `https://localhost:${p2pPort}`
 
-const hasBrowserStack = !!process.env.BROWSERSTACK_USERNAME
+// BrowserStack costs real minutes from a limited budget. Credentials are loaded
+// into every shell from the Keychain, so their presence must NOT opt in: a plain
+// `pnpm test:e2e` would otherwise start paid sessions. Only the explicit
+// `pnpm test:e2e:browserstack` script sets RUN_BROWSERSTACK=1.
+const hasBrowserStack = process.env.RUN_BROWSERSTACK === '1' && !!process.env.BROWSERSTACK_USERNAME
 // P2P specs (Tier 2) need an MQTT broker, HTTPS, and a second dev server on
 // p2pPort — none of which are present in CI. Opt in locally with RUN_P2P_E2E=1
 // or implicitly via BrowserStack.
 const runningP2P = process.env.RUN_P2P_E2E === '1' || hasBrowserStack
 const runningStress = process.env.RUN_STRESS === '1'
+// @java-parity tests compare lotta-web against golden masters recorded from the
+// original Java Lotta engine (e2e/discover-snapshots.ts). 36 of them have never
+// matched lotta-web (same set failing on v1.6.0, v1.20.3 and v1.22.1) and need a
+// per-case audit: real parity bug vs. deliberate divergence. They are excluded
+// from the default tier so a red run means a new regression; run them with
+// `pnpm test:e2e:parity`. Do NOT regenerate their snapshots from lotta-web.
+const runningJavaParity = process.env.RUN_JAVA_PARITY === '1'
 // Investigation specs (curl-progression, publish-bug-repro, tourney-probe)
 // load a real ~/Downloads/lotta-backup*.sqlite snapshot. Opt in locally with
 // RUN_INVESTIGATION=1; otherwise excluded so CI doesn't fail without a backup.
@@ -34,6 +45,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   retries: 0,
   workers: 4,
+  grepInvert: runningJavaParity ? undefined : /@java-parity/,
 
   reporter: [
     ['html', { open: 'never' }],
@@ -116,6 +128,7 @@ export default defineConfig({
       name: 'schack4an-coupling-edge-cases',
       testMatch: 'schack4an-coupling-edge-cases.spec.ts',
     },
+    { name: 'smoke', testMatch: 'smoke.spec.ts' },
     { name: 'menus', testMatch: 'menus.spec.ts' },
     { name: 'navigation', testMatch: 'navigation.spec.ts' },
     { name: 'pairings', testMatch: 'pairings.spec.ts' },

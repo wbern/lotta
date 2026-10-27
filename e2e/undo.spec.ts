@@ -524,7 +524,8 @@ test.describe('Timeline panel', () => {
     await page.getByTestId('menu-dropdown').getByText('Historik...').click()
     await expect(page.locator('.timeline-panel')).toBeVisible()
 
-    await page.locator('button[aria-label="Stäng"]').click()
+    // A toast's dismiss button is also labelled "Stäng"; scope to the panel.
+    await page.locator('.timeline-panel').getByRole('button', { name: 'Stäng' }).click()
     await expect(page.locator('.timeline-panel')).not.toBeVisible()
   })
 })

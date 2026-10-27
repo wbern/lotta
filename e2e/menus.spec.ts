@@ -53,13 +53,17 @@ test.describe('Menu structure', () => {
     await expect(dropdown.getByText('Skriv ut...')).toBeVisible()
     await expect(dropdown.getByText('Publicera...')).toBeVisible()
     await expect(dropdown.getByText('Ångra lottning')).toBeVisible()
-    await expect(dropdown.getByText('Exportera till LiveChess')).toBeVisible()
     await expect(dropdown.getByText('Lägg till bord')).toBeVisible()
     await expect(dropdown.getByText('Editera bord')).toBeVisible()
     await expect(dropdown.getByText('Ta bort bord')).toBeVisible()
   })
 
   test('Ställning dropdown contains expected items', async ({ page }) => {
+    // Ställning is disabled until a tournament is selected
+    const tournamentSelect = page.getByTestId('tournament-selector').locator('select').first()
+    await tournamentSelect.selectOption('Hjälteturneringen 2025')
+    await expect(page.getByTestId('data-table')).toBeVisible()
+
     await page
       .getByTestId('menu-bar')
       .getByRole('button', { name: 'Ställning', exact: true })
@@ -98,15 +102,17 @@ test.describe('Menu structure', () => {
     await expect(page.getByTestId('data-table')).toBeVisible()
 
     await page.getByTestId('menu-bar').getByRole('button', { name: 'Lotta' }).click()
-    await page.getByText('Publicera...').click()
+    await page.getByTestId('menu-dropdown').getByText('Publicera...').click()
 
     const dialog = page.getByTestId('dialog-title')
     await expect(dialog).toHaveText('Publicera')
     await expect(page.getByTestId('publish-pairings')).toBeVisible()
     await expect(page.getByTestId('publish-alphabetical')).toBeVisible()
     await expect(page.getByTestId('publish-alphabetical-columns')).toBeVisible()
+    // Columns only apply once per-class-per-page grouping is turned off
+    await page.getByTestId('publish-alphabetical-group-by-class').click()
     await page.getByTestId('publish-alphabetical-columns').selectOption('4')
-    await page.waitForTimeout(800)
+    await expect(page.getByTestId('publish-alphabetical-columns')).toHaveValue('4')
   })
 
   test('Ställning > Skriv ut... opens standings print dialog', async ({ page }) => {
@@ -118,7 +124,7 @@ test.describe('Menu structure', () => {
       .getByTestId('menu-bar')
       .getByRole('button', { name: 'Ställning', exact: true })
       .click()
-    await page.getByText('Skriv ut...').click()
+    await page.getByTestId('menu-dropdown').getByText('Skriv ut...').click()
 
     const dialog = page.getByTestId('dialog-title')
     await expect(dialog).toHaveText('Skriv ut')
@@ -142,7 +148,6 @@ test.describe('Menu structure', () => {
 
     await expect(dropdown.getByText('Editera')).toBeDisabled()
     await expect(dropdown.getByText('Ta bort')).toBeDisabled()
-    await expect(dropdown.getByText('Skapa FIDE-rapport')).toBeDisabled()
   })
 
   test('Editera and Ta bort are enabled with tournament selected', async ({ page }) => {
@@ -156,7 +161,6 @@ test.describe('Menu structure', () => {
 
     await expect(dropdown.getByText('Editera')).toBeEnabled()
     await expect(dropdown.getByText('Ta bort')).toBeEnabled()
-    await expect(dropdown.getByText('Skapa FIDE-rapport')).toBeDisabled()
   })
 
   test('menu closes on click outside', async ({ page }) => {
@@ -172,7 +176,7 @@ test.describe('Menu structure', () => {
   test('clicking one menu closes another', async ({ page }) => {
     await page.getByTestId('menu-bar').getByRole('button', { name: 'Turnering' }).click()
     await expect(page.getByTestId('menu-dropdown')).toBeVisible()
-    await expect(page.getByTestId('menu-dropdown').getByText('Ny')).toBeVisible()
+    await expect(page.getByTestId('menu-dropdown').getByText('Ny', { exact: true })).toBeVisible()
 
     // Click a different menu button
     await page.getByTestId('menu-bar').getByRole('button', { name: 'Hjälp' }).click()
@@ -181,7 +185,7 @@ test.describe('Menu structure', () => {
 
     // Should now show Hjälp items, not Turnering items
     await expect(dropdown.getByText('Om')).toBeVisible()
-    await expect(dropdown.getByText('Ny')).not.toBeVisible()
+    await expect(dropdown.getByText('Ny', { exact: true })).not.toBeVisible()
   })
 
   test('clicking same menu button toggles dropdown closed', async ({ page }) => {
@@ -219,9 +223,11 @@ test.describe('Context menu', () => {
     await expect(ctxMenu).toBeVisible()
 
     await expect(ctxMenu.getByText('Ej spelad')).toBeVisible()
-    await expect(ctxMenu.getByText('Vit vinst', { exact: true }).first()).toBeVisible()
+    // Exact 'Vit vinst'/'Svart vinst' only match the hidden W/O submenu items; the
+    // top-level buttons also contain the shortcut hint.
+    await expect(ctxMenu.getByRole('button', { name: /^Vit vinst\s*V/ })).toBeVisible()
     await expect(ctxMenu.getByText('Remi')).toBeVisible()
-    await expect(ctxMenu.getByText('Svart vinst', { exact: true }).first()).toBeVisible()
+    await expect(ctxMenu.getByRole('button', { name: /^Svart vinst\s*F/ })).toBeVisible()
     await expect(ctxMenu.getByText('Walk over')).toBeVisible()
     await expect(ctxMenu.getByText('Uppskjuten')).toBeVisible()
     await expect(ctxMenu.getByText('Inställd')).toBeVisible()

@@ -219,10 +219,10 @@ test.describe('App smoke tests', () => {
     // Wait for tournaments to load from API
     await waitForTournaments(page)
 
-    // Should have the --- default + 3 tournaments
+    // Placeholder "(N turneringar)" + the two tournaments seedHeroTournament creates
     const options = selector.locator('option')
-    await expect(options).toHaveCount(4)
-    await expect(options.nth(0)).toHaveText('---')
+    await expect(options).toHaveCount(3)
+    await expect(options.nth(0)).toHaveText('(2 turneringar)')
   })
 
   test('select tournament and see pairings load', async ({ page }) => {
@@ -278,9 +278,11 @@ test.describe('Pairings tab', () => {
 
     const ctxMenu = page.locator('.context-menu')
     await expect(ctxMenu).toBeVisible()
-    await expect(ctxMenu.getByText('Vit vinst', { exact: true }).first()).toBeVisible()
+    // Exact 'Vit vinst'/'Svart vinst' only match the hidden W/O submenu items; the
+    // top-level buttons also contain the shortcut hint.
+    await expect(ctxMenu.getByRole('button', { name: /^Vit vinst\s*V/ })).toBeVisible()
     await expect(ctxMenu.getByText('Remi')).toBeVisible()
-    await expect(ctxMenu.getByText('Svart vinst', { exact: true }).first()).toBeVisible()
+    await expect(ctxMenu.getByRole('button', { name: /^Svart vinst\s*F/ })).toBeVisible()
     await expect(ctxMenu.getByText('Walk over')).toBeVisible()
   })
 })
@@ -403,10 +405,11 @@ test.describe('Dialogs', () => {
     await expect(dialog).toBeVisible()
     await expect(dialog).toContainText('Inställningar')
     await expect(dialog).toContainText('Namnvisning')
-    await expect(dialog.locator('select')).toBeVisible()
+    const namePresentation = dialog.getByTestId('name-presentation-select')
+    await expect(namePresentation).toBeVisible()
 
     // Check Swedish chars render correctly in option text
-    await expect(dialog.locator('select option').first()).toContainText('Förnamn')
+    await expect(namePresentation.locator('option').first()).toContainText('Förnamn')
 
     await dialog.getByRole('button', { name: 'OK' }).click()
     await expect(dialog).not.toBeVisible()
@@ -524,27 +527,22 @@ test.describe('Pairing error handling', () => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
-    await $.post('/api/tournaments', {
-      name: 'Empty Test',
-      group: 'TestGroup',
-      pairingSystem: 'Monrad',
-      nrOfRounds: 5,
-    })
+    await createTournament(
+      $,
+      { name: 'Empty Test', group: 'TestGroup', pairingSystem: 'Monrad', nrOfRounds: 5 },
+      [],
+    )
 
     await page.goto('/')
     const tournamentSelect = page.getByTestId('tournament-selector').locator('select').first()
     await waitForTournaments(page)
     await tournamentSelect.selectOption('Empty Test')
 
-    // Listen for the alert dialog
-    const alertPromise = page.waitForEvent('dialog')
-
     // Open Lotta menu and click "Lotta nästa rond"
     await page.getByRole('button', { name: 'Lotta' }).click()
     await page.getByRole('button', { name: 'Lotta nästa rond' }).click()
 
-    const dialog = await alertPromise
-    expect(dialog.message()).toContain('spelare')
-    await dialog.accept()
+    // Pairing errors are shown in an in-app dialog (not a native alert)
+    await expect(page.getByTestId('pair-error')).toContainText('spelare')
   })
 })

@@ -103,7 +103,7 @@ test.describe('Edge cases', () => {
     }).toEqual(COMPENSATE_WEAK_PP)
   })
 
-  test('POSTPONED pairing score vs display score', async ({ page }) => {
+  test('POSTPONED pairing score vs display score', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -221,7 +221,7 @@ test.describe('Edge cases', () => {
     }).toEqual(CHESS4_SPECIAL)
   })
 
-  test('Tiebreaks with pointsPerGame=2', async ({ page }) => {
+  test('Tiebreaks with pointsPerGame=2', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -310,7 +310,7 @@ test.describe('Edge cases', () => {
     }).toEqual(BERGER_EXTRA)
   })
 
-  test('Place numbering with ties — all draws', async ({ page }) => {
+  test('Place numbering with ties — all draws', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -346,7 +346,7 @@ test.describe('Edge cases', () => {
     expect(standings.map(snapshotStandingBasic)).toEqual(PLACE_NUMBERING)
   })
 
-  test('Withdrawn player in standings', async ({ page }) => {
+  test('Withdrawn player in standings', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -479,7 +479,7 @@ test.describe('Edge cases', () => {
     }).toEqual(WITHDRAWN_PLAYER)
   })
 
-  test('BLACK_WIN_WO scoring and tiebreaks', async ({ page }) => {
+  test('BLACK_WIN_WO scoring and tiebreaks', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -524,7 +524,7 @@ test.describe('Edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(BLACK_WIN_WO_SCORING)
   })
 
-  test('CANCELLED result type', async ({ page }) => {
+  test('CANCELLED result type', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -575,7 +575,7 @@ test.describe('Edge cases', () => {
     }).toEqual(CANCELLED_RESULT)
   })
 
-  test('Mid-tournament tiebreak addition', async ({ page }) => {
+  test('Mid-tournament tiebreak addition', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -625,7 +625,7 @@ test.describe('Edge cases', () => {
     }).toEqual(MID_TOURNAMENT_TIEBREAK)
   })
 
-  test('Unpair-repair cycle (Monrad)', async ({ page }) => {
+  test('Unpair-repair cycle (Monrad)', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -686,7 +686,7 @@ test.describe('Edge cases', () => {
     }).toEqual(UNPAIR_REPAIR_CYCLE)
   })
 
-  test('DOUBLE_WO scoring and tiebreaks', async ({ page }) => {
+  test('DOUBLE_WO scoring and tiebreaks', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -731,7 +731,7 @@ test.describe('Edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(DOUBLE_WO_SCORING)
   })
 
-  test('Add player mid-tournament', async ({ page }) => {
+  test('Add player mid-tournament', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -797,7 +797,7 @@ test.describe('Edge cases', () => {
     }).toEqual(ADD_PLAYER_MID_TOURNAMENT)
   })
 
-  test('POSTPONED-only round then pair next', async ({ page }) => {
+  test('POSTPONED-only round then pair next', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)

@@ -35,7 +35,7 @@ function findByeRecipient(round: any): string | null {
 }
 
 test.describe('Pairing edge cases', () => {
-  test('5-player Monrad bye rotation', async ({ page }) => {
+  test('5-player Monrad bye rotation', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -290,7 +290,7 @@ test.describe('Pairing edge cases', () => {
     expect(snapshot).toEqual(NS_COLOR)
   })
 
-  test('Identical ratings seeding', async ({ page }) => {
+  test('Identical ratings seeding', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)

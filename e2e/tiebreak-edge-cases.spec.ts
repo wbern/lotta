@@ -30,7 +30,7 @@ function snapshotStanding(s: any) {
 }
 
 test.describe('Tiebreak edge cases', () => {
-  test('Tiebreaks with byes and walkovers', async ({ page }) => {
+  test('Tiebreaks with byes and walkovers', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -99,7 +99,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(TIEBREAK_BYES_WO)
   })
 
-  test('Rating choice QUICK_THEN_ELO', async ({ page }) => {
+  test('Rating choice QUICK_THEN_ELO', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -140,7 +140,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(QUICK_THEN_ELO)
   })
 
-  test('Median Buchholz equals Buchholz at 2 rounds', async ({ page }) => {
+  test('Median Buchholz equals Buchholz at 2 rounds', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -188,7 +188,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(snapshot).toEqual(MEDIAN_BUCHHOLZ_2R)
   })
 
-  test('SSF Buchholz vs standard Buchholz with byes', async ({ page }) => {
+  test('SSF Buchholz vs standard Buchholz with byes', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -224,7 +224,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(SSF_BUCHHOLZ_BYES)
   })
 
-  test('Inbördes möte resolves a tie', async ({ page }) => {
+  test('Inbördes möte resolves a tie', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -267,7 +267,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(INBORDES_MOTE)
   })
 
-  test('Progressive tiebreak', async ({ page }) => {
+  test('Progressive tiebreak', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -310,7 +310,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(PROGRESSIVE_TIEBREAK)
   })
 
-  test('Svarta partier (Black pieces count)', async ({ page }) => {
+  test('Svarta partier (Black pieces count)', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -346,7 +346,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(SVARTA_PARTIER)
   })
 
-  test('Vinster counts WO wins', async ({ page }) => {
+  test('Vinster counts WO wins', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -391,7 +391,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(VINSTER_WO)
   })
 
-  test('Prestationsrating LASK edge cases', async ({ page }) => {
+  test('Prestationsrating LASK edge cases', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
@@ -434,7 +434,7 @@ test.describe('Tiebreak edge cases', () => {
     expect(standings.map(snapshotStanding)).toEqual(PRESTATIONSRATING_LASK)
   })
 
-  test('Chess4 club scaling with small clubs', async ({ page }) => {
+  test('Chess4 club scaling with small clubs', { tag: '@java-parity' }, async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
     const $ = apiClient(page)
