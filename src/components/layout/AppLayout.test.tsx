@@ -278,7 +278,7 @@ describe('AppLayout action errors', () => {
   it('surfaces import success via the global success toast', async () => {
     mockSearch.tournamentId = 1
     const { importPlayers: mockImportPlayers } = await import('../../api/tournaments')
-    vi.mocked(mockImportPlayers).mockResolvedValue({ imported: 7 })
+    vi.mocked(mockImportPlayers).mockResolvedValue({ imported: 7, duplicates: 0, unreadable: 0 })
 
     render(
       <ToastProvider>
@@ -300,6 +300,60 @@ describe('AppLayout action errors', () => {
     const toast = await waitFor(() => screen.getByTestId('toast'))
     expect(toast.className).toContain('toast--success')
     expect(toast.textContent).toContain('7')
+  })
+
+  const runImport = async () => {
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    const fileInput = document.querySelector(
+      'input[type="file"][accept*=".tsv"]',
+    ) as HTMLInputElement
+    const file = new File(['x'], 'players.tsv', { type: 'text/tab-separated-values' })
+    Object.defineProperty(fileInput, 'files', { value: [file], configurable: true })
+    await act(async () => {
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    return waitFor(() => screen.getByTestId('toast'))
+  }
+
+  it('warns when some import lines could not be read', async () => {
+    mockSearch.tournamentId = 1
+    const { importPlayers: mockImportPlayers } = await import('../../api/tournaments')
+    vi.mocked(mockImportPlayers).mockResolvedValue({ imported: 2, duplicates: 1, unreadable: 3 })
+
+    const toast = await runImport()
+
+    expect(toast.className).toContain('toast--warning')
+    expect(toast.textContent).toContain('2 nya spelare tillagda som tillgängliga spelare.')
+    expect(toast.textContent).toContain('1 dubblett hoppades över.')
+    expect(toast.textContent).toContain('3 rader kunde inte läsas.')
+  })
+
+  it('reports duplicates-only imports as info', async () => {
+    mockSearch.tournamentId = 1
+    const { importPlayers: mockImportPlayers } = await import('../../api/tournaments')
+    vi.mocked(mockImportPlayers).mockResolvedValue({ imported: 0, duplicates: 4, unreadable: 0 })
+
+    const toast = await runImport()
+
+    expect(toast.className).toContain('toast--info')
+    expect(toast.textContent).toContain('Inga nya spelare tillagda. 4 dubbletter hoppades över.')
+  })
+
+  it('shows the format error when nothing in the file could be read', async () => {
+    mockSearch.tournamentId = 1
+    const { importPlayers: mockImportPlayers } = await import('../../api/tournaments')
+    vi.mocked(mockImportPlayers).mockRejectedValue(
+      new Error('Inga spelare kunde läsas. Filen måste vara tabbseparerad.'),
+    )
+
+    const toast = await runImport()
+
+    expect(toast.className).toContain('toast--error')
+    expect(toast.textContent).toContain('Fel vid import: Inga spelare kunde läsas.')
   })
 
   it('surfaces export failure via the global error toast', async () => {

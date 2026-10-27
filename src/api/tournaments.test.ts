@@ -132,6 +132,9 @@ describe('tournaments API (local)', () => {
     service.tournamentPlayers.add(t.id, {
       lastName: 'Björk',
       firstName: 'Bo',
+      // Group is never exported: old Lotta reads exactly three columns, and a
+      // fourth column after an empty club makes it create a club named "".
+      playerGroup: 'Junior',
     })
 
     const blob = await exportTournamentPlayers(t.id)
@@ -265,6 +268,144 @@ describe('tournaments API (local)', () => {
     const players = service.availablePlayers.list()
     expect(players).toHaveLength(1)
     expect(players[0].lastName).toBe('Andersson')
+  })
+
+  const tsvFile = (content: string | Uint8Array<ArrayBuffer>) =>
+    new File([content], 'spelare.tsv', { type: 'text/tab-separated-values' })
+
+  it('import reports duplicates and unreadable lines separately', async () => {
+    const tsv = 'Andersson\tAnna\nandersson\tanna\nOnlyLast\n\t\tSK\n'
+
+    const result = await importPlayers(tsvFile(tsv))
+
+    expect(result).toEqual({ imported: 1, duplicates: 1, unreadable: 2 })
+  })
+
+  it('import ignores blank and tab-only lines without counting them as unreadable', async () => {
+    const tsv = 'Andersson\tAnna\n\t\t\n   \n\n'
+
+    const result = await importPlayers(tsvFile(tsv))
+
+    expect(result).toEqual({ imported: 1, duplicates: 0, unreadable: 0 })
+  })
+
+  it('import rejects a file without tabs and writes nothing', async () => {
+    const tsv = 'Andersson;Anna;SK Lund\nBjörk;Bo;SK Lund\n'
+
+    await expect(importPlayers(tsvFile(tsv))).rejects.toThrow(/tabbseparerad/)
+    expect(service.availablePlayers.list()).toHaveLength(0)
+    expect(service.clubs.list()).toHaveLength(0)
+  })
+
+  it('import rejects an empty file as containing no players', async () => {
+    await expect(importPlayers(tsvFile(''))).rejects.toThrow('Filen innehåller inga spelare.')
+    await expect(importPlayers(tsvFile(' \n\t\n'))).rejects.toThrow(
+      'Filen innehåller inga spelare.',
+    )
+    expect(service.availablePlayers.list()).toHaveLength(0)
+  })
+
+  it('import skips a leading Efternamn/Förnamn header row', async () => {
+    const tsv = 'Efternamn\tFörnamn\tKlubb\nAndersson\tAnna\tSK Lund\n'
+
+    const result = await importPlayers(tsvFile(tsv))
+
+    expect(result).toEqual({ imported: 1, duplicates: 0, unreadable: 0 })
+    expect(service.availablePlayers.list().map((p) => p.lastName)).toEqual(['Andersson'])
+    expect(service.clubs.list().map((c) => c.name)).toEqual(['SK Lund'])
+  })
+
+  it('import only treats the first line as a header', async () => {
+    const tsv = 'Andersson\tAnna\nEfternamn\tFörnamn\n'
+
+    const result = await importPlayers(tsvFile(tsv))
+
+    expect(result.imported).toBe(2)
+  })
+
+  it('import splits lines on lone carriage returns', async () => {
+    const tsv = 'Andersson\tAnna\tSK Lund\rBjörk\tBo\tSK Lund\r'
+
+    const result = await importPlayers(tsvFile(tsv))
+
+    expect(result.imported).toBe(2)
+    expect(service.availablePlayers.list().map((p) => p.club)).toEqual(['SK Lund', 'SK Lund'])
+  })
+
+  it('import reads old Lotta exports (Windows-1252, CRLF)', async () => {
+    // "Åkesson\tÖrjan\tSK Lund\r\nBjörk\tBo\t\r\n" encoded as Windows-1252
+    const bytes = new Uint8Array([
+      0xc5, 0x6b, 0x65, 0x73, 0x73, 0x6f, 0x6e, 0x09, 0xd6, 0x72, 0x6a, 0x61, 0x6e, 0x09, 0x53,
+      0x4b, 0x20, 0x4c, 0x75, 0x6e, 0x64, 0x0d, 0x0a, 0x42, 0x6a, 0xf6, 0x72, 0x6b, 0x09, 0x42,
+      0x6f, 0x09, 0x0d, 0x0a,
+    ])
+
+    const result = await importPlayers(tsvFile(bytes))
+
+    expect(result).toEqual({ imported: 2, duplicates: 0, unreadable: 0 })
+    const players = service.availablePlayers.list()
+    expect(players.find((p) => p.lastName === 'Åkesson')).toMatchObject({
+      firstName: 'Örjan',
+      club: 'SK Lund',
+    })
+    expect(players.find((p) => p.lastName === 'Björk')).toMatchObject({
+      firstName: 'Bo',
+      club: null,
+    })
+  })
+
+  it('import keeps the existing column handling for lines starting with a tab', async () => {
+    // Old Lotta trims the whole line before splitting; keep that parity.
+    const tsv = '\tAnna\tSK\tKlubb\n'
+
+    await importPlayers(tsvFile(tsv))
+
+    expect(service.availablePlayers.list()[0]).toMatchObject({
+      lastName: 'Anna',
+      firstName: 'SK',
+      club: 'Klubb',
+    })
+  })
+
+  it('import reads an optional fourth column as player group', async () => {
+    const tsv = 'Andersson\tAnna\tSK Lund\t1\nBjörk\tBo\tSK Lund\n'
+
+    await importPlayers(tsvFile(tsv))
+
+    const players = service.availablePlayers.list()
+    expect(players.find((p) => p.lastName === 'Andersson')?.playerGroup).toBe('1')
+    expect(players.find((p) => p.lastName === 'Björk')?.playerGroup).toBe('')
+  })
+
+  it('import reads a group without a club', async () => {
+    await importPlayers(tsvFile('Andersson\tAnna\t\tJunior\n'))
+
+    expect(service.availablePlayers.list()[0]).toMatchObject({ club: null, playerGroup: 'Junior' })
+    expect(service.clubs.list()).toHaveLength(0)
+  })
+
+  it('import trims the group and ignores columns after it', async () => {
+    await importPlayers(tsvFile('Andersson\tAnna\tSK Lund\t B \textra\n'))
+
+    expect(service.availablePlayers.list()[0].playerGroup).toBe('B')
+  })
+
+  it('import does not change the group of an existing player', async () => {
+    service.availablePlayers.create({ lastName: 'Andersson', firstName: 'Anna', playerGroup: 'X' })
+
+    const result = await importPlayers(tsvFile('Andersson\tAnna\tSK Lund\tY\n'))
+
+    expect(result.duplicates).toBe(1)
+    expect(service.availablePlayers.list()[0].playerGroup).toBe('X')
+  })
+
+  it('import accepts a header row with a Grupp column', async () => {
+    const result = await importPlayers(
+      tsvFile('Efternamn\tFörnamn\tKlubb\tGrupp\nAndersson\tAnna\tSK Lund\t2\n'),
+    )
+
+    expect(result).toEqual({ imported: 1, duplicates: 0, unreadable: 0 })
+    expect(service.availablePlayers.list()[0].playerGroup).toBe('2')
   })
 
   it('import reuses existing clubs', async () => {

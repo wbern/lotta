@@ -32,12 +32,37 @@ import { SettingsDialog } from '../dialogs/SettingsDialog'
 import { TournamentDialog } from '../dialogs/TournamentDialog'
 import { TournamentPlayersDialog } from '../dialogs/TournamentPlayersDialog'
 import { SpectatorLayout } from '../SpectatorLayout'
-import { useToast } from '../toast/useToast'
+import { type ShowToastInput, useToast } from '../toast/useToast'
 import { MenuBar } from './MenuBar'
 import { StatusBar } from './StatusBar'
 import { TabPanel } from './TabPanel'
 import { TimelinePanel } from './TimelinePanel'
 import { TournamentSelector } from './TournamentSelector'
+
+function importResultToast({
+  imported,
+  duplicates,
+  unreadable,
+}: {
+  imported: number
+  duplicates: number
+  unreadable: number
+}): ShowToastInput {
+  const parts = [
+    imported > 0
+      ? `${imported} nya spelare tillagda som tillgängliga spelare.`
+      : 'Inga nya spelare tillagda.',
+  ]
+  if (duplicates > 0) {
+    parts.push(`${duplicates} ${duplicates === 1 ? 'dubblett' : 'dubbletter'} hoppades över.`)
+  }
+  if (unreadable > 0) {
+    parts.push(`${unreadable} ${unreadable === 1 ? 'rad' : 'rader'} kunde inte läsas.`)
+    return { message: parts.join(' '), variant: 'warning' }
+  }
+  if (imported === 0) return { message: parts.join(' '), variant: 'info', autoDismissMs: 6000 }
+  return { message: parts.join(' '), variant: 'success', autoDismissMs: 4000 }
+}
 
 export function AppLayout() {
   const search = useSearch({ strict: false }) as {
@@ -424,12 +449,7 @@ export function AppLayout() {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const res = await importPlayers(file)
-      showToast({
-        message: `${res.imported} nya spelare tillagda som tillgängliga spelare.`,
-        variant: 'success',
-        autoDismissMs: 4000,
-      })
+      showToast(importResultToast(await importPlayers(file)))
       queryClient.invalidateQueries({ queryKey: ['players'] })
     } catch (err) {
       showActionError('Fel vid import: ' + (err instanceof Error ? err.message : String(err)))

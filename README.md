@@ -25,7 +25,7 @@ https://github.com/wbern/lotta/raw/main/docs/tournament-lifecycle-demo.mp4
 - **Live P2P sharing** — broadcast pairings, boards, and scores to referees and spectators over WebRTC without any central server
 - **HTML publishing** — generate standalone result pages (single HTML file with embedded CSS) for easy distribution
 - **LiveChess PGN export** — export ongoing games in PGN for downstream broadcast tools
-- **TSV import/export** — move player lists between Lotta and spreadsheet tools; handles both UTF-8 and Windows-1252 encodings
+- **TSV import/export** — move player lists between Lotta and spreadsheet tools; handles both UTF-8 and Windows-1252 encodings. Format: one player per line, tab-separated `Efternamn⇥Förnamn⇥Klubb⇥Grupp` (club and group optional, an `Efternamn⇥Förnamn…` header row is skipped). Group is import-only; export writes the three columns old Lotta reads
 - **Backup and restore** — download or upload the full SQLite database as a single file
 - **Undo** — step backwards through recent edits
 - **Offline-capable PWA** — install as an app and keep running without a network connection after the first load

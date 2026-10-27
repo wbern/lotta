@@ -138,7 +138,7 @@ pnpm secretlint '**/*'   # Secret scanning
 - Database backup/restore: download/upload raw SQLite binary
 - HTML publishing: standalone HTML pages with embedded CSS
 - LiveChess export: PGN format for unfinished games
-- TSV import/export: player data with club associations
+- TSV import/export: player data with club associations. Import reads an optional 4th column into `playerGroup`; export stays at 3 columns for old-Lotta compatibility (old Lotta reads exactly 3 tokens and would create a "" club from an empty club cell followed by a group)
 
 <claude-commands-template commands="code-review">
 

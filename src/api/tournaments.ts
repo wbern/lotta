@@ -121,10 +121,69 @@ export async function exportLiveChess(id: number, round?: number): Promise<Blob>
   return new Blob([pgn], { type: 'text/plain; charset=UTF-8' })
 }
 
-export async function importPlayers(file: File): Promise<{ imported: number }> {
+interface ParsedPlayerRow {
+  lastName: string
+  firstName: string
+  clubName: string
+  playerGroup: string
+}
+
+const IMPORT_EMPTY_ERROR = 'Filen innehåller inga spelare.'
+const IMPORT_FORMAT_ERROR =
+  'Inga spelare kunde läsas. Filen måste vara tabbseparerad med kolumnerna Efternamn, Förnamn, Klubb, Grupp (klubb och grupp kan utelämnas).'
+
+function isHeaderRow(parts: string[]): boolean {
+  const [last, first, club, group] = parts.map((p) => p.trim().toLowerCase())
+  return (
+    last === 'efternamn' &&
+    (first === 'förnamn' || first === 'fornamn') &&
+    (club === undefined || club === '' || club === 'klubb') &&
+    (group === undefined || group === '' || group === 'grupp')
+  )
+}
+
+// Line handling mirrors old Lotta: the whole line is trimmed before splitting on tabs.
+function parsePlayerLines(content: string): { rows: ParsedPlayerRow[]; unreadable: number } {
+  const rows: ParsedPlayerRow[] = []
+  let unreadable = 0
+  let isFirstLine = true
+
+  for (const rawLine of content.split(/\r\n|\r|\n/)) {
+    const line = rawLine.trim()
+    if (line === '') continue
+
+    const parts = line.split('\t')
+    if (isFirstLine) {
+      isFirstLine = false
+      if (isHeaderRow(parts)) continue
+    }
+    if (parts.length < 2) {
+      unreadable++
+      continue
+    }
+
+    rows.push({
+      lastName: parts[0].trim(),
+      firstName: parts[1].trim(),
+      clubName: parts.length > 2 ? parts[2].trim() : '',
+      playerGroup: parts.length > 3 ? parts[3].trim() : '',
+    })
+  }
+
+  return { rows, unreadable }
+}
+
+export async function importPlayers(
+  file: File,
+): Promise<{ imported: number; duplicates: number; unreadable: number }> {
   const arrayBuffer = await file.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
   const content = decodeTsv(bytes)
+
+  const { rows, unreadable } = parsePlayerLines(content)
+  if (rows.length === 0) {
+    throw new Error(unreadable === 0 ? IMPORT_EMPTY_ERROR : IMPORT_FORMAT_ERROR)
+  }
 
   return withSave(
     () => {
@@ -132,26 +191,19 @@ export async function importPlayers(file: File): Promise<{ imported: number }> {
       const existingPlayers = db.availablePlayers.list()
 
       let imported = 0
-      const lines = content.split('\n')
+      let duplicates = 0
 
-      for (const rawLine of lines) {
-        const line = rawLine.trim()
-        if (line === '') continue
-
-        const parts = line.split('\t')
-        if (parts.length < 2) continue
-
-        const lastName = parts[0].trim()
-        const firstName = parts[1].trim()
-        const clubName = parts.length > 2 ? parts[2].trim() : ''
-
+      for (const { lastName, firstName, clubName, playerGroup } of rows) {
         // Check case-insensitive duplicate
         const isDuplicate = existingPlayers.some(
           (p) =>
             p.lastName.toLowerCase() === lastName.toLowerCase() &&
             p.firstName.toLowerCase() === firstName.toLowerCase(),
         )
-        if (isDuplicate) continue
+        if (isDuplicate) {
+          duplicates++
+          continue
+        }
 
         let clubIndex = 0
         if (clubName !== '') {
@@ -169,12 +221,13 @@ export async function importPlayers(file: File): Promise<{ imported: number }> {
           lastName,
           firstName,
           clubIndex,
+          playerGroup,
         })
         existingPlayers.push(player)
         imported++
       }
 
-      return { imported }
+      return { imported, duplicates, unreadable }
     },
     'Importera spelare',
     (r) => `${r.imported} spelare`,
