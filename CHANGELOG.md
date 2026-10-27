@@ -1,3 +1,10 @@
+## [1.22.1](https://github.com/wbern/lotta/compare/v1.22.0...v1.22.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* result context menu items did nothing when clicked ([a3b88b0](https://github.com/wbern/lotta/commit/a3b88b0667c9aa10fdaf0462888846df6af9de5c))
+
 # [1.22.0](https://github.com/wbern/lotta/compare/v1.21.0...v1.22.0) (2026-10-27)
 
 
