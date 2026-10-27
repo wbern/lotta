@@ -49,11 +49,64 @@ jobs:
         if: ${{ !inputs.skip_tests }}
         run: pnpm test
 
+  # Release gate: a fast Playwright smoke suite (e2e/smoke.spec.ts) that drives
+  # the arbiter-critical flows with a real mouse. Runs on every push; the
+  # deploy is blocked if it fails. Skipped only for emergency deploys.
+  test-smoke:
+    if: ${{ !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Run smoke tests
+        run: pnpm test:e2e:smoke
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-smoke-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
+
   test-e2e:
     if: ${{ inputs.run_e2e }}
     runs-on: ubuntu-latest
     steps:
+      # Full history + tags for the changelog-backed whats-new e2e test.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -101,11 +154,12 @@ jobs:
     # (emergency redeploys, etc.) never trigger semantic-release; they just
     # rebuild and redeploy whatever's on main.
     runs-on: ubuntu-latest
-    needs: [test, test-e2e]
+    needs: [test, test-smoke, test-e2e]
     if: |
       always() &&
       github.event_name == 'push' &&
       needs.test.result == 'success' &&
+      needs.test-smoke.result == 'success' &&
       (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
     steps:
       - uses: actions/checkout@v4
@@ -162,10 +216,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: github-pages
-    needs: [test, test-e2e, release]
+    needs: [test, test-smoke, test-e2e, release]
     if: |
       always() &&
       needs.test.result == 'success' &&
+      (needs.test-smoke.result == 'success' || (inputs.skip_tests && needs.test-smoke.result == 'skipped')) &&
       (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') &&
       (needs.release.result == 'success' || needs.release.result == 'skipped')
     steps:

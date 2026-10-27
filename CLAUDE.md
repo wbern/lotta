@@ -67,7 +67,9 @@ Playwright, **one project per spec file** (see `playwright.config.ts`). Split in
 
 - **Tier 1 — default** (21 projects): non-p2p, localhost-only. Runs on every push to `main` via CI.
 - **Tier 2 — p2p** (7 projects): needs MQTT broker + HTTPS + second dev server. Opt-in only. New p2p specs **must** be added inside the `runningP2P` conditional spread in `playwright.config.ts` — otherwise they leak into Tier 1 / CI.
-- **Tier 3 — browserstack**: real devices, paid. Only runs when `BROWSERSTACK_USERNAME` is set.
+- **Tier 3 — browserstack**: real devices, paid. Only runs via `pnpm test:e2e:browserstack` (sets `RUN_BROWSERSTACK=1`); having `BROWSERSTACK_USERNAME` in the shell is not enough, so a plain `pnpm test:e2e` never starts paid sessions.
+- **Smoke — release gate** (`e2e/smoke.spec.ts`, `pnpm test:e2e:smoke`): arbiter-critical flows driven with a real mouse (set results incl. W/O from the result menu, Editera poäng, pair next round, tournament-settings save errors, player import). Runs in CI on every push to `main` and blocks the deploy. Add a case here whenever a bug ships that an arbiter cannot work around.
+- **Java parity — opt-in** (`@java-parity` tag, `pnpm test:e2e:parity`): golden masters recorded from the original Java Lotta engine. 36 have never matched lotta-web and await a per-case audit, so they are excluded from Tier 1. Never regenerate these snapshots from lotta-web output.
 
 ```bash
 pnpm test:e2e              # Tier 1 (same as CI)
@@ -106,9 +108,12 @@ The pattern, which is also the baseline for upcoming p2p chaos tests:
 GitHub Actions workflow (`.github/workflows/deploy.yml`) runs on push to `main`:
 
 1. `test` job — `pnpm test` (unit tests)
-2. `deploy` job — `pnpm build` + publish to GitHub Pages
+2. `test-smoke` job — `pnpm test:e2e:smoke` (Playwright release gate, ~1 min). `release` and `deploy` require it to pass.
+3. `deploy` job — `pnpm build` + publish to GitHub Pages
 
-**E2E tests do NOT run on push** — by design; the suite is too slow to gate every merge. The `test-e2e` job is gated on a `workflow_dispatch` input (`run_e2e`, default false), so it only runs when manually triggered. Downstream `release`/`deploy` accept `test-e2e.result == 'skipped'` as success.
+`.github/workflows/e2e-nightly.yml` runs the full Tier 1 suite nightly (03:00 UTC); a failure emails the repo owner. The repo is public, so GitHub-hosted minutes are free; do not move it to the self-hosted CRM runners (a public repo must not run code on those hosts).
+
+**The full E2E suite does NOT run on push** — by design; it is too slow to gate every merge. Only the smoke suite gates the deploy; the rest runs nightly. The `test-e2e` job is gated on a `workflow_dispatch` input (`run_e2e`, default false), so it only runs when manually triggered. Downstream `release`/`deploy` accept `test-e2e.result == 'skipped'` as success.
 
 No backend required — the app is fully static. Tier 2/3 e2e tests are **not** run in CI either.
 
@@ -197,5 +202,10 @@ Note: Biome plugins (`pnpm check`) already catch four mechanically-detectable ru
 - Look for: new UI introducing duplicate semantic elements (multiple selects, nested dialogs, sibling tabs) without `data-testid`.
 - Verify: when adding a duplicate `<select>`, dialog, or tab, give the new one a `data-testid` so existing locators don't ambiguously match.
 - History: 97fdec5, 39abbe8.
+
+**11. Document-level dismiss listeners swallowing clicks inside the popup**
+- Look for: a `document.addEventListener('pointerdown' | 'mousedown' | 'touchstart', ...)` that closes a menu, popup, or dropdown.
+- Verify: the handler ignores events whose target is inside the popup (`ref.contains(e.target)` or `e.target.closest(...)`). `pointerdown`/`mousedown` fire *before* `click`, so an unconditional close unmounts the item before its `onClick` runs: every item silently does nothing while keyboard shortcuts keep working. Unit tests with bare `fireEvent.click` cannot catch this; use `userEvent.click` or fire `pointerDown` first, and cover the flow in `e2e/smoke.spec.ts`.
+- History: 03a4bee (introduced: result menu dead for five months), a3b88b0 (fixed). `MenuBar.tsx` does it right.
 
 </claude-commands-template>

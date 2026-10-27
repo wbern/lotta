@@ -376,7 +376,7 @@ function ContextMenuPopup({
   const positionStyle = flipUp ? { left: x, bottom: viewportHeight - y } : { left: x, top: y }
   const renderHint = (slot: KeybindSlot) => keybinds[slot].join(' / ')
   return (
-    <div className="context-menu" style={positionStyle}>
+    <div className="context-menu" style={positionStyle} data-testid="result-context-menu">
       <button onClick={() => onSelect('NO_RESULT')}>
         {sv.contextMenu.notPlayed}
         <span className="context-menu-shortcut" data-testid="shortcut-no-result">
@@ -401,9 +401,9 @@ function ContextMenuPopup({
           {renderHint('blackWin')}
         </span>
       </button>
-      <div className="context-submenu">
+      <div className="context-submenu" data-testid="result-context-submenu">
         <button>{sv.contextMenu.walkOver} ▸</button>
-        <div className="context-submenu-items">
+        <div className="context-submenu-items" data-testid="result-context-submenu-items">
           <button onClick={() => onSelect('WHITE_WIN_WO')}>{sv.contextMenu.whiteWinWO}</button>
           <button onClick={() => onSelect('BLACK_WIN_WO')}>{sv.contextMenu.blackWinWO}</button>
           <button onClick={() => onSelect('DOUBLE_WO')}>{sv.contextMenu.doubleWO}</button>
