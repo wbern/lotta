@@ -2,6 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { sv } from '../../lib/swedish-text'
 import type { TournamentDto } from '../../types/api'
 import { TournamentDialog } from './TournamentDialog'
 
@@ -12,17 +13,22 @@ const mockExisting = vi.hoisted(
   () => ({ value: undefined }) as { value: TournamentDto | undefined },
 )
 
+const mockMutationOverride = vi.hoisted(
+  () => ({ value: undefined }) as { value: Record<string, unknown> | undefined },
+)
+
 vi.mock('../../hooks/useTournaments', () => ({
   useTournament: (id: number | undefined) =>
     id == null ? { data: undefined } : { data: mockExisting.value },
-  useCreateTournament: () => mockMutation,
-  useUpdateTournament: () => mockMutation,
+  useCreateTournament: () => mockMutationOverride.value ?? mockMutation,
+  useUpdateTournament: () => mockMutationOverride.value ?? mockMutation,
 }))
 
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   mockExisting.value = undefined
+  mockMutationOverride.value = undefined
 })
 
 const baseTournament: TournamentDto = {
@@ -466,5 +472,92 @@ describe('TournamentDialog overlay close', () => {
 
     fireEvent.click(screen.getByTestId('dialog-overlay'))
     expect(onClose).not.toHaveBeenCalled()
+  })
+})
+
+describe('TournamentDialog save errors', () => {
+  const failWith = (message: string) =>
+    mockMutate.mockImplementation((_data: unknown, options?: { onError?: (e: Error) => void }) => {
+      Promise.resolve().then(() => options?.onError?.(new Error(message)))
+    })
+
+  it('shows the repository error inline when reducing rounds below paired rounds', async () => {
+    const onClose = vi.fn()
+    const message = 'Kan inte minska antal ronder under antalet redan lottade ronder.'
+    failWith(message)
+    mockExisting.value = {
+      ...baseTournament,
+      roundsPlayed: 3,
+      hasRecordedResults: false,
+    } as unknown as TournamentDto
+    render(<TournamentDialog open tournamentId={1} onClose={onClose} />)
+
+    fireEvent.change(screen.getByTestId('tournament-nr-of-rounds-input'), {
+      target: { value: '2' },
+    })
+    fireEvent.click(screen.getByText('Spara'))
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('tournament-save-error').textContent).toBe(message)
+    })
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('shows the error inline when creating a tournament fails', async () => {
+    const onClose = vi.fn()
+    const onCreated = vi.fn()
+    failWith('Antal ronder måste vara minst 1.')
+    render(
+      <TournamentDialog open tournamentId={undefined} onClose={onClose} onCreated={onCreated} />,
+    )
+
+    fireEvent.change(screen.getByTestId('tournament-name-input'), { target: { value: 'T' } })
+    fireEvent.change(screen.getByTestId('tournament-group-input'), { target: { value: 'A' } })
+    fireEvent.click(screen.getByText('Spara'))
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('tournament-save-error').textContent).toBe(
+        'Antal ronder måste vara minst 1.',
+      )
+    })
+    expect(onClose).not.toHaveBeenCalled()
+    expect(onCreated).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the generic save-failed text when the error has no message', async () => {
+    failWith('')
+    mockExisting.value = { ...baseTournament } as unknown as TournamentDto
+    render(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('Spara'))
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('tournament-save-error').textContent).toBe(sv.common.saveFailed)
+    })
+  })
+
+  it('clears a previous save error when the dialog is reopened', async () => {
+    failWith('Något gick fel.')
+    mockExisting.value = { ...baseTournament } as unknown as TournamentDto
+    const { rerender } = render(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByText('Spara'))
+    await vi.waitFor(() => {
+      expect(screen.queryByTestId('tournament-save-error')).not.toBeNull()
+    })
+
+    rerender(<TournamentDialog open={false} tournamentId={1} onClose={vi.fn()} />)
+    rerender(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    expect(screen.queryByTestId('tournament-save-error')).toBeNull()
+  })
+
+  it('disables Spara while a save is pending', () => {
+    const pending = { ...mockMutation, isPending: true }
+    mockMutationOverride.value = pending
+    mockExisting.value = { ...baseTournament } as unknown as TournamentDto
+    render(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    expect((screen.getByText('Spara') as HTMLButtonElement).disabled).toBe(true)
   })
 })

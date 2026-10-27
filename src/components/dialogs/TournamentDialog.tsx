@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { generateRandomName } from '../../domain/random-name'
 import { isFieldLocked, tournamentLockState } from '../../domain/tournament-lock'
 import { useCreateTournament, useTournament, useUpdateTournament } from '../../hooks/useTournaments'
@@ -112,7 +112,13 @@ export function TournamentDialog({
   const lockState = isEdit && existing ? tournamentLockState(existing) : 'draft'
   const scoringLocked = isFieldLocked('chess4', lockState)
 
+  const wasOpen = useRef(open)
   /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (open && !wasOpen.current) setSaveError('')
+    wasOpen.current = open
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     if (isEdit && existing) {
@@ -300,19 +306,29 @@ export function TournamentDialog({
     update({ selectedTiebreaks: copy })
   }
 
+  // Flow-specific inline layer on top of the shared save-failure toast (ADR-0001):
+  // validation and lock errors are thrown before save() and would otherwise be silent.
+  const showSaveError = (err: Error | null) => {
+    setSaveError(err?.message || sv.common.saveFailed)
+  }
+
   const handleSave = () => {
     if (!form.name.trim() || !form.group.trim()) {
       setSaveError(sv.tournament.nameAndGroupRequired)
       return
     }
     if (isEdit && tournamentId != null) {
-      updateMutation.mutate({ id: tournamentId, req: form }, { onSuccess: () => onClose() })
+      updateMutation.mutate(
+        { id: tournamentId, req: form },
+        { onSuccess: () => onClose(), onError: showSaveError },
+      )
     } else {
       createMutation.mutate(form, {
         onSuccess: (data) => {
           onCreated?.(data.id)
           onClose()
         },
+        onError: showSaveError,
       })
     }
   }
@@ -326,7 +342,11 @@ export function TournamentDialog({
       isDirty={isEdit || form.name !== '' || form.group !== ''}
       footer={
         <>
-          <button className="btn btn-primary" onClick={handleSave}>
+          <button
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={createMutation.isPending || updateMutation.isPending}
+          >
             {sv.common.save}
           </button>
           <button className="btn" onClick={onClose}>
