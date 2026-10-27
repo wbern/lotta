@@ -1,3 +1,15 @@
+# [1.22.0](https://github.com/wbern/lotta/compare/v1.21.0...v1.22.0) (2026-10-27)
+
+
+### Bug Fixes
+
+* show save errors in tournament settings dialog ([4907362](https://github.com/wbern/lotta/commit/49073627856ae681c27ec1c235d38356c4fb84bc))
+
+
+### Features
+
+* clearer player import feedback and optional group column ([faa2f09](https://github.com/wbern/lotta/commit/faa2f09d8c1522f23f59a31e85301996d5b82acc))
+
 # [1.21.0](https://github.com/wbern/lotta/compare/v1.20.3...v1.21.0) (2026-06-25)
 
 
