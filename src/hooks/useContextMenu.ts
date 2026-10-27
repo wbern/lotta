@@ -18,7 +18,12 @@ export function useContextMenu() {
 
   useEffect(() => {
     if (state) {
-      const pointerHandler = () => close()
+      // Presses inside the menu must not dismiss it: pointerdown fires before click,
+      // so closing here would unmount the item before its onClick runs.
+      const pointerHandler = (e: PointerEvent) => {
+        if (e.target instanceof Element && e.target.closest('.context-menu')) return
+        close()
+      }
       const keyHandler = (e: KeyboardEvent) => {
         if (e.key === 'Escape') close()
       }

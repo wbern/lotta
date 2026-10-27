@@ -471,6 +471,59 @@ describe('ContextMenuPopup sends correct scores for ppg>1', () => {
   })
 })
 
+describe('ContextMenuPopup with real pointer sequence', () => {
+  afterEach(() => {
+    cleanup()
+    mockMutate.mockClear()
+  })
+
+  // Browsers fire pointerdown before click; the outside-dismiss listener must not
+  // close the menu when the pointerdown lands on one of its own items.
+  const pressAndClick = (el: HTMLElement) => {
+    fireEvent.pointerDown(el)
+    fireEvent.mouseDown(el)
+    fireEvent.mouseUp(el)
+    fireEvent.click(el)
+  }
+
+  it('sets the result when a menu item is pressed', () => {
+    renderTab()
+    fireEvent.contextMenu(screen.getByTestId('result-dropdown-2'))
+
+    pressAndClick(screen.getByTestId('shortcut-draw').closest('button')!)
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ boardNr: 2, req: expect.objectContaining({ resultType: 'DRAW' }) }),
+    )
+  })
+
+  it('sets a walk over result from the submenu', () => {
+    renderTab()
+    fireEvent.contextMenu(screen.getByTestId('result-dropdown-2'))
+
+    pressAndClick(document.querySelector('.context-submenu > button') as HTMLElement)
+    pressAndClick(document.querySelector('.context-submenu-items button') as HTMLElement)
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boardNr: 2,
+        req: expect.objectContaining({ resultType: 'WHITE_WIN_WO' }),
+      }),
+    )
+  })
+
+  it('still closes when pressing outside the menu', () => {
+    renderTab()
+    fireEvent.contextMenu(screen.getByTestId('result-dropdown-2'))
+    expect(document.querySelector('.context-menu')).not.toBeNull()
+
+    fireEvent.pointerDown(document.body)
+
+    expect(document.querySelector('.context-menu')).toBeNull()
+    expect(mockMutate).not.toHaveBeenCalled()
+  })
+})
+
 describe('PairingsTab keyboard focus restriction', () => {
   afterEach(() => {
     cleanup()
