@@ -24,14 +24,20 @@ const gitTag = git('describe --tags --abbrev=0')
 const rollbackVersion = process.env.ROLLBACK_VERSION || null
 const rollback = rollbackBuildConfig(rollbackVersion)
 
+// Generated files are gitignored and served from public/ in dev. Write them when
+// the config is evaluated, NOT in buildStart: the dev server indexes public/
+// before buildStart runs, so on a fresh checkout (CI) a file first created in
+// buildStart 404s until the watcher catches up. The changelog then silently
+// came back empty and the nightly e2e failed.
+function writePublicFile(name: string, data: string): void {
+  writeFileSync(join(__dirname, 'public', name), data)
+}
+
 function generateVersionJson(): Plugin {
   const versionData = JSON.stringify({ hash: commitHash, date: commitDate, tag: gitTag })
+  writePublicFile('version.json', versionData)
   return {
     name: 'generate-version-json',
-    buildStart() {
-      // Write to public/ for dev mode
-      writeFileSync(join(__dirname, 'public', 'version.json'), versionData)
-    },
     writeBundle(options) {
       // Write to dist/ for production build
       const outDir = options.dir || join(__dirname, 'dist')
@@ -45,11 +51,9 @@ function generateVersionsJsonStub(): Plugin {
   // Empty rollback-version list for dev and local builds; the real file is
   // regenerated from the live gh-pages branch at deploy time.
   const data = JSON.stringify({ versions: [] })
+  writePublicFile('versions.json', data)
   return {
     name: 'generate-versions-json-stub',
-    buildStart() {
-      writeFileSync(join(__dirname, 'public', 'versions.json'), data)
-    },
     writeBundle(options) {
       const outDir = options.dir || join(__dirname, 'dist')
       mkdirSync(outDir, { recursive: true })
@@ -92,11 +96,9 @@ function buildChangelog(): ChangelogRelease[] {
 
 function generateChangelogJson(): Plugin {
   const data = JSON.stringify(buildChangelog())
+  writePublicFile('changelog.json', data)
   return {
     name: 'generate-changelog-json',
-    buildStart() {
-      writeFileSync(join(__dirname, 'public', 'changelog.json'), data)
-    },
     writeBundle(options) {
       const outDir = options.dir || join(__dirname, 'dist')
       mkdirSync(outDir, { recursive: true })
