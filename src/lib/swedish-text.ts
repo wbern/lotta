@@ -112,6 +112,10 @@ export const sv = {
     noClubs: 'Inga klubbar',
     noChess4Standings: 'Ingen Schack4an-ställning',
   },
+  /** Tooltips explaining why a menu item or button is disabled. */
+  disabledReason: {
+    noRoundPaired: 'Ingen rond är lottad',
+  },
   guidance: {
     step1Path: 'Turnering \u2192 Ny',
     step1Label: 'Skapa en ny turnering',

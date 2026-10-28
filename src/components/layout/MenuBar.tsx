@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePairNextRound } from '../../hooks/useRounds'
+import { sv } from '../../lib/swedish-text'
 import { Dialog } from '../dialogs/Dialog'
 import { PrintDialog } from '../dialogs/PrintDialog'
 import { PublishDialog } from '../dialogs/PublishDialog'
@@ -193,7 +194,11 @@ export function MenuBar({
               Publicera...
             </button>
             <div className="menu-separator" />
-            <button onClick={() => action(onUnpair)} disabled={!hasTournament}>
+            <button
+              onClick={() => action(onUnpair)}
+              disabled={!hasRound}
+              title={!hasRound ? sv.disabledReason.noRoundPaired : undefined}
+            >
               Ångra lottning
             </button>
             <div className="menu-separator" />

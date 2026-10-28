@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MenuBar } from './MenuBar'
 
@@ -297,5 +298,35 @@ describe('MenuBar pairing success callback', () => {
     act(() => capturedOpts.onSuccess?.())
 
     expect(onPaired).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('MenuBar Ångra lottning', () => {
+  it('given a tournament with no paired round, when the Lotta menu is opened, then Ångra lottning is disabled with an explanation', async () => {
+    const user = userEvent.setup()
+    const onUnpair = vi.fn()
+    render(<MenuBar tournamentId={1} roundNr={undefined} onUnpair={onUnpair} />)
+
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    const item = screen.getByRole('button', { name: 'Ångra lottning' }) as HTMLButtonElement
+
+    expect(item.disabled).toBe(true)
+    expect(item.title).toBe('Ingen rond är lottad')
+    await user.click(item)
+    expect(onUnpair).not.toHaveBeenCalled()
+  })
+
+  it('given round 1 is paired, when Ångra lottning is clicked, then onUnpair fires', async () => {
+    const user = userEvent.setup()
+    const onUnpair = vi.fn()
+    render(<MenuBar tournamentId={1} roundNr={1} onUnpair={onUnpair} />)
+
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    const item = screen.getByRole('button', { name: 'Ångra lottning' }) as HTMLButtonElement
+
+    expect(item.disabled).toBe(false)
+    expect(item.title).toBe('')
+    await user.click(item)
+    expect(onUnpair).toHaveBeenCalledOnce()
   })
 })
