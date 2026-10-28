@@ -430,3 +430,30 @@ test.describe('Keyboard shortcuts', () => {
     await expect(firstResultCell).toHaveText(originalText || '')
   })
 })
+
+test.describe('Published file names', () => {
+  test('given the latest round is 7, when Ställning > Publicera... > Ställning is chosen, then the download has a descriptive name and a saved toast shows it', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    const tournamentSelect = page.getByTestId('tournament-selector').locator('select').first()
+    await tournamentSelect.selectOption('Hjälteturneringen 2025')
+    await expect(page.getByTestId('data-table')).toBeVisible()
+
+    await page
+      .getByTestId('menu-bar')
+      .getByRole('button', { name: 'Ställning', exact: true })
+      .click()
+    await page.getByTestId('menu-dropdown').getByText('Publicera...').click()
+
+    const downloadPromise = page.waitForEvent('download')
+    await page.getByTestId('publish-standings').click()
+    const download = await downloadPromise
+
+    const filename = 'hjalteturneringen-2025-alla-stallning-rond-7.html'
+    expect(download.suggestedFilename()).toBe(filename)
+    await expect(
+      page.getByTestId('toast').filter({ hasText: `Fil sparad: ${filename}` }),
+    ).toBeVisible()
+  })
+})

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ConfirmDialog } from './ConfirmDialog'
 
@@ -64,5 +65,39 @@ describe('ConfirmDialog typed confirmation', () => {
     const input = screen.getByTestId('confirm-text-input')
     fireEvent.change(input, { target: { value: '  Skol-DM 2026 A  ' } })
     expect(confirmBtn.disabled).toBe(false)
+  })
+})
+
+describe('ConfirmDialog button labels', () => {
+  it('given no labels, when rendered, then the buttons read OK and Cancel', () => {
+    render(<ConfirmDialog open title="T" message="M" onConfirm={() => {}} onCancel={() => {}} />)
+
+    expect(screen.getByRole('button', { name: 'OK' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined()
+  })
+
+  it('given custom labels, when the user clicks them, then each label triggers its own handler', async () => {
+    const user = userEvent.setup()
+    const onConfirm = vi.fn()
+    const onCancel = vi.fn()
+    render(
+      <ConfirmDialog
+        open
+        title="Återställ databas"
+        message="M"
+        confirmLabel="Välj fil…"
+        cancelLabel="Avbryt"
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Avbryt' }))
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onConfirm).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Välj fil…' }))
+    expect(onConfirm).toHaveBeenCalledTimes(1)
   })
 })

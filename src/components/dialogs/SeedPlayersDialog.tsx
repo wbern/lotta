@@ -4,6 +4,7 @@ import { seedFakePlayers } from '../../api/seed-players'
 import { addTournamentPlayers } from '../../api/tournament-players'
 import { generateRandomName } from '../../domain/random-name'
 import { useCreateTournament, useTournaments } from '../../hooks/useTournaments'
+import { DEFAULT_PUBLISH_PAGES } from '../../lib/filenames'
 import type { CreateTournamentRequest } from '../../types/api'
 import { useToast } from '../toast/useToast'
 import { Dialog } from './Dialog'
@@ -21,11 +22,7 @@ const randomTournamentDefaults: Omit<CreateTournamentRequest, 'name' | 'group'> 
   showGroup: false,
   federation: 'SWE',
   selectedTiebreaks: [],
-  resultsPage: 'lottning.htm',
-  standingsPage: 'stallning.htm',
-  playerListPage: 'spelare.htm',
-  roundForRoundPage: 'korstabell.htm',
-  clubStandingsPage: 'klubbstallning.htm',
+  ...DEFAULT_PUBLISH_PAGES,
 }
 
 interface Props {

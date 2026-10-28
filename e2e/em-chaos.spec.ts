@@ -50,6 +50,9 @@ async function restoreBackupFile(page: Page, sqliteBytes: Buffer): Promise<void>
     const api = (window as any).__lottaApi
     if (!api?.restoreDbBytes) throw new Error('restoreDbBytes not available on __lottaApi')
     await api.restoreDbBytes(new Uint8Array(byteArray))
+    // Restore now records undo entries; seeding wants a clean baseline.
+    await api.clearUndo()
+    await api.captureInitialUndoState()
   }, bytes)
 }
 
@@ -66,6 +69,8 @@ async function backupRoundtrip(page: Page): Promise<void> {
     }
     const bytes: Uint8Array = api.exportDbBytes()
     await api.restoreDbBytes(bytes)
+    await api.clearUndo()
+    await api.captureInitialUndoState()
   })
 }
 

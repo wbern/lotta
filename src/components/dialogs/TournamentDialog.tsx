@@ -4,6 +4,7 @@ import { RATING_CHOICE_CODES, RATING_CHOICE_LABELS } from '../../domain/ratings'
 import { tiebreakLabel } from '../../domain/standings'
 import { isFieldLocked, tournamentLockState } from '../../domain/tournament-lock'
 import { useCreateTournament, useTournament, useUpdateTournament } from '../../hooks/useTournaments'
+import { DEFAULT_PUBLISH_PAGES } from '../../lib/filenames'
 import { sv } from '../../lib/swedish-text'
 import type { CreateTournamentRequest } from '../../types/api'
 import { IconButton } from '../IconButton'
@@ -72,11 +73,7 @@ const defaults: CreateTournamentRequest = {
   showGroup: false,
   federation: 'SWE',
   selectedTiebreaks: [],
-  resultsPage: 'lottning.htm',
-  standingsPage: 'stallning.htm',
-  playerListPage: 'spelare.htm',
-  roundForRoundPage: 'korstabell.htm',
-  clubStandingsPage: 'klubbstallning.htm',
+  ...DEFAULT_PUBLISH_PAGES,
 }
 
 export function TournamentDialog({

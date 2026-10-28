@@ -555,6 +555,9 @@ async function runHuntSession(opts: SessionOpts): Promise<SessionResult> {
           const beforeHash = await hashBytes(before)
 
           await api.restoreDbBytes(before)
+          // Restore now records undo entries; keep the clean-baseline semantics.
+          await api.clearUndo()
+          await api.captureInitialUndoState()
 
           const after: Uint8Array = api.exportDbBytes()
           const afterLen = after.byteLength

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DatabaseService } from '../db/database-service.ts'
 import { initDatabase } from '../db/db.ts'
 import { deleteDatabase } from '../db/persistence.ts'
@@ -12,7 +12,9 @@ import {
   EncryptedBackupError,
   restoreBackup,
 } from './backup.ts'
+import { setBroadcastHook } from './broadcast-hook.ts'
 import { getDatabaseService, setDatabaseService } from './service-provider.ts'
+import { redoLocal, undoLocal } from './undo.ts'
 
 describe('backup API (local)', () => {
   let service: DatabaseService
@@ -183,30 +185,100 @@ describe('backup API (local)', () => {
     // Sanity: the row data still survives.
     expect(names.has('lastname')).toBe(true)
   })
+})
 
-  it('clears undo history after restore', async () => {
+describe('restoreBackup undo history', () => {
+  let service: DatabaseService
+  let manager: UndoManager
+
+  const clubNames = () =>
+    getDatabaseService()
+      .clubs.list()
+      .map((c) => c.name)
+
+  async function backupFileWithClub(name: string): Promise<File> {
+    service.clubs.create({ name })
+    const blob = await downloadBackup()
+    service.clubs.delete(service.clubs.list().find((c) => c.name === name)!.id)
+    return new File([blob], 'lotta-backup-2026-10-28-1430.sqlite')
+  }
+
+  beforeEach(async () => {
     await deleteUndoDatabase()
-    const manager = await UndoManager.create()
+    service = await DatabaseService.create()
+    setDatabaseService(service)
+    manager = await UndoManager.create()
     setUndoManager(manager)
+  })
+
+  afterEach(async () => {
+    setBroadcastHook(null)
+    getDatabaseService().close()
+    await deleteDatabase()
+    await deleteUndoDatabase()
+  })
+
+  it('given existing data, when a backup is restored, then the history records the state before and after the restore', async () => {
+    const file = await backupFileWithClub('SK Restored')
+    service.clubs.create({ name: 'SK Before' })
     await manager.captureInitialState()
 
-    // Create data and push undo state
-    service.clubs.create({ name: 'SK Lund' })
-    await service.save()
-    await manager.pushState('Ny klubb', 'SK Lund')
-    expect(manager.getState().canUndo).toBe(true)
-
-    // Download backup
-    const blob = await downloadBackup()
-    const file = new File([blob], 'backup.db')
-
-    // Restore from backup
     await restoreBackup(file)
 
-    // Undo history should be cleared
-    const undoManager = getUndoManager()
-    expect(undoManager.getState().canUndo).toBe(false)
-    expect(undoManager.getState().canRedo).toBe(false)
-    expect(undoManager.getTimeline()).toHaveLength(0)
+    const timeline = getUndoManager().getTimeline()
+    expect(timeline.map((e) => e.label)).toEqual(['Före återställning', 'Återställ databas'])
+    expect(timeline.map((e) => e.detail)).toEqual([file.name, file.name])
+    expect(getUndoManager().getState().canUndo).toBe(true)
+    expect(getUndoManager().getState().canRedo).toBe(false)
+  })
+
+  it('given a restored backup, when the arbiter undoes and redoes, then the pre-restore data comes back and the restore re-applies', async () => {
+    const file = await backupFileWithClub('SK Restored')
+    service.clubs.create({ name: 'SK Before' })
+    await manager.captureInitialState()
+    await restoreBackup(file)
+    expect(clubNames()).toEqual(['SK Restored'])
+
+    expect(await undoLocal()).toBe(true)
+    expect(clubNames()).toEqual(['SK Before'])
+
+    expect(await redoLocal()).toBe(true)
+    expect(clubNames()).toEqual(['SK Restored'])
+  })
+
+  it('given a corrupt file, when restoring, then the history and the active database are unchanged', async () => {
+    service.clubs.create({ name: 'SK Before' })
+    await manager.captureInitialState()
+    await manager.pushState('Ny klubb', 'SK Before')
+    const timelineBefore = getUndoManager().getTimeline()
+    const corrupt = new File([new Uint8Array(4096).fill(7)], 'broken.sqlite')
+
+    await expect(restoreBackup(corrupt)).rejects.toThrow()
+
+    expect(getUndoManager().getTimeline()).toEqual(timelineBefore)
+    expect(getDatabaseService()).toBe(service)
+    expect(clubNames()).toEqual(['SK Before'])
+  })
+
+  it('given an encrypted backup, when the password is wrong, then no history entry is added', async () => {
+    service.clubs.create({ name: 'SK Before' })
+    await manager.captureInitialState()
+    const blob = await downloadEncryptedBackup('correct-password')
+    const file = new File([blob], 'backup.sqlite.enc')
+
+    await expect(restoreBackup(file, 'wrong-password')).rejects.toThrow()
+
+    expect(getUndoManager().getTimeline()).toHaveLength(0)
+    expect(getDatabaseService()).toBe(service)
+  })
+
+  it('given a P2P broadcast hook, when a backup is restored, then peers are told the whole database changed', async () => {
+    const hook = vi.fn().mockResolvedValue(undefined)
+    setBroadcastHook(hook)
+    const file = await backupFileWithClub('SK Restored')
+
+    await restoreBackup(file)
+
+    expect(hook).toHaveBeenCalledWith({ kind: 'restore' })
   })
 })

@@ -134,6 +134,7 @@ export default defineConfig({
     { name: 'pairing-edge-cases', testMatch: 'pairing-edge-cases.spec.ts' },
     { name: 'live', testMatch: 'live.spec.ts' },
     { name: 'undo', testMatch: 'undo.spec.ts' },
+    { name: 'restore-confirm', testMatch: 'restore-confirm.spec.ts' },
     { name: 'scroll', testMatch: 'scroll.spec.ts' },
     { name: 'fix-screenshots', testMatch: 'fix-screenshots.spec.ts' },
     { name: 'keybind-demo', testMatch: 'keybind-demo.spec.ts' },

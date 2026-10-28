@@ -51,8 +51,20 @@ vi.mock('../dialogs/EditBoardDialog', () => ({
     return null
   },
 }))
-vi.mock('../dialogs/BackupExportDialog', () => ({ BackupExportDialog: () => null }))
-vi.mock('../dialogs/BackupRestoreDialog', () => ({ BackupRestoreDialog: () => null }))
+let backupExportDialogProps: Record<string, unknown> = {}
+vi.mock('../dialogs/BackupExportDialog', () => ({
+  BackupExportDialog: (props: Record<string, unknown>) => {
+    backupExportDialogProps = props
+    return null
+  },
+}))
+let backupRestoreDialogProps: Record<string, unknown> = {}
+vi.mock('../dialogs/BackupRestoreDialog', () => ({
+  BackupRestoreDialog: (props: Record<string, unknown>) => {
+    backupRestoreDialogProps = props
+    return null
+  },
+}))
 vi.mock('../dialogs/SeedPlayersDialog', () => ({ SeedPlayersDialog: () => null }))
 vi.mock('../dialogs/RollbackDialog', () => ({ RollbackDialog: () => null }))
 
@@ -114,8 +126,15 @@ vi.mock('../../api/results', () => ({
   deleteGames: (...args: unknown[]) => mockDeleteGames(...args),
 }))
 
+const mockPublishFile = vi.fn()
 vi.mock('../../api/publish', () => ({
   publishHtml: vi.fn(),
+  publishFile: (...args: unknown[]) => mockPublishFile(...args),
+}))
+
+const mockDownloadBlob = vi.fn()
+vi.mock('../../lib/download-file', () => ({
+  downloadBlob: (...args: unknown[]) => mockDownloadBlob(...args),
 }))
 
 vi.mock('../../hooks/useUndo', () => ({
@@ -144,6 +163,11 @@ afterEach(() => {
   confirmDialogProps.length = 0
   activeRoundBoardNrs = [1, 2, 3]
   editBoardDialogProps = {}
+  backupRestoreDialogProps = {}
+  backupExportDialogProps = {}
+  mockPublishFile.mockReset()
+  mockDownloadBlob.mockReset()
+  mockExportTournamentPlayers.mockReset()
   mockDeleteGame.mockReset()
   mockDeleteGames.mockReset()
   vi.restoreAllMocks()
@@ -683,5 +707,174 @@ describe('AppLayout P2P client gating', () => {
     )
 
     expect(menuBarProps.isP2PClient).toBe(false)
+  })
+})
+
+describe('AppLayout restore confirmation', () => {
+  const RESTORE_MESSAGE =
+    'Återställning ersätter ALLA turneringar, spelare och resultat i den här webbläsaren med innehållet i filen. Ta en säkerhetskopia först om du är osäker. Återställningen kan ångras via Redigera → Historik.'
+
+  const latestRestoreDialog = () =>
+    confirmDialogProps.findLast((p) => p.title === 'Återställ databas')
+
+  function renderAndChooseRestore() {
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {})
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    act(() => {
+      ;(menuBarProps.onRestore as () => void)()
+    })
+    return clickSpy
+  }
+
+  it('given the arbiter chooses Återställ databas, when the menu action runs, then a warning opens and no file picker or restore happens yet', async () => {
+    const { restoreBackup } = await import('../../api/backup')
+    vi.mocked(restoreBackup).mockClear()
+    const clickSpy = renderAndChooseRestore()
+
+    const dialog = latestRestoreDialog()
+    expect(dialog?.open).toBe(true)
+    expect(dialog?.message).toBe(RESTORE_MESSAGE)
+    expect(dialog?.confirmLabel).toBe('Välj fil…')
+    expect(dialog?.cancelLabel).toBe('Avbryt')
+    expect(clickSpy).not.toHaveBeenCalled()
+    expect(restoreBackup).not.toHaveBeenCalled()
+  })
+
+  it('given the restore warning is open, when Avbryt is chosen, then the warning closes and no file picker opens', () => {
+    const clickSpy = renderAndChooseRestore()
+
+    act(() => {
+      ;(latestRestoreDialog()?.onCancel as () => void)()
+    })
+
+    expect(latestRestoreDialog()?.open).toBe(false)
+    expect(clickSpy).not.toHaveBeenCalled()
+  })
+
+  it('given the restore warning is open, when Välj fil… is chosen, then the warning closes and the file picker opens once, synchronously', () => {
+    const clickSpy = renderAndChooseRestore()
+
+    act(() => {
+      ;(latestRestoreDialog()?.onConfirm as () => void)()
+      // Safari only opens the picker inside the user gesture: no deferral allowed.
+      expect(clickSpy).toHaveBeenCalledTimes(1)
+    })
+
+    expect(clickSpy).toHaveBeenCalledTimes(1)
+    expect(latestRestoreDialog()?.open).toBe(false)
+  })
+
+  it('given an encrypted backup is picked, when the restore needs a password, then the password dialog opens', async () => {
+    const backupApi = await import('../../api/backup')
+    vi.mocked(backupApi.restoreBackup).mockRejectedValueOnce(new backupApi.EncryptedBackupError())
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    const fileInput = document.querySelector(
+      'input[type="file"][accept*=".sqlite"]',
+    ) as HTMLInputElement
+    const file = new File(['x'], 'backup.sqlite.enc')
+    Object.defineProperty(fileInput, 'files', { value: [file], configurable: true })
+
+    await act(async () => {
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+    expect(backupApi.restoreBackup).toHaveBeenCalledWith(file)
+    expect(backupRestoreDialogProps.open).toBe(true)
+  })
+})
+
+describe('AppLayout saved-file feedback', () => {
+  const renderLayout = () =>
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+
+  const toastTexts = () => screen.queryAllByTestId('toast').map((t) => t.textContent ?? '')
+
+  it('given a tournament, when standings are published, then the page is downloaded under its descriptive name and a saved toast names the file', async () => {
+    const blob = new Blob(['<html>'])
+    mockPublishFile.mockResolvedValue({ blob, filename: 'test-stallning-rond-3.html' })
+    renderLayout()
+
+    await act(async () => {
+      await (menuBarProps.onPublish as (what: string) => Promise<void>)('standings')
+    })
+
+    expect(mockPublishFile).toHaveBeenCalledWith(1, 'standings', 3)
+    expect(mockDownloadBlob).toHaveBeenCalledWith(blob, 'test-stallning-rond-3.html')
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--success')
+    expect(toast.textContent).toContain('Fil sparad: test-stallning-rond-3.html')
+  })
+
+  it('given publishing fails, when a page is published, then nothing is downloaded and only the error toast shows', async () => {
+    mockPublishFile.mockRejectedValue(new Error('No rounds available'))
+    renderLayout()
+
+    await act(async () => {
+      await (menuBarProps.onPublish as (what: string) => Promise<void>)('pairings')
+    })
+
+    expect(mockDownloadBlob).not.toHaveBeenCalled()
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--error')
+    expect(toast.textContent).toContain('Publiceringsfel:')
+    expect(toastTexts().some((t) => t.includes('Fil sparad'))).toBe(false)
+  })
+
+  it('given a tournament with a group, when players are exported, then the TSV is named after the tournament and a saved toast shows', async () => {
+    currentTournament = { id: 1, name: 'Vårblixten', group: 'B' }
+    const blob = new Blob(['tsv'])
+    mockExportTournamentPlayers.mockResolvedValue(blob)
+    renderLayout()
+
+    await act(async () => {
+      await (menuBarProps.onExportPlayers as () => Promise<void>)()
+    })
+
+    expect(mockDownloadBlob).toHaveBeenCalledWith(blob, 'varblixten-b-spelare.tsv')
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--success')
+    expect(toast.textContent).toContain('Fil sparad: varblixten-b-spelare.tsv')
+  })
+
+  it.each([
+    [undefined, false, /^lotta-backup-\d{4}-\d{2}-\d{2}-\d{4}\.sqlite$/],
+    [undefined, true, /^lotta-backup-gammal-\d{4}-\d{2}-\d{2}-\d{4}\.sqlite$/],
+    ['hemligt', false, /^lotta-backup-\d{4}-\d{2}-\d{2}-\d{4}\.sqlite\.enc$/],
+  ])('given password %s and legacy %s, when a backup is saved, then it is downloaded with a dated name and a saved toast shows', async (password, legacy, pattern) => {
+    const backupApi = await import('../../api/backup')
+    const blob = new Blob(['db'])
+    vi.mocked(backupApi.downloadBackup).mockResolvedValue(blob)
+    vi.mocked(backupApi.downloadLegacyBackup).mockResolvedValue(blob)
+    vi.mocked(backupApi.downloadEncryptedBackup).mockResolvedValue(blob)
+    renderLayout()
+
+    await act(async () => {
+      await (
+        backupExportDialogProps.onExport as (
+          pw: string | undefined,
+          legacy: boolean,
+        ) => Promise<void>
+      )(password, legacy)
+    })
+
+    expect(mockDownloadBlob).toHaveBeenCalledTimes(1)
+    const [downloaded, filename] = mockDownloadBlob.mock.calls[0] as [Blob, string]
+    expect(downloaded).toBe(blob)
+    expect(filename).toMatch(pattern)
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--success')
+    expect(toast.textContent).toContain(`Fil sparad: ${filename}`)
   })
 })

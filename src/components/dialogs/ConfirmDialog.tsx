@@ -6,11 +6,22 @@ interface Props {
   title: string
   message: string
   confirmText?: string
+  confirmLabel?: string
+  cancelLabel?: string
   onConfirm: () => void
   onCancel: () => void
 }
 
-export function ConfirmDialog({ open, title, message, confirmText, onConfirm, onCancel }: Props) {
+export function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmText,
+  confirmLabel = 'OK',
+  cancelLabel = 'Cancel',
+  onConfirm,
+  onCancel,
+}: Props) {
   const [typed, setTyped] = useState('')
   useEffect(() => {
     if (!open) setTyped('')
@@ -27,10 +38,10 @@ export function ConfirmDialog({ open, title, message, confirmText, onConfirm, on
       footer={
         <>
           <button className="btn" onClick={onCancel}>
-            Cancel
+            {cancelLabel}
           </button>
           <button className="btn btn-primary" onClick={onConfirm} disabled={!canConfirm}>
-            OK
+            {confirmLabel}
           </button>
         </>
       }
