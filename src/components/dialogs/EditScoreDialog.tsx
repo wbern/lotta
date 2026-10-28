@@ -11,6 +11,12 @@ interface Props {
   onClose: () => void
 }
 
+/** Parses a typed score, accepting a Swedish decimal comma. Empty or non-numeric input ⇒ NaN. */
+function parseScore(s: string): number {
+  const t = s.trim().replace(',', '.')
+  return t === '' ? Number.NaN : Number(t)
+}
+
 export function EditScoreDialog({ open, game, pointsPerGame = 1, onSave, onClose }: Props) {
   const [whiteScore, setWhiteScore] = useState('')
   const [blackScore, setBlackScore] = useState('')
@@ -23,16 +29,22 @@ export function EditScoreDialog({ open, game, pointsPerGame = 1, onSave, onClose
   }
 
   const handleSave = () => {
-    const ws = parseFloat(whiteScore)
-    const bs = parseFloat(blackScore)
-    if (!isNaN(ws) && !isNaN(bs)) {
-      if (ws + bs > pointsPerGame) {
-        setScoreError('Vits och svarts resultat får ej överstiga maxpoängen!')
-        return
-      }
-      setScoreError('')
-      onSave(ws, bs)
+    const ws = parseScore(whiteScore)
+    const bs = parseScore(blackScore)
+    if (Number.isNaN(ws) || Number.isNaN(bs)) {
+      setScoreError('Ange poängen som tal, t.ex. 1, 0,5 eller 0.')
+      return
     }
+    if (ws < 0 || bs < 0) {
+      setScoreError('Poäng kan inte vara negativa.')
+      return
+    }
+    if (ws + bs > pointsPerGame) {
+      setScoreError('Vits och svarts resultat får ej överstiga maxpoängen!')
+      return
+    }
+    setScoreError('')
+    onSave(ws, bs)
   }
 
   const handleClose = () => {
