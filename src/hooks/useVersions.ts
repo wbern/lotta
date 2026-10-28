@@ -26,5 +26,7 @@ export function useVersions() {
     queryFn: fetchVersions,
     staleTime: 60_000,
     networkMode: 'online',
+    // Not tournament data: must not refetch on every write (ADR-0007).
+    meta: { source: 'network' },
   })
 }

@@ -3,6 +3,8 @@ import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import { renderHook, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { emitDataChanged } from '../lib/data-changed-bus'
+import { installDataChangedInvalidation } from '../lib/query-invalidation'
 import { useVersions } from './useVersions'
 
 function wrapper() {
@@ -42,6 +44,26 @@ describe('useVersions', () => {
       { version: '1.2.0', date: '2026-03-01', hash: 'abc' },
       { version: '1.1.0', date: '2026-02-01', hash: 'def' },
     ])
+  })
+
+  it('given versions are loaded, when tournament data changes, then versions.json is not refetched', async () => {
+    vi.mocked(globalThis.fetch).mockImplementation(
+      async () => new Response(JSON.stringify({ versions: [] }), { status: 200 }),
+    )
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { uninstall } = installDataChangedInvalidation(qc)
+    const { result } = renderHook(() => useVersions(), {
+      wrapper: ({ children }: { children: React.ReactNode }) =>
+        createElement(QueryClientProvider, { client: qc }, children),
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    emitDataChanged()
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(qc.getQueryState(['versions'])?.isInvalidated).toBe(false)
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+    uninstall()
   })
 
   it('returns an empty list when the manifest is missing', async () => {

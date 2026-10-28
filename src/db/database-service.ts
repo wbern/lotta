@@ -1,4 +1,5 @@
 import type { Database } from 'sql.js'
+import { emitDataChanged } from '../lib/data-changed-bus.ts'
 import { emitSaveError } from '../lib/save-error-bus.ts'
 import { initDatabase } from './db.ts'
 import { loadDatabase, saveDatabase } from './persistence.ts'
@@ -47,6 +48,11 @@ export class DatabaseService {
     return new DatabaseService(db)
   }
 
+  /**
+   * Persist the in-memory database. Every write path ends here (withSave,
+   * restore, undo/redo, Derby import), so this is also where readers are told
+   * the data changed (ADR-0007).
+   */
   async save(): Promise<void> {
     const data = this.db.export()
     try {
@@ -56,6 +62,11 @@ export class DatabaseService {
       // then re-throw so callers still see the rejection for flow control.
       emitSaveError(e)
       throw e
+    } finally {
+      // Emitted even when persisting failed: the in-memory database (what every
+      // query reads) has already changed, and the screen must not disagree with
+      // it. The failure itself is surfaced by the save-error toast above.
+      emitDataChanged()
     }
   }
 

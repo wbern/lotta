@@ -122,6 +122,7 @@ export default defineConfig({
     },
     { name: 'smoke', testMatch: 'smoke.spec.ts' },
     { name: 'ux-confirmation', testMatch: 'ux-confirmation.spec.ts' },
+    { name: 'stale-view-after-write', testMatch: 'stale-view-after-write.spec.ts' },
     { name: 'menus', testMatch: 'menus.spec.ts' },
     { name: 'navigation', testMatch: 'navigation.spec.ts' },
     { name: 'pairings', testMatch: 'pairings.spec.ts' },
