@@ -89,9 +89,12 @@ every DB-derived query in one place:
    keep the previous data, so views do not flash a loading state.
 3. Network-backed queries (`versions.json`) opt out with
    `meta: { source: 'network' }`.
-4. P2P clients, whose writes never reach a local `save()`, feed the same bus:
-   the host's `data-changed` broadcast emits on it, and the client provider
-   emits when the host confirms one of the client's own writes.
+4. P2P: while hosting, the host relays every bus emit to its peers as a
+   `data-changed` broadcast (so writes that are not React Query mutations —
+   Ta bort bord, Editera bord, imports — reach peers too). Clients, whose
+   writes never reach a local `save()`, feed their own bus: the host's
+   broadcast emits on it, and the client provider emits when the host
+   confirms one of the client's own writes.
 5. Mutations do not wait for that refresh. Views derive their state from
    the data (ADR-0002) and settle when the refetch lands; awaiting it would
    let one failing query (retrying with backoff — e.g. a referee grant that
@@ -126,7 +129,8 @@ redeeming a club code (`SpectatorLayout.tsx`) changes which data the host lets
 the peer read, so it refetches everything.
 
 Acceptance is pinned by `e2e/stale-view-after-write.spec.ts` (the six UI
-reproductions, red before this decision) and the WRITE MATRIX in
+reproductions, red before this decision), `e2e/p2p-stale-view.spec.ts` (a
+host's Ta bort bord reaching a referee, P2P tier) and the WRITE MATRIX in
 `src/lib/query-invalidation.test.ts` (every write API against a real database
 marks every DB query stale and leaves `versions` alone), plus
 `src/api/referee-result-refresh.test.ts` for the P2P referee path.
@@ -158,7 +162,8 @@ marks every DB query stale and leaves `versions` alone), plus
   `src/lib/query-invalidation.ts`, `src/query-client.ts`
 - `src/lib/save-error-bus.ts` — the ADR-0001 bus on the same write path
 - `src/api/p2p-data-provider.ts` (`createP2pClientProvider`),
-  `src/components/SharedView.tsx` (`onDataChanged`)
+  `src/components/SharedView.tsx` (`onDataChanged`),
+  `src/components/tabs/LiveTab.tsx` (host relay), `e2e/p2p-stale-view.spec.ts`
 - 566af71 — precedent: broadcast data-changed on every host DB write
 - 91f37cf — a per-site fix of this class (clubs created by an import)
 - CLAUDE.md recurring-bug check #12

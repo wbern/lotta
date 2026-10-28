@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { generateClubCodeMap } from '../../domain/club-codes'
+import { emitDataChanged } from '../../lib/data-changed-bus'
 import type {
   AuditLogEntry,
   ChatDeleteMessage,
@@ -31,6 +32,7 @@ let mockBroadcastChatMessageCalls: ChatMessage[] = []
 let mockSendChatToPeerCalls: { msg: ChatMessage; peerId: string }[] = []
 let mockBroadcastChatDeleteCalls: ChatDeleteMessage[] = []
 let mockBroadcastPeerCountCalls: unknown[] = []
+let mockBroadcastDataChangedCount = 0
 
 interface PdfSaveCall {
   filename: string
@@ -134,6 +136,9 @@ vi.mock('../../services/p2p-service', () => {
 
       broadcastPeerCount(msg: unknown) {
         mockBroadcastPeerCountCalls.push(msg)
+      }
+      broadcastDataChanged() {
+        mockBroadcastDataChangedCount++
       }
       broadcastAnnouncement() {}
       broadcastChatMessage(msg: ChatMessage) {
@@ -253,6 +258,7 @@ function renderLiveTab(
 
 describe('LiveTab', () => {
   beforeEach(() => {
+    mockBroadcastDataChangedCount = 0
     mockStartHostingCalls = []
     mockLeaveCalled = false
     mockOnResultSubmit = null
@@ -2006,11 +2012,39 @@ describe('LiveTab', () => {
     fireEvent.click(screen.getByText('Starta Live'))
 
     expect(mockStart).toHaveBeenCalledTimes(1)
-    expect(mockStart).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      expect.objectContaining({ onMutation: expect.any(Function) }),
-    )
+  })
+
+  // Every host write ends in save(), which announces it on the data-changed bus
+  // (ADR-0007) — React Query mutations, peers' RPC writes, and imperative
+  // writes alike (Ta bort bord, Editera bord, import). Peers must hear of all
+  // of them, not only of the writes that happened to be mutations.
+  it('given hosting, when any write announces a data change, then peers are told', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+
+    emitDataChanged()
+
+    expect(mockBroadcastDataChangedCount).toBe(1)
+  })
+
+  it('given hosting has stopped, when data changes, then nothing is broadcast', () => {
+    renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    fireEvent.click(screen.getByText('Stoppa Live'))
+
+    emitDataChanged()
+
+    expect(mockBroadcastDataChangedCount).toBe(0)
+  })
+
+  it('given the tab unmounts while hosting, when data changes, then nothing is broadcast', () => {
+    const { unmount } = renderLiveTab()
+    fireEvent.click(screen.getByText('Starta Live'))
+    unmount()
+
+    emitDataChanged()
+
+    expect(mockBroadcastDataChangedCount).toBe(0)
   })
 
   it('sets live status to connected when hosting starts', async () => {

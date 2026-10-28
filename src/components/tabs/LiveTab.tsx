@@ -36,10 +36,9 @@ import {
   resolveResultLabel,
   verifyChatMessage,
 } from '../../lib/chat'
+import { subscribeDataChanged } from '../../lib/data-changed-bus'
 import { getShareUrl, getViewUrl, getViewUrlWithCode } from '../../lib/live-urls'
 import { playSound } from '../../lib/notification-sounds'
-import { queryClient } from '../../query-client'
-import { subscribeMutationBroadcast } from '../../services/mutation-broadcast'
 import { clearP2PService, setP2PService } from '../../services/p2p-provider'
 import { type DiagnosticEntry, P2PService, type RelaySocketInfo } from '../../services/p2p-service'
 import type { AuditLogEntry, ChatMessage, P2PPeer } from '../../types/p2p'
@@ -196,7 +195,7 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   const chatEnabledRef = useRef(true)
   const activeSubTabRef = useRef<LiveSubTab>('delning')
   const chatRateLimitRef = useRef(new Map<string, number>())
-  const mutationUnsubRef = useRef<(() => void) | null>(null)
+  const dataChangedUnsubRef = useRef<(() => void) | null>(null)
   const [viewToken, setViewToken] = useState('')
   const [grants, setGrants] = useState<Grant[]>([])
   const [grantLabel, setGrantLabel] = useState('')
@@ -443,10 +442,9 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
       void sendLatestStateToPeer(peerId, msg.tournamentId)
     }
 
+    // A peer's RPC write ends in the host's save() like any other write, so the
+    // data-changed subscription below tells every peer (the sender included).
     startP2pRpcServer(service, getLocalProvider(), {
-      // The host's own views already refreshed: the write ended in save(), which
-      // announces it on the data-changed bus (ADR-0007). Only peers need telling.
-      onMutation: () => service.broadcastDataChanged(),
       clubCodeSecret: secret,
       getAllClubEntries: () => allClubEntriesRef.current,
       clubFilterEnabled: () => clubFilterEnabledRef.current,
@@ -457,9 +455,10 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
       onClubCodeRateLimit: () => setClubCodeRateLimited(true),
     })
 
-    mutationUnsubRef.current = subscribeMutationBroadcast(queryClient, () =>
-      service.broadcastDataChanged(),
-    )
+    // Every host write ends in save(), which announces it on the data-changed
+    // bus (ADR-0007): mutations, peers' RPC writes and imperative writes (Ta bort
+    // bord, Editera bord, import) alike. Tell the peers about each of them.
+    dataChangedUnsubRef.current = subscribeDataChanged(() => service.broadcastDataChanged())
 
     service.startHosting(code)
     setRoomCode(code)
@@ -469,8 +468,8 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   }, [])
 
   const stopHosting = useCallback(() => {
-    mutationUnsubRef.current?.()
-    mutationUnsubRef.current = null
+    dataChangedUnsubRef.current?.()
+    dataChangedUnsubRef.current = null
     if (serviceRef.current) {
       serviceRef.current.leave()
       serviceRef.current = null
@@ -508,8 +507,8 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      mutationUnsubRef.current?.()
-      mutationUnsubRef.current = null
+      dataChangedUnsubRef.current?.()
+      dataChangedUnsubRef.current = null
       setLiveStatus(null)
       clearAllPeerPermissions()
       setLiveContext(null)

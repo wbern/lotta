@@ -154,7 +154,7 @@ Note: Biome plugins (`pnpm check`) already catch five mechanically-detectable ru
 
 **1. P2P broadcast coverage on host state changes**
 - Look for: a new host-side mutation (DB write, tournament switch, undo/redo, delete, restore, snapshot, round seed) without a corresponding P2P broadcast.
-- Verify: every host mutation reaches `broadcastDataChanged` (or a more specific page/manifest broadcast). Direct DB writes via `__lottaApi` and backup/restore must trigger it too — not only React Query mutations.
+- Verify: every host mutation reaches `broadcastDataChanged` (or a more specific page/manifest broadcast). Direct DB writes via `__lottaApi` and backup/restore must trigger it too — not only React Query mutations. Since ADR-0007 the hosting `LiveTab` relays every data-changed emit (every `save()`), so a write path that bypasses `DatabaseService.save()` is the thing to look for.
 - History: bbcd024, 3df14d5, 384ea7a, a643603, e0c0277, 37a8aa7, 566af71, 4efb1ba.
 
 **2. Late-joiner / reconnect P2P state-sync**
