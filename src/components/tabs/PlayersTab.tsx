@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { withdrawnSuffix } from '../../domain/player-names'
 import { useTableSort } from '../../hooks/useTableSort'
 import { useTournamentPlayers } from '../../hooks/useTournamentPlayers'
 import { sv } from '../../lib/swedish-text'
@@ -80,7 +81,7 @@ export function PlayersTab({ tournamentId, showELO, showGroup }: Props) {
               <td className="place-cell">{i + 1}</td>
               <td>
                 {p.firstName} {p.lastName}
-                {p.withdrawnFromRound >= 0 ? ` (utgått r${p.withdrawnFromRound})` : ''}
+                {withdrawnSuffix(p.withdrawnFromRound)}
               </td>
               {showGroup && <td>{p.playerGroup || ''}</td>}
               <td>{p.club || ''}</td>

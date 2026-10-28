@@ -110,6 +110,20 @@ describe('publish API (local)', () => {
     expect(html).toContain('Poäng')
   })
 
+  it('given a player withdrawn from round 2, when standings are published, then the name cell carries the escaped "(utgått r2)" suffix', async () => {
+    const round = await pairNextRound(tournamentId)
+    for (const g of round.games) {
+      await setResult(tournamentId, 1, g.boardNr, { resultType: 'WHITE_WIN' })
+    }
+    const dahl = service.tournamentPlayers.list(tournamentId).find((p) => p.lastName === 'Dahl')!
+    service.tournamentPlayers.update(dahl.id, { withdrawnFromRound: 2 })
+
+    const html = await (await publishStandingsHtml(tournamentId, 1)).text()
+
+    expect(html).toContain('<td class="CP_Player">Dan Dahl (utgått r2)</td>')
+    expect(html).toContain('<td class="CP_Player">Anna Andersson</td>')
+  })
+
   it('publishClubStandingsHtml generates HTML', async () => {
     const round = await pairNextRound(tournamentId)
     for (const g of round.games) {
