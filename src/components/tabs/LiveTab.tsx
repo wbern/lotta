@@ -444,10 +444,9 @@ export function LiveTab({ tournamentName, tournamentId, round }: Props) {
     }
 
     startP2pRpcServer(service, getLocalProvider(), {
-      onMutation: () => {
-        queryClient.invalidateQueries()
-        service.broadcastDataChanged()
-      },
+      // The host's own views already refreshed: the write ended in save(), which
+      // announces it on the data-changed bus (ADR-0007). Only peers need telling.
+      onMutation: () => service.broadcastDataChanged(),
       clubCodeSecret: secret,
       getAllClubEntries: () => allClubEntriesRef.current,
       clubFilterEnabled: () => clubFilterEnabledRef.current,

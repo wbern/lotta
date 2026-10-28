@@ -5,6 +5,7 @@ import { createP2pClientProvider } from '../api/p2p-data-provider'
 import { cleanupClientSession } from '../api/p2p-session'
 import { setLiveStatus } from '../hooks/useLiveStatus'
 import { isRateLimited, verifyChatMessage } from '../lib/chat'
+import { emitDataChanged } from '../lib/data-changed-bus'
 import { getCompatWarnings } from '../lib/device-compat'
 import { LIVE_NAME_STORAGE_KEY } from '../lib/live-name'
 import { playSound } from '../lib/notification-sounds'
@@ -142,9 +143,9 @@ export function SharedView({ roomCode, token, mode = 'full', code }: SharedViewP
       pushLiveStatus(lastConnectionState, pending.length)
     }
 
-    service.onDataChanged = () => {
-      void queryClient.invalidateQueries()
-    }
+    // The host's write never reaches this client's save(); its broadcast feeds
+    // the same data-changed bus so every view refreshes (ADR-0007).
+    service.onDataChanged = emitDataChanged
 
     service.onSharedTournaments = (msg) => {
       setHostSharedTournamentId(msg.tournamentIds[0] ?? null)

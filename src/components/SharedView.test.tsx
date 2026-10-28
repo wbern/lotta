@@ -2,6 +2,7 @@
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { subscribeDataChanged } from '../lib/data-changed-bus'
 import { getClientP2PState, resetClientStore } from '../stores/client-p2p-store'
 import { SharedView } from './SharedView'
 
@@ -173,13 +174,11 @@ vi.mock('../lib/device-compat', () => ({
   getCompatWarnings: () => mockGetCompatWarnings(),
 }))
 
-const { mockInvalidateQueries, mockResumePausedMutations } = vi.hoisted(() => ({
-  mockInvalidateQueries: vi.fn(),
+const { mockResumePausedMutations } = vi.hoisted(() => ({
   mockResumePausedMutations: vi.fn(),
 }))
 vi.mock('../query-client', () => ({
   queryClient: {
-    invalidateQueries: mockInvalidateQueries,
     resumePausedMutations: mockResumePausedMutations,
   },
 }))
@@ -210,7 +209,6 @@ describe('SharedView', () => {
     mockLeave.mockReset()
     mockSetP2PService.mockReset()
     mockClearP2PService.mockReset()
-    mockInvalidateQueries.mockReset()
     mockResumePausedMutations.mockReset()
     resetClientStore()
     localStorage.setItem('lotta-live-name', 'Test User')
@@ -318,7 +316,11 @@ describe('SharedView', () => {
     expect(mockResumePausedMutations).toHaveBeenCalled()
   })
 
-  it('invalidates queries when host broadcasts data-changed', () => {
+  // ADR-0007: the host's broadcast feeds the same data-changed bus a local
+  // save() does, so the one installed subscriber refreshes every view.
+  it('announces a data change when the host broadcasts data-changed', () => {
+    const listener = vi.fn()
+    const unsubscribe = subscribeDataChanged(listener)
     render(<SharedView roomCode="ABC123" token="tok-1" />)
 
     expect(mockOnDataChanged).not.toBeNull()
@@ -327,7 +329,8 @@ describe('SharedView', () => {
       mockOnDataChanged?.()
     })
 
-    expect(mockInvalidateQueries).toHaveBeenCalled()
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
   })
 
   it('records the host-shared tournament id when host broadcasts it', () => {

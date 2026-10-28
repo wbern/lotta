@@ -1,4 +1,5 @@
 import { generateClubCodeMap } from '../domain/club-codes'
+import { emitDataChanged } from '../lib/data-changed-bus'
 import type { DataProvider } from './data-provider'
 import { getCurrentPageUpdates } from './p2p-broadcast'
 import { clearCurrentActor, setCurrentActor } from './peer-actor'
@@ -20,15 +21,45 @@ interface RpcReceiver {
 }
 
 export function createP2pClientProvider(service: RpcSender): DataProvider {
-  return createRpcClient(
-    (req) => service.sendRpcRequest(req),
-    (cb) => {
-      service.onRpcResponse = cb
-    },
+  return announceConfirmedWrites(
+    createRpcClient(
+      (req) => service.sendRpcRequest(req),
+      (cb) => {
+        service.onRpcResponse = cb
+      },
+    ),
   )
 }
 
 const READ_METHODS = new Set(['list', 'get', 'getClub', 'getChess4'])
+/** Domains whose calls never change tournament data. */
+const NON_DATA_DOMAINS = new Set(['pages', 'auth'])
+
+/**
+ * A client's write is persisted by the host and never reaches a local save(),
+ * so announce it on the data-changed bus once the host confirms it (ADR-0007).
+ * The client's views refresh immediately; the host's data-changed broadcast,
+ * which arrives just after the RPC response, refreshes them again harmlessly.
+ */
+function announceConfirmedWrites(provider: DataProvider): DataProvider {
+  return new Proxy(provider, {
+    get(target, domain: string) {
+      const methods = target[domain as keyof DataProvider] as Record<string, unknown>
+      if (NON_DATA_DOMAINS.has(domain)) return methods
+      return new Proxy(methods, {
+        get(inner, method: string) {
+          const fn = inner[method] as (...args: unknown[]) => Promise<unknown>
+          if (READ_METHODS.has(method)) return fn
+          return async (...args: unknown[]) => {
+            const result = await fn(...args)
+            emitDataChanged()
+            return result
+          }
+        },
+      })
+    },
+  })
+}
 
 /** Per-method permission record. Only explicitly `true` methods are allowed. */
 export type RpcPermissions = Partial<Record<string, boolean>>

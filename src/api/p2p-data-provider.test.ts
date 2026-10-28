@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { generateClubCodeMap } from '../domain/club-codes'
+import { subscribeDataChanged } from '../lib/data-changed-bus'
 import type { PageUpdateMessage } from '../types/p2p'
+import type { DataProvider } from './data-provider'
 
 const mockGetCurrentPageUpdates = vi.fn<() => Promise<PageUpdateMessage[]>>()
 vi.mock('./p2p-broadcast', () => ({
@@ -68,6 +70,75 @@ describe('createP2pClientProvider', () => {
 
     const result = await promise
     expect(result).toEqual({ id: 1, name: 'Test' })
+  })
+
+  // ADR-0007: a client's write never reaches a local save(), so the client
+  // announces it when the host confirms it. Its views refresh right away instead
+  // of waiting for the host's data-changed broadcast to arrive.
+  it.each([
+    ['results.deleteGame', (p: DataProvider) => p.results.deleteGame(1, 1, 1)],
+    ['clubs.rename', (p: DataProvider) => p.clubs.rename(1, { name: 'SK Ny' })],
+    [
+      'commands.setResult',
+      (p: DataProvider) =>
+        p.commands!.setResult({
+          tournamentId: 1,
+          roundNr: 1,
+          boardNr: 1,
+          resultType: 'DRAW',
+          expectedPrior: 'NO_RESULT',
+        }),
+    ],
+    ['undo.perform', (p: DataProvider) => p.undo.perform()],
+  ])('given the host confirms a %s write, then the client announces a data change', async (_m, call) => {
+    const service = createMockService()
+    const provider = createP2pClientProvider(service)
+    const listener = vi.fn()
+    const unsubscribe = subscribeDataChanged(listener)
+
+    const promise = call(provider)
+    expect(listener).not.toHaveBeenCalled()
+    service._simulateResponse({ id: service.sendRpcRequest.mock.calls[0][0].id, result: null })
+    await promise
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
+  it.each([
+    ['tournaments.list', (p: DataProvider) => p.tournaments.list()],
+    ['rounds.get', (p: DataProvider) => p.rounds.get(1, 1)],
+    ['standings.getChess4', (p: DataProvider) => p.standings.getChess4(1)],
+    ['pages.getCurrent', (p: DataProvider) => p.pages!.getCurrent()],
+  ])('given a %s read, then no data change is announced', async (_m, call) => {
+    const service = createMockService()
+    const provider = createP2pClientProvider(service)
+    const listener = vi.fn()
+    const unsubscribe = subscribeDataChanged(listener)
+
+    const promise = call(provider)
+    service._simulateResponse({ id: service.sendRpcRequest.mock.calls[0][0].id, result: [] })
+    await promise
+
+    expect(listener).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('given the host rejects a write, then no data change is announced', async () => {
+    const service = createMockService()
+    const provider = createP2pClientProvider(service)
+    const listener = vi.fn()
+    const unsubscribe = subscribeDataChanged(listener)
+
+    const promise = provider.results.deleteGame(1, 1, 1)
+    service._simulateResponse({
+      id: service.sendRpcRequest.mock.calls[0][0].id,
+      error: 'Permission denied: results.deleteGame',
+    })
+
+    await expect(promise).rejects.toThrow()
+    expect(listener).not.toHaveBeenCalled()
+    unsubscribe()
   })
 })
 
