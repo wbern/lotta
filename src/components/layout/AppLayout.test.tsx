@@ -629,4 +629,23 @@ describe('AppLayout board selection (single source of truth)', () => {
     expect(editBoardDialogProps.mode).toBe('edit')
     expect(editBoardDialogProps.boardNr).toBe(2)
   })
+
+  it('given round 2 exists, when every board of round 1 is deleted, then the refusal is shown as an error toast', async () => {
+    const GAP_MESSAGE =
+      'Det går inte att ta bort det sista bordet i rond 1 eftersom senare ronder finns. Ångra lottningen av de senare ronderna först.'
+    mockSearch.round = 1
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockDeleteGames.mockRejectedValue(new Error(GAP_MESSAGE))
+    renderLayout()
+    selectBoards(1, 2, 3)
+
+    await act(async () => {
+      await (menuBarProps.onDeleteBoard as () => Promise<void>)()
+    })
+
+    const toast = await screen.findByTestId('toast')
+    expect(toast.textContent).toContain(GAP_MESSAGE)
+    // The refused boards stay selected so the arbiter can see what was not deleted.
+    expect(selected()).toEqual([1, 2, 3])
+  })
 })

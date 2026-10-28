@@ -212,15 +212,43 @@ export class GameRepository {
   }
 
   deleteGame(tournamentId: number, roundNr: number, boardNr: number): void {
-    this.db.run('DELETE FROM tournamentgames WHERE tournament = ? AND round = ? AND boardnr = ?', [
-      tournamentId,
-      roundNr,
-      boardNr,
-    ])
+    this.deleteGames(tournamentId, roundNr, [boardNr])
   }
 
   deleteGames(tournamentId: number, roundNr: number, boardNrs: number[]): void {
-    for (const boardNr of boardNrs) this.deleteGame(tournamentId, roundNr, boardNr)
+    if (boardNrs.length === 0) return
+    this.assertNoRoundGap(tournamentId, roundNr, boardNrs)
+    for (const boardNr of boardNrs) {
+      this.db.run(
+        'DELETE FROM tournamentgames WHERE tournament = ? AND round = ? AND boardnr = ?',
+        [tournamentId, roundNr, boardNr],
+      )
+    }
+  }
+
+  /**
+   * Rounds are numbered from the count of existing rounds, so emptying round N
+   * while a later round exists would make the next pairing reuse a round number
+   * (UNIQUE failure). Refuse before touching anything; emptying the latest round
+   * is fine.
+   */
+  private assertNoRoundGap(tournamentId: number, roundNr: number, boardNrs: number[]): void {
+    const later = this.db.exec(
+      'SELECT 1 FROM tournamentgames WHERE tournament = ? AND round > ? LIMIT 1',
+      [tournamentId, roundNr],
+    )
+    if (later.length === 0 || later[0].values.length === 0) return
+    const placeholders = boardNrs.map(() => '?').join(', ')
+    const remaining = this.db.exec(
+      `SELECT COUNT(*) FROM tournamentgames
+       WHERE tournament = ? AND round = ? AND boardnr NOT IN (${placeholders})`,
+      [tournamentId, roundNr, ...boardNrs],
+    )
+    if (((remaining[0]?.values[0][0] as number) ?? 0) === 0) {
+      throw new Error(
+        `Det går inte att ta bort det sista bordet i rond ${roundNr} eftersom senare ronder finns. Ångra lottningen av de senare ronderna först.`,
+      )
+    }
   }
 
   updateGame(
