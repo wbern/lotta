@@ -415,3 +415,41 @@ describe('AppLayout alphabetical print options', () => {
     }
   })
 })
+
+describe('AppLayout Ångra lottning confirmation text', () => {
+  const findUnpairDialog = () =>
+    confirmDialogProps.findLast((p) => p.open === true && p.title === 'Ångra lottning')
+
+  function openUnpairConfirm() {
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    const onUnpair = menuBarProps.onUnpair as () => void
+    act(() => {
+      onUnpair()
+    })
+    return findUnpairDialog()
+  }
+
+  it('given a Berger tournament, when Ångra lottning is chosen, then the confirmation warns that all paired rounds are removed', () => {
+    currentTournament = { id: 1, name: 'Allsvenskan', pairingSystem: 'Berger', roundsPlayed: 3 }
+
+    const dialog = openUnpairConfirm()
+
+    expect(dialog).toBeDefined()
+    expect(dialog?.message).toContain('alla lottade ronder')
+    expect(dialog?.message).not.toContain('senaste ronden')
+  })
+
+  it('given a Monrad tournament, when Ångra lottning is chosen, then the confirmation mentions only the latest round', () => {
+    currentTournament = { id: 1, name: 'Höstblixten', pairingSystem: 'Monrad', roundsPlayed: 3 }
+
+    const dialog = openUnpairConfirm()
+
+    expect(dialog).toBeDefined()
+    expect(dialog?.message).toContain('senaste ronden')
+    expect(dialog?.message).not.toContain('alla lottade ronder')
+  })
+})

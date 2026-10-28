@@ -595,7 +595,11 @@ export function AppLayout() {
       <ConfirmDialog
         open={showUnpairConfirm}
         title="Ångra lottning"
-        message="Är du säker på att du vill ångra lottningen för den senaste ronden? Om resultat finns så kommer de att tas bort."
+        message={
+          tournament?.pairingSystem === 'Berger'
+            ? 'Är du säker på att du vill ångra lottningen? I en Berger-turnering tas alla lottade ronder bort. Om resultat finns så kommer de att tas bort.'
+            : 'Är du säker på att du vill ångra lottningen för den senaste ronden? Om resultat finns så kommer de att tas bort.'
+        }
         onConfirm={() => {
           unpairMutation.mutate(undefined, {
             onSuccess: () => setShowUnpairConfirm(false),
