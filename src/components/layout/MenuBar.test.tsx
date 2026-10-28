@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MenuBar } from './MenuBar'
@@ -404,5 +404,78 @@ describe('MenuBar board actions follow the pairings selection', () => {
     expect(remove.disabled).toBe(false)
     await user.click(remove)
     expect(onDeleteBoard).toHaveBeenCalledOnce()
+  })
+})
+
+describe('MenuBar when connected to a host as a P2P client', () => {
+  const CLIENT_TITLE = 'Inte tillgängligt när du är ansluten till en värd'
+  const GATED: [menu: string, item: string][] = [
+    ['Redigera', 'Ångra'],
+    ['Redigera', 'Gör om'],
+    ['Redigera', 'Historik...'],
+    ['Lotta', 'Publicera...'],
+    ['Ställning', 'Publicera...'],
+    ['Spelare', 'Publicera spelarlista'],
+    ['Spelare', 'Exportera turneringsspelare'],
+    ['Spelare', 'Importera till spelarpool'],
+    ['Spelare', 'Skapa testspelare'],
+    ['Inställningar', 'Säkerhetskopiera databas'],
+    ['Inställningar', 'Återställ databas'],
+  ]
+  const STILL_ENABLED: [menu: string, item: string][] = [
+    ['Lotta', 'Lotta nästa rond'],
+    ['Lotta', 'Skriv ut...'],
+    ['Ställning', 'Skriv ut...'],
+    ['Spelare', 'Turneringsspelare'],
+    ['Spelare', 'Skriv ut spelarlista'],
+    ['Inställningar', 'Byt till tidigare version…'],
+  ]
+
+  function renderClientMenu(isP2PClient: boolean) {
+    render(
+      <MenuBar
+        tournamentId={1}
+        roundNr={1}
+        canUndo
+        canRedo
+        isP2PClient={isP2PClient}
+        onRollback={vi.fn()}
+      />,
+    )
+  }
+
+  async function menuItem(menu: string, item: string) {
+    const user = userEvent.setup()
+    await user.click(within(screen.getByTestId('menu-bar')).getByRole('button', { name: menu }))
+    const dropdown = screen.getByTestId('menu-dropdown')
+    return within(dropdown).getByRole('button', { name: new RegExp(`^${escapeRe(item)}`) })
+  }
+
+  const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  it.each(
+    GATED,
+  )('given a P2P client, when %s is opened, then %s is disabled with an explanation', async (menu, item) => {
+    renderClientMenu(true)
+    const button = (await menuItem(menu, item)) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    expect(button.title).toBe(CLIENT_TITLE)
+  })
+
+  it.each(
+    STILL_ENABLED,
+  )('given a P2P client, when %s is opened, then %s stays enabled', async (menu, item) => {
+    renderClientMenu(true)
+    const button = (await menuItem(menu, item)) as HTMLButtonElement
+    expect(button.disabled).toBe(false)
+  })
+
+  it.each(
+    GATED,
+  )('given the host (not a client), when %s is opened, then %s is enabled', async (menu, item) => {
+    renderClientMenu(false)
+    const button = (await menuItem(menu, item)) as HTMLButtonElement
+    expect(button.disabled).toBe(false)
+    expect(button.title).toBe('')
   })
 })

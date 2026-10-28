@@ -118,6 +118,7 @@ export const sv = {
     selectBoardFirst: 'Markera ett bord i lottningen först',
     selectExactlyOneBoard: 'Markera exakt ett bord',
     selectBoardsFirst: 'Markera ett eller flera bord i lottningen först',
+    p2pClient: 'Inte tillgängligt när du är ansluten till en värd',
   },
   guidance: {
     step1Path: 'Turnering \u2192 Ny',

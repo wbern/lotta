@@ -12,6 +12,18 @@ export interface RpcResponse {
   error?: string
 }
 
+/** The host refused an RPC because the connected arbiter lacks the permission. */
+export class PermissionDeniedError extends Error {
+  readonly method: string
+  constructor(method: string) {
+    super('Värden tillåter inte den här åtgärden för anslutna domare.')
+    this.method = method
+    this.name = 'PermissionDeniedError'
+  }
+}
+
+const PERMISSION_DENIED_PREFIX = 'Permission denied:'
+
 export async function dispatch(
   provider: DataProvider,
   method: string,
@@ -39,7 +51,11 @@ export function createRpcClient(
     const handler = pending.get(res.id)
     if (!handler) return
     pending.delete(res.id)
-    if (res.error) {
+    if (res.error?.startsWith(PERMISSION_DENIED_PREFIX)) {
+      handler.reject(
+        new PermissionDeniedError(res.error.slice(PERMISSION_DENIED_PREFIX.length).trim()),
+      )
+    } else if (res.error) {
       handler.reject(new Error(res.error))
     } else {
       handler.resolve(res.result)

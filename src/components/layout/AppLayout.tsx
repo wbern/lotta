@@ -532,6 +532,7 @@ export function AppLayout() {
         tournamentId={tournamentId}
         roundNr={activeRound}
         chess4={tournament?.chess4}
+        isP2PClient={liveStatus?.role === 'client'}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={handleUndo}

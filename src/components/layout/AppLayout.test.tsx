@@ -2,6 +2,7 @@
 
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { setLiveStatus } from '../../hooks/useLiveStatus'
 import { ToastProvider } from '../toast/ToastProvider'
 import { AppLayout } from './AppLayout'
 
@@ -647,5 +648,36 @@ describe('AppLayout board selection (single source of truth)', () => {
     expect(toast.textContent).toContain(GAP_MESSAGE)
     // The refused boards stay selected so the arbiter can see what was not deleted.
     expect(selected()).toEqual([1, 2, 3])
+  })
+})
+
+describe('AppLayout P2P client gating', () => {
+  afterEach(() => {
+    act(() => setLiveStatus(null))
+  })
+
+  it('given this device is connected to a host as a client, when the menu renders, then MenuBar is told it is a P2P client', () => {
+    setLiveStatus({ state: 'connected', role: 'client', peerCount: 1 })
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+
+    expect(menuBarProps.isP2PClient).toBe(true)
+  })
+
+  it.each([
+    ['hosting', { state: 'connected' as const, role: 'host' as const, peerCount: 2 }],
+    ['not live', null],
+  ])('given this device is %s, when the menu renders, then MenuBar is not in client mode', (_label, status) => {
+    setLiveStatus(status)
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+
+    expect(menuBarProps.isP2PClient).toBe(false)
   })
 })

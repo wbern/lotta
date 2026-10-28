@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createP2pClientProvider } from '../api/p2p-data-provider'
+import { PermissionDeniedError } from '../api/rpc'
 import { useChatAutoScroll } from '../hooks/useChatAutoScroll'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import {
@@ -451,9 +452,10 @@ function LivePageInner({
             for (const msg of messages) handlePageUpdate(msg)
           })
           .catch((err: unknown) => {
-            // Old hosts don't grant pages.getCurrent → "Permission denied"
-            // comes back as a string. Swallow that case; surface anything else
-            // so a misconfiguration isn't invisible.
+            // Old hosts don't grant pages.getCurrent → the RPC client rejects
+            // with PermissionDeniedError. Swallow that case; surface anything
+            // else so a misconfiguration isn't invisible.
+            if (err instanceof PermissionDeniedError) return
             const msg = err instanceof Error ? err.message : String(err)
             if (!msg.includes('Permission denied')) {
               console.warn('pages.getCurrent bootstrap failed:', msg)
