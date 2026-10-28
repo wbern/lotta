@@ -115,6 +115,9 @@ export const sv = {
   /** Tooltips explaining why a menu item or button is disabled. */
   disabledReason: {
     noRoundPaired: 'Ingen rond är lottad',
+    selectBoardFirst: 'Markera ett bord i lottningen först',
+    selectExactlyOneBoard: 'Markera exakt ett bord',
+    selectBoardsFirst: 'Markera ett eller flera bord i lottningen först',
   },
   guidance: {
     step1Path: 'Turnering \u2192 Ny',

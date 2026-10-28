@@ -1347,6 +1347,30 @@ test.describe('EditBoard dialog', () => {
 
     await dialog.getByRole('button', { name: 'Avbryt' }).click()
   })
+
+  test('given a board is selected in round 1, when the round selector switches to round 2, then Editera bord and Ta bort bord are disabled', async ({
+    page,
+  }) => {
+    const roundSelect = page.getByTestId('tournament-selector').locator('select').last()
+    await roundSelect.selectOption('1')
+    await expect(page).toHaveURL(/round=1(&|$)/)
+    await page.locator('tr[data-board-nr="1"]').first().click()
+
+    const menuBar = page.getByTestId('menu-bar')
+    await menuBar.getByRole('button', { name: 'Lotta' }).click()
+    await expect(page.getByTestId('menu-dropdown').getByText('Editera bord')).toBeEnabled()
+    await menuBar.getByRole('button', { name: 'Lotta' }).click()
+
+    await roundSelect.selectOption('2')
+    await expect(page).toHaveURL(/round=2(&|$)/)
+    await expect(page.locator('tr[data-board-nr="1"].selected')).toHaveCount(0)
+
+    await menuBar.getByRole('button', { name: 'Lotta' }).click()
+    const editBoard = page.getByTestId('menu-dropdown').getByText('Editera bord')
+    await expect(editBoard).toBeDisabled()
+    await expect(editBoard).toHaveAttribute('title', 'Markera ett bord i lottningen först')
+    await expect(page.getByTestId('menu-dropdown').getByText('Ta bort bord')).toBeDisabled()
+  })
 })
 
 // ---------------------------------------------------------------------------

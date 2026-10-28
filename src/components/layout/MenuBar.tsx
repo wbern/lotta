@@ -27,6 +27,10 @@ interface Props {
   onAddBoard?: () => void
   onEditBoard?: () => void
   onDeleteBoard?: () => void
+  /** Exactly one board is selected in the pairings table. */
+  canEditBoard?: boolean
+  /** At least one board is selected in the pairings table. */
+  canDeleteBoard?: boolean
   onPrint?: (what: string) => void
   onExportPlayers?: () => void
   onImportPlayers?: () => void
@@ -59,6 +63,8 @@ export function MenuBar({
   onAddBoard,
   onEditBoard,
   onDeleteBoard,
+  canEditBoard = false,
+  canDeleteBoard = false,
   onPrint,
   onExportPlayers,
   onImportPlayers,
@@ -205,10 +211,24 @@ export function MenuBar({
             <button onClick={() => action(onAddBoard)} disabled={!hasRound}>
               Lägg till bord
             </button>
-            <button onClick={() => action(onEditBoard)} disabled={!hasRound}>
+            <button
+              onClick={() => action(onEditBoard)}
+              disabled={!hasRound || !canEditBoard}
+              title={
+                !canDeleteBoard
+                  ? sv.disabledReason.selectBoardFirst
+                  : !canEditBoard
+                    ? sv.disabledReason.selectExactlyOneBoard
+                    : undefined
+              }
+            >
               Editera bord
             </button>
-            <button onClick={() => action(onDeleteBoard)} disabled={!hasRound}>
+            <button
+              onClick={() => action(onDeleteBoard)}
+              disabled={!hasRound || !canDeleteBoard}
+              title={!canDeleteBoard ? sv.disabledReason.selectBoardsFirst : undefined}
+            >
               Ta bort bord
             </button>
           </div>

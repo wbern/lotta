@@ -330,3 +330,79 @@ describe('MenuBar Ångra lottning', () => {
     expect(onUnpair).toHaveBeenCalledOnce()
   })
 })
+
+describe('MenuBar board actions follow the pairings selection', () => {
+  async function openLotta(props: {
+    canEditBoard: boolean
+    canDeleteBoard: boolean
+    onEditBoard?: () => void
+    onDeleteBoard?: () => void
+  }) {
+    const user = userEvent.setup()
+    render(<MenuBar tournamentId={1} roundNr={1} {...props} />)
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    return {
+      user,
+      edit: screen.getByRole('button', { name: 'Editera bord' }) as HTMLButtonElement,
+      remove: screen.getByRole('button', { name: 'Ta bort bord' }) as HTMLButtonElement,
+    }
+  }
+
+  it('given no board is selected, when the Lotta menu opens, then Editera bord and Ta bort bord are disabled with explanations', async () => {
+    const onEditBoard = vi.fn()
+    const onDeleteBoard = vi.fn()
+    const { user, edit, remove } = await openLotta({
+      canEditBoard: false,
+      canDeleteBoard: false,
+      onEditBoard,
+      onDeleteBoard,
+    })
+
+    expect(edit.disabled).toBe(true)
+    expect(edit.title).toBe('Markera ett bord i lottningen först')
+    expect(remove.disabled).toBe(true)
+    expect(remove.title).toBe('Markera ett eller flera bord i lottningen först')
+    await user.click(edit)
+    await user.click(remove)
+    expect(onEditBoard).not.toHaveBeenCalled()
+    expect(onDeleteBoard).not.toHaveBeenCalled()
+  })
+
+  it('given exactly one board is selected, when Editera bord and Ta bort bord are clicked, then both fire', async () => {
+    const onEditBoard = vi.fn()
+    const onDeleteBoard = vi.fn()
+    const { user, edit } = await openLotta({
+      canEditBoard: true,
+      canDeleteBoard: true,
+      onEditBoard,
+      onDeleteBoard,
+    })
+
+    expect(edit.disabled).toBe(false)
+    expect(edit.title).toBe('')
+    await user.click(edit)
+    expect(onEditBoard).toHaveBeenCalledOnce()
+
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    const remove = screen.getByRole('button', { name: 'Ta bort bord' }) as HTMLButtonElement
+    expect(remove.disabled).toBe(false)
+    expect(remove.title).toBe('')
+    await user.click(remove)
+    expect(onDeleteBoard).toHaveBeenCalledOnce()
+  })
+
+  it('given two boards are selected, when the Lotta menu opens, then only Ta bort bord is enabled and Editera bord asks for exactly one board', async () => {
+    const onDeleteBoard = vi.fn()
+    const { user, edit, remove } = await openLotta({
+      canEditBoard: false,
+      canDeleteBoard: true,
+      onDeleteBoard,
+    })
+
+    expect(edit.disabled).toBe(true)
+    expect(edit.title).toBe('Markera exakt ett bord')
+    expect(remove.disabled).toBe(false)
+    await user.click(remove)
+    expect(onDeleteBoard).toHaveBeenCalledOnce()
+  })
+})

@@ -1,7 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ResultConflictError } from '../../api/result-command'
-import { deleteGame, deleteGames } from '../../api/results'
 import {
   calculateScores,
   formatResultLabel,
@@ -24,7 +22,11 @@ interface Props {
   tournamentId: number
   round: number | undefined
   rounds: RoundDto[]
-  onBoardSelect?: (boardNr: number | undefined) => void
+  /** Selected boards of the shown round; owned by AppLayout so the menu acts on the same boards. */
+  selectedBoards: Set<number>
+  onSelectedBoardsChange: (updater: (prev: Set<number>) => Set<number>) => void
+  /** Delete key on a focused row: deletes every selected board (confirm + errors handled by the owner). */
+  onDeleteSelected?: () => void
   onEditBoard?: (boardNr: number) => void
   showELO?: boolean
   pointsPerGame?: number
@@ -52,7 +54,9 @@ export function PairingsTab({
   tournamentId,
   round,
   rounds,
-  onBoardSelect,
+  selectedBoards,
+  onSelectedBoardsChange,
+  onDeleteSelected,
   onEditBoard,
   showELO,
   pointsPerGame = 1,
@@ -63,8 +67,6 @@ export function PairingsTab({
   const roundNr = round ?? (rounds.length > 0 ? rounds[rounds.length - 1].roundNr : undefined)
   const { data: roundData } = useRound(tournamentId, roundNr)
   const setResultMutation = useSetResult(tournamentId, roundNr)
-  const queryClient = useQueryClient()
-  const [selectedBoards, setSelectedBoards] = useState<Set<number>>(new Set())
   const contextMenu = useContextMenu()
   const [editScoreGame, setEditScoreGame] = useState<GameDto | null>(null)
 
@@ -106,24 +108,13 @@ export function PairingsTab({
   const getBoardNr = useCallback((g: GameDto) => g.boardNr, [])
   const { handleClick: shiftSelectClick, handleMouseDown: shiftSelectMouseDown } = useShiftSelect(
     games,
-    setSelectedBoards,
+    onSelectedBoardsChange,
     getBoardNr,
   )
 
-  const toggleBoard = useCallback(
-    (boardNr: number, event: React.MouseEvent) => {
-      shiftSelectClick(boardNr, event)
-      onBoardSelect?.(boardNr)
-    },
-    [shiftSelectClick, onBoardSelect],
-  )
-
   const selectBoard = useCallback(
-    (boardNr: number | null) => {
-      setSelectedBoards(boardNr != null ? new Set([boardNr]) : new Set())
-      onBoardSelect?.(boardNr ?? undefined)
-    },
-    [onBoardSelect],
+    (boardNr: number) => onSelectedBoardsChange(() => new Set([boardNr])),
+    [onSelectedBoardsChange],
   )
 
   const setResult = useCallback(
@@ -137,24 +128,6 @@ export function PairingsTab({
     },
     [setResultMutation, games],
   )
-
-  const deleteSelectedBoards = useCallback(async () => {
-    if (selectedBoards.size === 0 || tournamentId == null || roundNr == null) return
-    const boardNrs = [...selectedBoards]
-    const msg =
-      boardNrs.length === 1
-        ? `Är du säker på att du vill ta bort bord ${boardNrs[0]}?`
-        : `Är du säker på att du vill ta bort ${boardNrs.length} bord?`
-    if (confirm(msg)) {
-      if (boardNrs.length === 1) {
-        await deleteGame(tournamentId, roundNr, boardNrs[0])
-      } else {
-        await deleteGames(tournamentId, roundNr, boardNrs)
-      }
-      setSelectedBoards(new Set())
-      queryClient.invalidateQueries({ queryKey: ['tournaments', tournamentId, 'rounds'] })
-    }
-  }, [selectedBoards, tournamentId, roundNr, queryClient])
 
   // Effective scoring config for keybinds and score calculation. Non-chess4
   // tournaments with ppg=1 respect maxPointsImmediately as an opt-in to the
@@ -183,7 +156,7 @@ export function PairingsTab({
       // Delete works with any selection size
       if (key === 'Delete' || key === 'Backspace') {
         e.preventDefault()
-        deleteSelectedBoards()
+        onDeleteSelected?.()
         return
       }
 
@@ -227,7 +200,7 @@ export function PairingsTab({
     games,
     setResult,
     selectBoard,
-    deleteSelectedBoards,
+    onDeleteSelected,
     effectivePpg,
     scoringConfig,
     keybinds,
@@ -285,7 +258,7 @@ export function PairingsTab({
                 className={selectedBoards.has(game.boardNr) ? 'selected' : ''}
                 onMouseDown={shiftSelectMouseDown}
                 onClick={(e) => {
-                  toggleBoard(game.boardNr, e)
+                  shiftSelectClick(game.boardNr, e)
                   e.currentTarget.focus()
                 }}
                 onDoubleClick={() => handleDoubleClick(game)}

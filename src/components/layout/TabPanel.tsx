@@ -18,7 +18,9 @@ interface Props {
   tournamentName?: string
   round: number | undefined
   rounds: RoundDto[]
-  onBoardSelect?: (boardNr: number | undefined) => void
+  selectedBoards: Set<number>
+  onSelectedBoardsChange: (updater: (prev: Set<number>) => Set<number>) => void
+  onDeleteSelected?: () => void
   onEditBoard?: (boardNr: number) => void
   chess4?: boolean
   showELO?: boolean
@@ -38,7 +40,9 @@ export function TabPanel({
   tournamentName,
   round,
   rounds,
-  onBoardSelect,
+  selectedBoards,
+  onSelectedBoardsChange,
+  onDeleteSelected,
   onEditBoard,
   chess4,
   showELO,
@@ -105,7 +109,9 @@ export function TabPanel({
                 tournamentId={tournamentId}
                 round={round}
                 rounds={rounds}
-                onBoardSelect={onBoardSelect}
+                selectedBoards={selectedBoards}
+                onSelectedBoardsChange={onSelectedBoardsChange}
+                onDeleteSelected={onDeleteSelected}
                 onEditBoard={onEditBoard}
                 showELO={showELO}
                 pointsPerGame={pointsPerGame}
