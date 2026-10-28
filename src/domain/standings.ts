@@ -1,4 +1,5 @@
 import type { Chess4StandingDto, ClubStandingDto, ResultType, StandingDto } from '../types/api.ts'
+import { compareSwedish, compareSwedishNames } from './player-names.ts'
 import { formatScore, getActualScores } from './scoring.ts'
 import type { TiebreakContext, TiebreakGameInfo } from './tiebreaks.ts'
 import {
@@ -17,6 +18,9 @@ import {
 export interface StandingsPlayerInfo {
   id: number
   name: string
+  /** Used only to order players who share a place (never affects place). */
+  lastName?: string
+  firstName?: string
   playerGroup: string
   club: string | null
   clubId: number
@@ -199,6 +203,20 @@ function comparePlayerData(a: PlayerData, b: PlayerData): number {
   return 0
 }
 
+/**
+ * Listing order within a shared place: higher rating first, then Swedish name
+ * order (last name, first name; formatted name when those are absent).
+ * Only used after comparePlayerData — places are assigned from
+ * comparePlayerData alone, so this never changes a place.
+ */
+function compareTiedListing(a: StandingsPlayerInfo, b: StandingsPlayerInfo): number {
+  if (a.rating !== b.rating) return b.rating - a.rating
+  if (a.lastName != null && b.lastName != null) {
+    return compareSwedishNames(a.lastName, a.firstName ?? '', b.lastName, b.firstName ?? '')
+  }
+  return compareSwedish(a.name, b.name)
+}
+
 export function calculateStandings(input: StandingsInput): StandingDto[] {
   const {
     roundNr,
@@ -251,7 +269,9 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
   }
 
   // Sort
-  const sorted = [...allPlayerData.values()].sort(comparePlayerData)
+  const sorted = [...allPlayerData.values()].sort(
+    (a, b) => comparePlayerData(a, b) || compareTiedListing(a.info, b.info),
+  )
 
   // Assign places and build DTOs
   const standings: StandingDto[] = []

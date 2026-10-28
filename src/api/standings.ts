@@ -70,6 +70,8 @@ function buildStandingsInput(tournamentId: number, round?: number): StandingsInp
       name:
         formatPlayerName(p.firstName, p.lastName, presentation) +
         withdrawnSuffix(p.withdrawnFromRound),
+      lastName: p.lastName,
+      firstName: p.firstName,
       playerGroup: p.playerGroup,
       club: p.club,
       clubId: p.clubIndex,

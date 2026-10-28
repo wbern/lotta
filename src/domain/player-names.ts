@@ -6,3 +6,20 @@
 export function withdrawnSuffix(withdrawnFromRound: number): string {
   return withdrawnFromRound >= 1 ? ` (utgått r${withdrawnFromRound})` : ''
 }
+
+const swedishCollator = new Intl.Collator('sv')
+
+/** Compare two strings in Swedish alphabetical order (… X, Y, Z, Å, Ä, Ö; case-insensitive first). */
+export function compareSwedish(a: string, b: string): number {
+  return swedishCollator.compare(a, b)
+}
+
+/** Order players by last name, then first name, in Swedish alphabetical order. */
+export function compareSwedishNames(
+  aLast: string,
+  aFirst: string,
+  bLast: string,
+  bFirst: string,
+): number {
+  return compareSwedish(aLast, bLast) || compareSwedish(aFirst, bFirst)
+}

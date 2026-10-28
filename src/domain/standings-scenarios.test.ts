@@ -29,6 +29,8 @@ function player(
   return {
     id,
     name: `${firstName} ${lastName}`,
+    firstName,
+    lastName,
     playerGroup: '',
     club: null,
     clubId: 0,
@@ -118,6 +120,12 @@ describe('Inbördes möte (INB)', () => {
     expect(rows['Dan D'].place).toBe(4)
   })
 
+  it('given the cyclic tie, when the input order is reversed, then the whole standings list is identical', () => {
+    expect(standings([D, C, B, A], cyclicGames, ['Inbördes möte'], 3)).toEqual(
+      standings([A, B, C, D], cyclicGames, ['Inbördes möte'], 3),
+    )
+  })
+
   // Six players, three rounds:
   // r1 A-B 1-0, C-D 1-0, E-F ½-½   → A1 B0 C1 D0 E½ F½
   // r2 C-A 1-0, B-E 1-0, D-F ½-½   → A1 B1 C2 D½ E½ F1
@@ -159,15 +167,9 @@ describe('Inbördes möte (INB)', () => {
       ['Cilla C', 1],
       ['Anna A', 2],
       ['Bo B', 3],
-      ...(rows[3].name === 'Eva E'
-        ? [
-            ['Eva E', 4],
-            ['Filip F', 4],
-          ]
-        : [
-            ['Filip F', 4],
-            ['Eva E', 4],
-          ]),
+      // E and F share place 4; equal rating → listed by name (E before F).
+      ['Eva E', 4],
+      ['Filip F', 4],
       ['Dan D', 6],
     ])
   })
@@ -362,5 +364,93 @@ describe('Prestationsrating (L)', () => {
     ]
     const games = [game(1, 1, 1, 2, 'WHITE_WIN'), game(2, 1, 3, 1, 'WHITE_WIN')]
     expect(byName(standings(players, games, pres, 2))['Anna A'].tiebreaks.Pres).toBe('1500')
+  })
+})
+
+describe('Tied players listing order (TIE)', () => {
+  // Players tied on score and every tiebreak share a place; within the place
+  // they are listed by rating (high first), then Swedish name order
+  // (… X, Y, Z, Å, Ä, Ö), last name before first name. Never affects place.
+
+  it('given Öberg (1500) drew Åberg (1700), when standings are calculated, then both share place 1 and Åberg (higher rating) is listed first', () => {
+    const players = [player(1, 'Olle', 'Öberg', 1500), player(2, 'Åsa', 'Åberg', 1700)]
+    const games = [game(1, 1, 1, 2, 'DRAW')]
+    const rows = standings(players, games, [], 1)
+    expect(rows.map((r) => [r.name, r.place])).toEqual([
+      ['Åsa Åberg', 1],
+      ['Olle Öberg', 1],
+    ])
+  })
+
+  it('given three tied 1500 players Öberg, Äberg, Åberg, when standings are calculated, then they are listed Åberg, Äberg, Öberg (Swedish collation)', () => {
+    const players = [
+      player(1, 'Olle', 'Öberg', 1500),
+      player(2, 'Ärla', 'Äberg', 1500),
+      player(3, 'Åsa', 'Åberg', 1500),
+    ]
+    // No games in the viewed round yet: all on 0 points, no tiebreaks → tied.
+    const tied = standings(players, [], [], 1)
+    expect(tied.map((r) => [r.name, r.place])).toEqual([
+      ['Åsa Åberg', 1],
+      ['Ärla Äberg', 1],
+      ['Olle Öberg', 1],
+    ])
+  })
+
+  it('given tied players "berg" and "Zeta", when standings are calculated, then lower-case "berg" is listed first (case-insensitive)', () => {
+    const players = [player(1, 'Anna', 'Zeta', 1500), player(2, 'Anna', 'berg', 1500)]
+    expect(standings(players, [], [], 1).map((r) => r.name)).toEqual(['Anna berg', 'Anna Zeta'])
+  })
+
+  it('given tied players with the same last name, when standings are calculated, then the first name decides', () => {
+    const players = [player(1, 'Örjan', 'Berg', 1500), player(2, 'Åke', 'Berg', 1500)]
+    expect(standings(players, [], [], 1).map((r) => r.name)).toEqual(['Åke Berg', 'Örjan Berg'])
+  })
+
+  it('given rows without last/first name, when standings are calculated, then the formatted name is compared with Swedish collation', () => {
+    const players = [
+      { ...player(1, 'Olle', 'Öberg', 1500), firstName: undefined, lastName: undefined },
+      { ...player(2, 'Åsa', 'Åberg', 1500), firstName: undefined, lastName: undefined },
+      { ...player(3, 'Bo', 'Berg', 1500), firstName: undefined, lastName: undefined },
+    ]
+    expect(standings(players, [], [], 1).map((r) => r.name)).toEqual([
+      'Bo Berg',
+      'Olle Öberg',
+      'Åsa Åberg',
+    ])
+  })
+
+  it('given the same players in reversed input order, when standings are calculated, then the output is identical', () => {
+    const players = [
+      player(1, 'Olle', 'Öberg', 1500),
+      player(2, 'Ärla', 'Äberg', 1500),
+      player(3, 'Åsa', 'Åberg', 1500),
+      player(4, 'Bo', 'berg', 1500),
+      player(5, 'Zack', 'Zeta', 1700),
+    ]
+    const games = [game(1, 1, 1, 2, 'DRAW'), game(1, 2, 3, 4, 'DRAW'), bye(1, 3, 5)]
+    expect(standings([...players].reverse(), games, ['Buchholz'], 1)).toEqual(
+      standings(players, games, ['Buchholz'], 1),
+    )
+  })
+
+  it('given a higher-rated player behind on a tiebreak, when standings are calculated, then rating never changes the place', () => {
+    // r1: A (1400) beats C, B (2000) beats D → A and B on 1 point.
+    // Vinster both 1; Buchholz: A's opponent C 0, B's opponent D 0 → tied
+    // on all tiebreaks → shared place 1, B listed first only because of rating.
+    const players = [
+      player(1, 'Anna', 'A', 1400),
+      player(2, 'Bo', 'B', 2000),
+      player(3, 'Cilla', 'C', 1500),
+      player(4, 'Dan', 'D', 1500),
+    ]
+    const games = [game(1, 1, 1, 3, 'WHITE_WIN'), game(1, 2, 2, 4, 'WHITE_WIN')]
+    const rows = standings(players, games, ['Buchholz', 'Vinster'], 1)
+    expect(rows.map((r) => [r.name, r.place])).toEqual([
+      ['Bo B', 1],
+      ['Anna A', 1],
+      ['Cilla C', 3],
+      ['Dan D', 3],
+    ])
   })
 })
