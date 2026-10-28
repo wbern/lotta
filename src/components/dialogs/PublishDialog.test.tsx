@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PublishDialog } from './PublishDialog'
 
@@ -17,7 +18,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -36,7 +36,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -63,7 +62,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -84,7 +82,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -101,7 +98,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -123,7 +119,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -144,7 +139,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={onClose}
@@ -162,7 +156,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -179,7 +172,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -198,7 +190,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -216,7 +207,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound={false}
-          hasTournament
           chess4={false}
           category="lotta"
           onClose={vi.fn()}
@@ -237,7 +227,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="standings"
           onClose={vi.fn()}
@@ -256,7 +245,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="standings"
           onClose={vi.fn()}
@@ -275,7 +263,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={true}
           category="standings"
           onClose={vi.fn()}
@@ -294,7 +281,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="standings"
           onClose={vi.fn()}
@@ -312,7 +298,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="standings"
           onClose={vi.fn()}
@@ -329,7 +314,6 @@ describe('PublishDialog', () => {
         <PublishDialog
           open
           hasRound
-          hasTournament
           chess4={false}
           category="standings"
           onClose={vi.fn()}
@@ -342,12 +326,11 @@ describe('PublishDialog', () => {
       expect(screen.getByTestId('publish-club-standings').textContent).toBe('Klubbställning')
     })
 
-    it('disables cross-table when there is no round', () => {
+    it('disables cross-table and standings when there is no round', () => {
       render(
         <PublishDialog
           open
           hasRound={false}
-          hasTournament
           chess4={false}
           category="standings"
           onClose={vi.fn()}
@@ -357,8 +340,68 @@ describe('PublishDialog', () => {
 
       const disabled = (id: string) => (screen.getByTestId(id) as HTMLButtonElement).disabled
       expect(disabled('publish-cross-table')).toBe(true)
-      expect(disabled('publish-standings')).toBe(false)
-      expect(disabled('publish-club-standings')).toBe(false)
+      expect(disabled('publish-standings')).toBe(true)
+      expect(disabled('publish-club-standings')).toBe(true)
     })
+  })
+})
+
+describe('PublishDialog standings gating', () => {
+  const cases = [
+    { testId: 'publish-standings', what: 'standings', chess4: false },
+    { testId: 'publish-club-standings', what: 'club-standings', chess4: false },
+    { testId: 'publish-chess4-standings', what: 'chess4-standings', chess4: true },
+  ]
+
+  it.each(
+    cases,
+  )('given a tournament with no paired round, when $testId is clicked, then it is disabled with an explanation and onPublish is not called', async ({
+    testId,
+    chess4,
+  }) => {
+    const user = userEvent.setup()
+    const onPublish = vi.fn()
+    render(
+      <PublishDialog
+        open
+        hasRound={false}
+        chess4={chess4}
+        category="standings"
+        onClose={vi.fn()}
+        onPublish={onPublish}
+      />,
+    )
+
+    const button = screen.getByTestId(testId) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    expect(button.title).toBe('Ingen rond är lottad')
+    await user.click(button)
+    expect(onPublish).not.toHaveBeenCalled()
+  })
+
+  it.each(
+    cases,
+  )('given a paired round, when $testId is clicked, then onPublish fires with $what', async ({
+    testId,
+    what,
+    chess4,
+  }) => {
+    const user = userEvent.setup()
+    const onPublish = vi.fn()
+    render(
+      <PublishDialog
+        open
+        hasRound
+        chess4={chess4}
+        category="standings"
+        onClose={vi.fn()}
+        onPublish={onPublish}
+      />,
+    )
+
+    const button = screen.getByTestId(testId) as HTMLButtonElement
+    expect(button.title).toBe('')
+    await user.click(button)
+    expect(onPublish).toHaveBeenCalledWith(what)
   })
 })

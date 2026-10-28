@@ -389,7 +389,6 @@ export function MenuBar({
       <PublishDialog
         open={showLottaPublish}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="lotta"
         onClose={() => setShowLottaPublish(false)}
@@ -398,7 +397,6 @@ export function MenuBar({
       <PublishDialog
         open={showStandingsPublish}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="standings"
         onClose={() => setShowStandingsPublish(false)}
