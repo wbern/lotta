@@ -27,6 +27,7 @@ function renderEditor(overrides: EditorProps = {}) {
         onAddClub={overrides.onAddClub}
         onRenameClub={overrides.onRenameClub}
         onDeleteClub={overrides.onDeleteClub}
+        defaultWithdrawRound={overrides.defaultWithdrawRound}
       />,
     ),
   }
@@ -302,5 +303,29 @@ describe('PlayerEditor delete club', () => {
 
     expect(onDeleteClub).not.toHaveBeenCalled()
     expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('PlayerEditor withdrawal default', () => {
+  afterEach(() => cleanup())
+
+  // "Utgå från rond N" means the player is not paired from round N on, so the
+  // safe default is the next round to be paired; round 1 would erase every game.
+  it('given the next round to pair is 4, when the arbiter ticks "Utgå från rond", then withdrawnFromRound is 4', async () => {
+    const user = userEvent.setup()
+    const { onChange } = renderEditor({ showTournamentFields: true, defaultWithdrawRound: 4 })
+
+    await user.click(screen.getByTestId('withdrawn-checkbox'))
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ withdrawnFromRound: 4 }))
+  })
+
+  it('given no tournament context, when the arbiter ticks "Utgå från rond", then withdrawnFromRound defaults to 1', async () => {
+    const user = userEvent.setup()
+    const { onChange } = renderEditor({ showTournamentFields: true })
+
+    await user.click(screen.getByTestId('withdrawn-checkbox'))
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ withdrawnFromRound: 1 }))
   })
 })

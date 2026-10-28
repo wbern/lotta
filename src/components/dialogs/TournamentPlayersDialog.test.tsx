@@ -729,3 +729,20 @@ describe('TournamentPlayersDialog Berger add gating', () => {
     expect(screen.queryByTestId('toast')).toBeNull()
   })
 })
+
+describe('TournamentPlayersDialog withdrawal default', () => {
+  afterEach(() => {
+    phaseMode = 'draft'
+  })
+
+  it('given round 1 has been paired, when the arbiter ticks "Utgå från rond", then the round field shows 2 (the next round to pair)', async () => {
+    phaseMode = 'in_progress'
+    const user = userEvent.setup()
+    renderDialog()
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+
+    await user.click(screen.getByTestId('withdrawn-checkbox'))
+
+    expect((screen.getByTestId('withdrawn-round-input') as HTMLInputElement).value).toBe('2')
+  })
+})

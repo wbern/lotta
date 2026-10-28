@@ -20,6 +20,8 @@ interface Props {
   onRenameClub?: (id: number, name: string) => void
   /** Resolves true when the club was deleted; false keeps the player's club selected. */
   onDeleteClub?: (id: number) => Promise<boolean> | boolean | void
+  /** Round pre-filled when "Utgå från rond" is ticked: the next round to be paired. */
+  defaultWithdrawRound?: number
 }
 
 export function PlayerEditor({
@@ -31,6 +33,7 @@ export function PlayerEditor({
   onAddClub,
   onRenameClub,
   onDeleteClub,
+  defaultWithdrawRound = 1,
 }: Props) {
   const [editorTab, setEditorTab] = useState<'main' | 'fide' | 'other'>('main')
   const update = (fields: Partial<PlayerDto>) => onChange({ ...player, ...fields })
@@ -163,7 +166,9 @@ export function PlayerEditor({
               data-testid="withdrawn-checkbox"
               type="checkbox"
               checked={(player.withdrawnFromRound ?? -1) >= 1}
-              onChange={(e) => update({ withdrawnFromRound: e.target.checked ? 1 : -1 })}
+              onChange={(e) =>
+                update({ withdrawnFromRound: e.target.checked ? defaultWithdrawRound : -1 })
+              }
             />
             {sv.player.withdrawn}
           </label>

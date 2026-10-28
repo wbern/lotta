@@ -362,6 +362,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
               }}
               nameError={nameError}
               showTournamentFields
+              defaultWithdrawRound={(tournament?.roundsPlayed ?? 0) + 1}
               onAddClub={async (name) => {
                 try {
                   const club = await addClub.mutateAsync({ name })
