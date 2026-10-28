@@ -149,8 +149,9 @@ marks every DB query stale and leaves `versions` alone), plus
   before adding one.
 - Queries that do not read the tournament database must remember
   `meta: { source: 'network' }`, or they refetch on every write.
-- On a P2P client a write is refreshed twice (on the RPC confirmation and on
-  the host's broadcast); both are background refetches.
+- On a P2P client a write can trigger up to three refreshes (the RPC
+  confirmation, the host's write relay and the older page broadcast in
+  `p2p-broadcast.ts`); all are background refetches and coalesce per tick.
 
 **Neutral:**
 - Mutation hooks keep their flow-specific `onSuccess`/`onError` (closing a
