@@ -354,6 +354,15 @@
     {
       "includes": ["src/**/*.{ts,tsx}", "!src/hooks/useVersions.ts", "!**/*.test.{ts,tsx}"],
       "plugins": ["./biome-plugins/no-online-network-mode.grit"]
+    },
+    {
+      "includes": [
+        "src/**/*.{ts,tsx}",
+        "!src/lib/query-invalidation.ts",
+        "!src/components/SpectatorLayout.tsx",
+        "!**/*.test.{ts,tsx}"
+      ],
+      "plugins": ["./biome-plugins/no-direct-query-invalidation.grit"]
     }
   ],
   "assist": {

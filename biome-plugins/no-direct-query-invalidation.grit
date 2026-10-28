@@ -1,0 +1,3 @@
+`$client.invalidateQueries($args)` as $call where {
+  register_diagnostic(span=$call, message="Do not invalidate queries at the call site (ADR-0007). Every write ends in DatabaseService.save(), which emits on the data-changed bus; src/lib/query-invalidation.ts then refreshes every DB-derived query. Per-site invalidation is how readers got missed (club rename, Namnvisning, Ta bort bord, Editera bord, Schack4an class size). For a scope change that is not a data change, add the file to this rule's excludes in biome.json and to INVALIDATION_ALLOWLIST in src/lib/data-flow-guard.test.ts, with the reason in a comment.", severity="error")
+}
