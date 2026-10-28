@@ -201,6 +201,7 @@ export function AppLayout() {
   const [showRollbackDialog, setShowRollbackDialog] = useState(false)
   const [restoreError, setRestoreError] = useState('')
   const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null)
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
   const importFileRef = useRef<HTMLInputElement>(null)
 
   const setTournamentId = (id: number | undefined) => {
@@ -459,6 +460,13 @@ export function AppLayout() {
   }
 
   const handleRestore = () => {
+    setShowRestoreConfirm(true)
+  }
+
+  // The file picker must open synchronously inside the click handler: Safari
+  // drops the user activation across setTimeout/effects and silently refuses.
+  const handleRestoreConfirmed = () => {
+    setShowRestoreConfirm(false)
     backupFileRef.current?.click()
   }
 
@@ -685,6 +693,15 @@ export function AppLayout() {
         open={showBackupExport}
         onClose={() => setShowBackupExport(false)}
         onExport={handleExport}
+      />
+      <ConfirmDialog
+        open={showRestoreConfirm}
+        title="Återställ databas"
+        message="Återställning ersätter ALLA turneringar, spelare och resultat i den här webbläsaren med innehållet i filen. Ta en säkerhetskopia först om du är osäker. Återställningen kan ångras via Redigera → Historik."
+        confirmLabel="Välj fil…"
+        cancelLabel="Avbryt"
+        onConfirm={handleRestoreConfirmed}
+        onCancel={() => setShowRestoreConfirm(false)}
       />
       <BackupRestoreDialog
         open={showBackupRestore}

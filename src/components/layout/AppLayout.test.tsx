@@ -52,7 +52,13 @@ vi.mock('../dialogs/EditBoardDialog', () => ({
   },
 }))
 vi.mock('../dialogs/BackupExportDialog', () => ({ BackupExportDialog: () => null }))
-vi.mock('../dialogs/BackupRestoreDialog', () => ({ BackupRestoreDialog: () => null }))
+let backupRestoreDialogProps: Record<string, unknown> = {}
+vi.mock('../dialogs/BackupRestoreDialog', () => ({
+  BackupRestoreDialog: (props: Record<string, unknown>) => {
+    backupRestoreDialogProps = props
+    return null
+  },
+}))
 vi.mock('../dialogs/SeedPlayersDialog', () => ({ SeedPlayersDialog: () => null }))
 vi.mock('../dialogs/RollbackDialog', () => ({ RollbackDialog: () => null }))
 
@@ -144,6 +150,7 @@ afterEach(() => {
   confirmDialogProps.length = 0
   activeRoundBoardNrs = [1, 2, 3]
   editBoardDialogProps = {}
+  backupRestoreDialogProps = {}
   mockDeleteGame.mockReset()
   mockDeleteGames.mockReset()
   vi.restoreAllMocks()
@@ -683,5 +690,86 @@ describe('AppLayout P2P client gating', () => {
     )
 
     expect(menuBarProps.isP2PClient).toBe(false)
+  })
+})
+
+describe('AppLayout restore confirmation', () => {
+  const RESTORE_MESSAGE =
+    'Återställning ersätter ALLA turneringar, spelare och resultat i den här webbläsaren med innehållet i filen. Ta en säkerhetskopia först om du är osäker. Återställningen kan ångras via Redigera → Historik.'
+
+  const latestRestoreDialog = () =>
+    confirmDialogProps.findLast((p) => p.title === 'Återställ databas')
+
+  function renderAndChooseRestore() {
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {})
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    act(() => {
+      ;(menuBarProps.onRestore as () => void)()
+    })
+    return clickSpy
+  }
+
+  it('given the arbiter chooses Återställ databas, when the menu action runs, then a warning opens and no file picker or restore happens yet', async () => {
+    const { restoreBackup } = await import('../../api/backup')
+    vi.mocked(restoreBackup).mockClear()
+    const clickSpy = renderAndChooseRestore()
+
+    const dialog = latestRestoreDialog()
+    expect(dialog?.open).toBe(true)
+    expect(dialog?.message).toBe(RESTORE_MESSAGE)
+    expect(dialog?.confirmLabel).toBe('Välj fil…')
+    expect(dialog?.cancelLabel).toBe('Avbryt')
+    expect(clickSpy).not.toHaveBeenCalled()
+    expect(restoreBackup).not.toHaveBeenCalled()
+  })
+
+  it('given the restore warning is open, when Avbryt is chosen, then the warning closes and no file picker opens', () => {
+    const clickSpy = renderAndChooseRestore()
+
+    act(() => {
+      ;(latestRestoreDialog()?.onCancel as () => void)()
+    })
+
+    expect(latestRestoreDialog()?.open).toBe(false)
+    expect(clickSpy).not.toHaveBeenCalled()
+  })
+
+  it('given the restore warning is open, when Välj fil… is chosen, then the warning closes and the file picker opens once, synchronously', () => {
+    const clickSpy = renderAndChooseRestore()
+
+    act(() => {
+      ;(latestRestoreDialog()?.onConfirm as () => void)()
+      // Safari only opens the picker inside the user gesture: no deferral allowed.
+      expect(clickSpy).toHaveBeenCalledTimes(1)
+    })
+
+    expect(clickSpy).toHaveBeenCalledTimes(1)
+    expect(latestRestoreDialog()?.open).toBe(false)
+  })
+
+  it('given an encrypted backup is picked, when the restore needs a password, then the password dialog opens', async () => {
+    const backupApi = await import('../../api/backup')
+    vi.mocked(backupApi.restoreBackup).mockRejectedValueOnce(new backupApi.EncryptedBackupError())
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    const fileInput = document.querySelector(
+      'input[type="file"][accept*=".sqlite"]',
+    ) as HTMLInputElement
+    const file = new File(['x'], 'backup.sqlite.enc')
+    Object.defineProperty(fileInput, 'files', { value: [file], configurable: true })
+
+    await act(async () => {
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+    expect(backupApi.restoreBackup).toHaveBeenCalledWith(file)
+    expect(backupRestoreDialogProps.open).toBe(true)
   })
 })
