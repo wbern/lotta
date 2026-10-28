@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { Outlet, useNavigate, useSearch } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -84,7 +83,6 @@ export function AppLayout() {
   const deleteTournament = useDeleteTournament()
   const unpairMutation = useUnpairLastRound(tournamentId)
   const { data: settings } = useSettings()
-  const queryClient = useQueryClient()
   const { canUndo, canRedo } = useUndoState()
   const { performUndo, performRedo, restoreToPoint } = useUndoActions()
   const { timeline, currentSnapshotIndex } = useTimeline()
@@ -356,8 +354,6 @@ export function AppLayout() {
       // Persistence failures are already toasted by SaveErrorToaster (ADR-0001).
       const message = actionErrorMessage(e)
       if (message) showActionError(message)
-    } finally {
-      queryClient.invalidateQueries({ queryKey: ['tournaments', tournamentId, 'rounds'] })
     }
   }
 
@@ -467,7 +463,6 @@ export function AppLayout() {
     e.target.value = ''
     try {
       await restoreBackup(file)
-      queryClient.invalidateQueries()
       navigate({ to: '/', search: { tournamentId: undefined, round: undefined, tab: currentTab } })
     } catch (err) {
       if (err instanceof EncryptedBackupError) {
@@ -487,7 +482,6 @@ export function AppLayout() {
       setShowBackupRestore(false)
       setPendingRestoreFile(null)
       setRestoreError('')
-      queryClient.invalidateQueries()
       navigate({ to: '/', search: { tournamentId: undefined, round: undefined, tab: currentTab } })
     } catch {
       setRestoreError('Fel lösenord eller skadad fil')
@@ -499,9 +493,6 @@ export function AppLayout() {
     if (!file) return
     try {
       showToast(importResultToast(await importPlayers(file)))
-      queryClient.invalidateQueries({ queryKey: ['players'] })
-      // Import creates clubs too; the player dialogs stay mounted and must see them.
-      queryClient.invalidateQueries({ queryKey: ['clubs'] })
     } catch (err) {
       showActionError('Fel vid import: ' + (err instanceof Error ? err.message : String(err)))
     }

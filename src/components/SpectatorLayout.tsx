@@ -29,6 +29,8 @@ export function SpectatorLayout() {
       if (outcome.status === 'ok' && outcome.clubs) {
         setClubFilter(outcome.clubs)
         setShowCodeDialog(false)
+        // Scope change, not a data change (ADR-0007 exception): the host now
+        // filters this peer's reads to the redeemed club, so refetch everything.
         queryClient.invalidateQueries()
       }
     })()
@@ -64,6 +66,7 @@ export function SpectatorLayout() {
       setClubFilter(outcome.clubs)
       setShowCodeDialog(false)
       setRedeemError(null)
+      // Scope change, not a data change (ADR-0007 exception) — see above.
       queryClient.invalidateQueries()
     } else {
       setRedeemError('Fel kod')

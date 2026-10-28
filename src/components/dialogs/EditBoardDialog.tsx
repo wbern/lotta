@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { addGame, updateGame } from '../../api/results'
 import { useRound } from '../../hooks/useRounds'
@@ -19,7 +18,6 @@ interface Props {
 export function EditBoardDialog({ open, tournamentId, roundNr, mode, boardNr, onClose }: Props) {
   const { data: players } = useTournamentPlayers(tournamentId)
   const { data: roundData } = useRound(tournamentId, roundNr)
-  const queryClient = useQueryClient()
 
   const [whiteId, setWhiteId] = useState<number | ''>('')
   const [blackId, setBlackId] = useState<number | ''>('')
@@ -67,7 +65,6 @@ export function EditBoardDialog({ open, tournamentId, roundNr, mode, boardNr, on
       } else if (boardNr != null) {
         await updateGame(tournamentId, roundNr, boardNr, whitePlayerId, blackPlayerId)
       }
-      queryClient.invalidateQueries({ queryKey: ['tournaments', tournamentId, 'rounds'] })
       onClose()
     } catch (e) {
       showToast({

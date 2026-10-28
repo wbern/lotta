@@ -1,8 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import * as api from '../api/results'
 import * as standingsApi from '../api/standings'
 import type { SetResultRequest } from '../types/api'
-import { roundKeys } from './useRounds'
 
 const standingKeys = {
   standings: (tournamentId: number, round?: number) =>
@@ -38,29 +37,11 @@ export function useChess4Standings(tournamentId: number | undefined, round?: num
 }
 
 export function useSetResult(tournamentId: number | undefined, roundNr: number | undefined) {
-  const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ boardNr, req }: { boardNr: number; req: SetResultRequest }) => {
       if (tournamentId == null || roundNr == null) throw new Error('No round selected')
       return api.setResult(tournamentId, roundNr, boardNr, req)
     },
     scope: { id: 'set-result' },
-    onSuccess: () => {
-      if (tournamentId == null || roundNr == null) return
-      qc.invalidateQueries({ queryKey: roundKeys.list(tournamentId) })
-      qc.invalidateQueries({ queryKey: roundKeys.detail(tournamentId, roundNr) })
-      qc.invalidateQueries({
-        queryKey: ['tournaments', tournamentId, 'standings'],
-        exact: false,
-      })
-      qc.invalidateQueries({
-        queryKey: ['tournaments', tournamentId, 'club-standings'],
-        exact: false,
-      })
-      qc.invalidateQueries({
-        queryKey: ['tournaments', tournamentId, 'chess4-standings'],
-        exact: false,
-      })
-    },
   })
 }

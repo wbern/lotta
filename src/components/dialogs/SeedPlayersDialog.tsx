@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { seedFakePlayers } from '../../api/seed-players'
 import { addTournamentPlayers } from '../../api/tournament-players'
@@ -40,19 +39,14 @@ export function SeedPlayersDialog({ open, onClose, tournamentId }: Props) {
   const [target, setTarget] = useState<string>('')
   const { data: tournaments } = useTournaments()
   const createTournament = useCreateTournament()
-  const queryClient = useQueryClient()
   const { show: showToast } = useToast()
 
   const handleSeed = async () => {
     setSeeding(true)
     try {
-      const { players, clubs } = await seedFakePlayers(count, {
+      const { players } = await seedFakePlayers(count, {
         clubCount: createClubs ? clubCount : undefined,
       })
-      queryClient.invalidateQueries({ queryKey: ['players'] })
-      if (clubs.length > 0) {
-        queryClient.invalidateQueries({ queryKey: ['clubs'] })
-      }
       let targetId: number | undefined
       if (target === 'random') {
         const created = await createTournament.mutateAsync({
@@ -61,7 +55,6 @@ export function SeedPlayersDialog({ open, onClose, tournamentId }: Props) {
           ...randomTournamentDefaults,
         })
         targetId = created.id
-        queryClient.invalidateQueries({ queryKey: ['tournaments'] })
       } else if (target) {
         targetId = Number(target)
       }
@@ -69,8 +62,6 @@ export function SeedPlayersDialog({ open, onClose, tournamentId }: Props) {
       if (targetId != null) {
         try {
           await addTournamentPlayers(targetId, players)
-          queryClient.invalidateQueries({ queryKey: ['tournaments', targetId, 'players'] })
-          queryClient.invalidateQueries({ queryKey: ['tournaments', targetId] })
           addedToTournament = true
         } catch {
           showToast({
@@ -83,8 +74,6 @@ export function SeedPlayersDialog({ open, onClose, tournamentId }: Props) {
       } else if (autoAdd && tournamentId != null) {
         try {
           await addTournamentPlayers(tournamentId, players)
-          queryClient.invalidateQueries({ queryKey: ['tournaments', tournamentId, 'players'] })
-          queryClient.invalidateQueries({ queryKey: ['tournaments', tournamentId] })
           addedToTournament = true
         } catch {
           showToast({

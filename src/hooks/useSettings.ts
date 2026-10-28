@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import * as api from '../api/settings'
 import type { SettingsDto } from '../types/api'
 
@@ -14,9 +14,7 @@ export function useSettings() {
 }
 
 export function useUpdateSettings() {
-  const qc = useQueryClient()
   return useMutation({
     mutationFn: (dto: Partial<SettingsDto>) => api.updateSettings(dto),
-    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.all }),
   })
 }

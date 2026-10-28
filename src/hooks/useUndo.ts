@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useCallback, useSyncExternalStore } from 'react'
 import * as undoApi from '../api/undo'
 import type { AuditEntry, UndoState } from '../db/undo-manager'
@@ -25,27 +25,16 @@ export function useUndoState(): UndoState {
 }
 
 export function useUndoActions() {
-  const qc = useQueryClient()
-
   const undoMutation = useMutation({
     mutationFn: () => undoApi.undo(),
-    onSuccess: (success) => {
-      if (success) qc.invalidateQueries()
-    },
   })
 
   const redoMutation = useMutation({
     mutationFn: () => undoApi.redo(),
-    onSuccess: (success) => {
-      if (success) qc.invalidateQueries()
-    },
   })
 
   const restoreMutation = useMutation({
     mutationFn: (snapshotIndex: number) => undoApi.restoreToPoint(snapshotIndex),
-    onSuccess: (success) => {
-      if (success) qc.invalidateQueries()
-    },
   })
 
   const performUndo = useCallback(() => undoMutation.mutateAsync(), [undoMutation])
