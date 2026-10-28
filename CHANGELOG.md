@@ -1,3 +1,13 @@
+## [1.24.1](https://github.com/wbern/lotta/compare/v1.24.0...v1.24.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* alfabetisk lottning print view shows renamed players ([f745c22](https://github.com/wbern/lotta/commit/f745c225818f2b2860d0dadbb3e42d9a22bc7a5a))
+* **live:** refresh p2p clients through the data-changed bus ([662c572](https://github.com/wbern/lotta/commit/662c572942341dd06e071ea250304ddaf9954d0c))
+* **live:** tell peers about every host write, not only mutations ([f87c6ff](https://github.com/wbern/lotta/commit/f87c6ff4a82fb966155334956ac355416da42156)), closes [#1](https://github.com/wbern/lotta/issues/1)
+* refresh every view after a write via a data-changed signal ([c9fddba](https://github.com/wbern/lotta/commit/c9fddbabcbc7d7168b7aaceef11a1b0dd6b0dd66))
+
 # [1.24.0](https://github.com/wbern/lotta/compare/v1.23.2...v1.24.0) (2026-10-28)
 
 
