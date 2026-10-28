@@ -7,6 +7,7 @@ import { getLocalProvider } from './local-data-provider.ts'
 import {
   publishClubStandingsHtml,
   publishCrossTableHtml,
+  publishFile,
   publishHtml,
   publishPairingsHtml,
   publishPlayerListHtml,
@@ -369,5 +370,52 @@ describe('publish API (local)', () => {
 
   it('publishPairingsHtml throws with no rounds', async () => {
     await expect(publishPairingsHtml(tournamentId)).rejects.toThrow('No rounds available')
+  })
+
+  it('given round 2 is the latest round, when standings are published without a round, then the file is named after the rendered round', async () => {
+    for (let r = 1; r <= 2; r++) {
+      const round = await pairNextRound(tournamentId)
+      for (const g of round.games) {
+        if (g.blackPlayer) await setResult(tournamentId, r, g.boardNr, { resultType: 'DRAW' })
+      }
+    }
+
+    const { blob, filename } = await publishFile(tournamentId, 'standings')
+
+    expect(filename).toBe('testturneringen-a-stallning-rond-2.html')
+    expect(await blob.text()).toContain('<!DOCTYPE html>')
+    expect((await publishFile(tournamentId, 'pairings', 1)).filename).toBe(
+      'testturneringen-a-lottning-rond-1.html',
+    )
+    expect((await publishFile(tournamentId, 'players')).filename).toBe(
+      'testturneringen-a-spelarlista.html',
+    )
+  })
+
+  it('given the arbiter set a standings page name, when standings are published, then that name is used', async () => {
+    service.tournaments.update(tournamentId, {
+      name: 'Testturneringen',
+      group: 'A',
+      pairingSystem: 'Monrad',
+      initialPairing: 'Rating',
+      nrOfRounds: 7,
+      barredPairing: false,
+      compensateWeakPlayerPP: false,
+      pointsPerGame: 1,
+      chess4: false,
+      ratingChoice: 'ELO',
+      showELO: true,
+      showGroup: true,
+      standingsPage: 'ställning-a',
+    })
+    await pairNextRound(tournamentId)
+
+    const { filename } = await publishFile(tournamentId, 'standings')
+
+    expect(filename).toBe('ställning-a.html')
+  })
+
+  it('given no rounds, when pairings are published as a file, then it fails like publishHtml', async () => {
+    await expect(publishFile(tournamentId, 'pairings')).rejects.toThrow('No rounds available')
   })
 })

@@ -16,6 +16,7 @@ import {
 } from '../domain/html-publisher'
 import { getPlayerRating } from '../domain/ratings'
 import { formatScore } from '../domain/scoring'
+import { publishFilename } from '../lib/filenames'
 import {
   buildAlphabeticalPairingsInput,
   buildPairingsInput,
@@ -28,11 +29,15 @@ function htmlBlob(html: string): Blob {
   return new Blob([html], { type: 'text/html; charset=UTF-8' })
 }
 
+/** The round a page renders: the requested one, or the latest when none is given. */
+function requestedOrLatestRound(tournamentId: number, round?: number): number {
+  return round ?? getDatabaseService().games.listRounds(tournamentId).length
+}
+
 function resolveRound(tournamentId: number, round?: number): number {
-  const db = getDatabaseService()
-  const rounds = db.games.listRounds(tournamentId)
-  const roundNr = round ?? rounds.length
-  if (roundNr < 1 || roundNr > rounds.length) {
+  const roundCount = getDatabaseService().games.listRounds(tournamentId).length
+  const roundNr = round ?? roundCount
+  if (roundNr < 1 || roundNr > roundCount) {
     throw new Error('No rounds available')
   }
   return roundNr
@@ -81,9 +86,7 @@ function parseAlphabeticalOptions(query: string): AlphabeticalPublishOptions {
 }
 
 export async function publishStandingsHtml(tournamentId: number, round?: number): Promise<Blob> {
-  const db = getDatabaseService()
-  const rounds = db.games.listRounds(tournamentId)
-  const roundNr = round ?? rounds.length
+  const roundNr = requestedOrLatestRound(tournamentId, round)
   if (roundNr < 1) throw new Error('No rounds available')
 
   const input = await buildStandingsInput(tournamentId, roundNr)
@@ -122,8 +125,7 @@ export async function publishClubStandingsHtml(
   const tournament = db.tournaments.get(tournamentId)
   if (!tournament) throw new Error(`Tournament ${tournamentId} not found`)
 
-  const rounds = db.games.listRounds(tournamentId)
-  const roundNr = round ?? rounds.length
+  const roundNr = requestedOrLatestRound(tournamentId, round)
   if (roundNr < 1) throw new Error('No rounds available')
 
   const standings = await getClubStandings(tournamentId, roundNr)
@@ -146,8 +148,7 @@ async function publishChess4StandingsHtml(tournamentId: number, round?: number):
   const tournament = db.tournaments.get(tournamentId)
   if (!tournament) throw new Error(`Tournament ${tournamentId} not found`)
 
-  const rounds = db.games.listRounds(tournamentId)
-  const roundNr = round ?? rounds.length
+  const roundNr = requestedOrLatestRound(tournamentId, round)
   if (roundNr < 1) throw new Error('No rounds available')
 
   const standings = await getChess4Standings(tournamentId, roundNr)
@@ -257,4 +258,20 @@ export async function publishHtml(
     default:
       throw new Error(`Unknown publish type: ${what}`)
   }
+}
+
+/**
+ * Render a page and name the download after the round actually rendered,
+ * so "Ställning" without a round picks the same N as the page content.
+ */
+export async function publishFile(
+  tournamentId: number,
+  what: string,
+  round?: number,
+): Promise<{ blob: Blob; filename: string }> {
+  const roundNr = requestedOrLatestRound(tournamentId, round)
+  const blob = await publishHtml(tournamentId, what, round)
+  const tournament = getDatabaseService().tournaments.get(tournamentId)
+  if (!tournament) throw new Error(`Tournament ${tournamentId} not found`)
+  return { blob, filename: publishFilename(tournament, what, roundNr) }
 }

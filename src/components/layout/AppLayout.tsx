@@ -8,7 +8,7 @@ import {
   EncryptedBackupError,
   restoreBackup,
 } from '../../api/backup'
-import { publishHtml } from '../../api/publish'
+import { publishFile } from '../../api/publish'
 import { deleteGame, deleteGames } from '../../api/results'
 import { exportTournamentPlayers, importPlayers } from '../../api/tournaments'
 import { tournamentLockState } from '../../domain/tournament-lock'
@@ -18,6 +18,8 @@ import { useRound, useRounds, useUnpairLastRound } from '../../hooks/useRounds'
 import { useSettings } from '../../hooks/useSettings'
 import { useDeleteTournament, useTournament, useTournaments } from '../../hooks/useTournaments'
 import { useTimeline, useUndoActions, useUndoState } from '../../hooks/useUndo'
+import { downloadBlob } from '../../lib/download-file'
+import { backupFilename, playerExportFilename } from '../../lib/filenames'
 import { actionErrorMessage } from '../../lib/save-error-bus'
 import { useClientP2PStore } from '../../stores/client-p2p-store'
 import { ClientOverlay } from '../ClientOverlay'
@@ -359,16 +361,16 @@ export function AppLayout() {
     }
   }
 
+  const saveFile = (blob: Blob, filename: string) => {
+    downloadBlob(blob, filename)
+    showToast({ message: `Fil sparad: ${filename}`, variant: 'success', autoDismissMs: 4000 })
+  }
+
   const handleExportPlayers = async () => {
     if (tournamentId == null) return
     try {
       const blob = await exportTournamentPlayers(tournamentId)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${tournament?.name || 'spelare'}.tsv`
-      a.click()
-      URL.revokeObjectURL(url)
+      saveFile(blob, playerExportFilename(tournament?.name ?? '', tournament?.group ?? ''))
     } catch (e) {
       showActionError('Exportfel: ' + (e instanceof Error ? e.message : String(e)))
     }
@@ -377,14 +379,8 @@ export function AppLayout() {
   const handlePublish = async (what: string) => {
     if (tournamentId == null) return
     try {
-      const blob = await publishHtml(tournamentId, what, activeRound ?? undefined)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      const baseName = what.split('?')[0]
-      a.download = `${baseName}.html`
-      a.click()
-      URL.revokeObjectURL(url)
+      const { blob, filename } = await publishFile(tournamentId, what, activeRound ?? undefined)
+      saveFile(blob, filename)
     } catch (e) {
       showActionError('Publiceringsfel: ' + (e instanceof Error ? e.message : String(e)))
     }
@@ -437,23 +433,14 @@ export function AppLayout() {
   const handleExport = async (password: string | undefined, legacyCompat: boolean) => {
     try {
       let blob: Blob
-      let filename: string
       if (password) {
         blob = await downloadEncryptedBackup(password, legacyCompat)
-        filename = legacyCompat ? 'lotta-backup-gammal.sqlite.enc' : 'lotta-backup.sqlite.enc'
       } else if (legacyCompat) {
         blob = await downloadLegacyBackup()
-        filename = 'lotta-backup-gammal.sqlite'
       } else {
         blob = await downloadBackup()
-        filename = 'lotta-backup.sqlite'
       }
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      a.click()
-      URL.revokeObjectURL(url)
+      saveFile(blob, backupFilename(new Date(), { legacy: legacyCompat, encrypted: !!password }))
     } catch (e) {
       showActionError('Säkerhetskopieringsfel: ' + (e instanceof Error ? e.message : String(e)))
     }

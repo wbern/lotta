@@ -51,7 +51,13 @@ vi.mock('../dialogs/EditBoardDialog', () => ({
     return null
   },
 }))
-vi.mock('../dialogs/BackupExportDialog', () => ({ BackupExportDialog: () => null }))
+let backupExportDialogProps: Record<string, unknown> = {}
+vi.mock('../dialogs/BackupExportDialog', () => ({
+  BackupExportDialog: (props: Record<string, unknown>) => {
+    backupExportDialogProps = props
+    return null
+  },
+}))
 let backupRestoreDialogProps: Record<string, unknown> = {}
 vi.mock('../dialogs/BackupRestoreDialog', () => ({
   BackupRestoreDialog: (props: Record<string, unknown>) => {
@@ -120,8 +126,15 @@ vi.mock('../../api/results', () => ({
   deleteGames: (...args: unknown[]) => mockDeleteGames(...args),
 }))
 
+const mockPublishFile = vi.fn()
 vi.mock('../../api/publish', () => ({
   publishHtml: vi.fn(),
+  publishFile: (...args: unknown[]) => mockPublishFile(...args),
+}))
+
+const mockDownloadBlob = vi.fn()
+vi.mock('../../lib/download-file', () => ({
+  downloadBlob: (...args: unknown[]) => mockDownloadBlob(...args),
 }))
 
 vi.mock('../../hooks/useUndo', () => ({
@@ -151,6 +164,10 @@ afterEach(() => {
   activeRoundBoardNrs = [1, 2, 3]
   editBoardDialogProps = {}
   backupRestoreDialogProps = {}
+  backupExportDialogProps = {}
+  mockPublishFile.mockReset()
+  mockDownloadBlob.mockReset()
+  mockExportTournamentPlayers.mockReset()
   mockDeleteGame.mockReset()
   mockDeleteGames.mockReset()
   vi.restoreAllMocks()
@@ -771,5 +788,93 @@ describe('AppLayout restore confirmation', () => {
 
     expect(backupApi.restoreBackup).toHaveBeenCalledWith(file)
     expect(backupRestoreDialogProps.open).toBe(true)
+  })
+})
+
+describe('AppLayout saved-file feedback', () => {
+  const renderLayout = () =>
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+
+  const toastTexts = () => screen.queryAllByTestId('toast').map((t) => t.textContent ?? '')
+
+  it('given a tournament, when standings are published, then the page is downloaded under its descriptive name and a saved toast names the file', async () => {
+    const blob = new Blob(['<html>'])
+    mockPublishFile.mockResolvedValue({ blob, filename: 'test-stallning-rond-3.html' })
+    renderLayout()
+
+    await act(async () => {
+      await (menuBarProps.onPublish as (what: string) => Promise<void>)('standings')
+    })
+
+    expect(mockPublishFile).toHaveBeenCalledWith(1, 'standings', 3)
+    expect(mockDownloadBlob).toHaveBeenCalledWith(blob, 'test-stallning-rond-3.html')
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--success')
+    expect(toast.textContent).toContain('Fil sparad: test-stallning-rond-3.html')
+  })
+
+  it('given publishing fails, when a page is published, then nothing is downloaded and only the error toast shows', async () => {
+    mockPublishFile.mockRejectedValue(new Error('No rounds available'))
+    renderLayout()
+
+    await act(async () => {
+      await (menuBarProps.onPublish as (what: string) => Promise<void>)('pairings')
+    })
+
+    expect(mockDownloadBlob).not.toHaveBeenCalled()
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--error')
+    expect(toast.textContent).toContain('Publiceringsfel:')
+    expect(toastTexts().some((t) => t.includes('Fil sparad'))).toBe(false)
+  })
+
+  it('given a tournament with a group, when players are exported, then the TSV is named after the tournament and a saved toast shows', async () => {
+    currentTournament = { id: 1, name: 'Vårblixten', group: 'B' }
+    const blob = new Blob(['tsv'])
+    mockExportTournamentPlayers.mockResolvedValue(blob)
+    renderLayout()
+
+    await act(async () => {
+      await (menuBarProps.onExportPlayers as () => Promise<void>)()
+    })
+
+    expect(mockDownloadBlob).toHaveBeenCalledWith(blob, 'varblixten-b-spelare.tsv')
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--success')
+    expect(toast.textContent).toContain('Fil sparad: varblixten-b-spelare.tsv')
+  })
+
+  it.each([
+    [undefined, false, /^lotta-backup-\d{4}-\d{2}-\d{2}-\d{4}\.sqlite$/],
+    [undefined, true, /^lotta-backup-gammal-\d{4}-\d{2}-\d{2}-\d{4}\.sqlite$/],
+    ['hemligt', false, /^lotta-backup-\d{4}-\d{2}-\d{2}-\d{4}\.sqlite\.enc$/],
+  ])('given password %s and legacy %s, when a backup is saved, then it is downloaded with a dated name and a saved toast shows', async (password, legacy, pattern) => {
+    const backupApi = await import('../../api/backup')
+    const blob = new Blob(['db'])
+    vi.mocked(backupApi.downloadBackup).mockResolvedValue(blob)
+    vi.mocked(backupApi.downloadLegacyBackup).mockResolvedValue(blob)
+    vi.mocked(backupApi.downloadEncryptedBackup).mockResolvedValue(blob)
+    renderLayout()
+
+    await act(async () => {
+      await (
+        backupExportDialogProps.onExport as (
+          pw: string | undefined,
+          legacy: boolean,
+        ) => Promise<void>
+      )(password, legacy)
+    })
+
+    expect(mockDownloadBlob).toHaveBeenCalledTimes(1)
+    const [downloaded, filename] = mockDownloadBlob.mock.calls[0] as [Blob, string]
+    expect(downloaded).toBe(blob)
+    expect(filename).toMatch(pattern)
+    const toast = await screen.findByTestId('toast')
+    expect(toast.className).toContain('toast--success')
+    expect(toast.textContent).toContain(`Fil sparad: ${filename}`)
   })
 })
