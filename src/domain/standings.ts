@@ -215,11 +215,16 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
     getPlayerGames: (playerId: number) => allPlayerData.get(playerId)?.games ?? [],
   }
 
-  // Calculate tiebreaks in order (important for internal meeting)
+  // Calculate tiebreaks column by column (Inbördes möte compares the earlier
+  // columns). Compute every player's value for a column before appending any,
+  // so each player sees the same previous columns regardless of input order.
   for (const tbName of selectedTiebreaks) {
-    for (const [, pd] of allPlayerData) {
-      const value = calculateTiebreakValue(tbName, pd, roundNr, ctx, allPlayerData)
-      pd.tiebreakValues.push(value)
+    const column = new Map<number, number>()
+    for (const [id, pd] of allPlayerData) {
+      column.set(id, calculateTiebreakValue(tbName, pd, roundNr, ctx, allPlayerData))
+    }
+    for (const [id, pd] of allPlayerData) {
+      pd.tiebreakValues.push(column.get(id) ?? 0)
     }
   }
 
