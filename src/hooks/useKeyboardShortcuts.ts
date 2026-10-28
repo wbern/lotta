@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { isAnyModalOpen } from '../components/dialogs/modal-registry'
 
 interface KeyboardShortcutHandlers {
   onUndo: () => void
@@ -8,6 +9,8 @@ interface KeyboardShortcutHandlers {
 export function useKeyboardShortcuts({ onUndo, onRedo }: KeyboardShortcutHandlers): void {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // An open modal owns the keyboard: undo/redo must not mutate data behind it (ADR-0005).
+      if (isAnyModalOpen()) return
       // Skip when focus is on input, textarea, or contenteditable
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { registerOpenModal } from '../components/dialogs/modal-registry'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
 
 function fireKeydown(opts: KeyboardEventInit) {
@@ -124,5 +125,35 @@ describe('useKeyboardShortcuts', () => {
 
     expect(onUndo).not.toHaveBeenCalled()
     expect(onRedo).not.toHaveBeenCalled()
+  })
+
+  describe('while a modal is open', () => {
+    it('given a modal is registered as open, when Ctrl+Z is pressed on the body, then onUndo is not called', () => {
+      const onUndo = vi.fn()
+      const onRedo = vi.fn()
+      renderHook(() => useKeyboardShortcuts({ onUndo, onRedo }))
+      const unregister = registerOpenModal()
+      try {
+        fireKeydown({ key: 'z', ctrlKey: true })
+        fireKeydown({ key: 'y', ctrlKey: true })
+      } finally {
+        unregister()
+      }
+
+      expect(onUndo).not.toHaveBeenCalled()
+      expect(onRedo).not.toHaveBeenCalled()
+    })
+
+    it('given the modal has been closed again, when Ctrl+Z is pressed, then onUndo is called', () => {
+      const onUndo = vi.fn()
+      const onRedo = vi.fn()
+      renderHook(() => useKeyboardShortcuts({ onUndo, onRedo }))
+      const unregister = registerOpenModal()
+      unregister()
+
+      fireKeydown({ key: 'z', ctrlKey: true })
+
+      expect(onUndo).toHaveBeenCalledOnce()
+    })
   })
 })

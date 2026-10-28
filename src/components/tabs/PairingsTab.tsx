@@ -16,6 +16,7 @@ import { useSetResult } from '../../hooks/useStandings'
 import { sv } from '../../lib/swedish-text'
 import type { GameDto, ResultType, RoundDto } from '../../types/api'
 import { EditScoreDialog } from '../dialogs/EditScoreDialog'
+import { isAnyModalOpen } from '../dialogs/modal-registry'
 import { EmptyState } from '../EmptyState'
 import { useToast } from '../toast/useToast'
 
@@ -171,6 +172,8 @@ export function PairingsTab({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (selectedBoards.size === 0 || !roundNr) return
+      // A modal owns the keyboard while open (ADR-0005)
+      if (isAnyModalOpen()) return
       // Only handle shortcuts when a pairings row has focus
       const active = document.activeElement
       if (!(active instanceof HTMLElement) || !active.matches('tr[data-board-nr]')) return
