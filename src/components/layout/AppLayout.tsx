@@ -334,10 +334,13 @@ export function AppLayout() {
   const handleDeleteSelectedBoards = async () => {
     if (selectedBoardNrs.size === 0 || tournamentId == null || activeRound == null) return
     const boardNrs = [...selectedBoardNrs].sort((a, b) => a - b)
-    const msg =
+    // Name the boards and round: the selection survives a tab switch, so the user
+    // may not be looking at the highlighted rows when confirming.
+    const boardList =
       boardNrs.length === 1
-        ? `Är du säker på att du vill ta bort bord ${boardNrs[0]}?`
-        : `Är du säker på att du vill ta bort ${boardNrs.length} bord?`
+        ? `${boardNrs[0]}`
+        : `${boardNrs.slice(0, -1).join(', ')} och ${boardNrs[boardNrs.length - 1]}`
+    const msg = `Är du säker på att du vill ta bort bord ${boardList} i rond ${activeRound}?`
     if (!confirm(msg)) return
     try {
       if (boardNrs.length === 1) {

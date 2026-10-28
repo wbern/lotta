@@ -552,7 +552,9 @@ describe('AppLayout board selection (single source of truth)', () => {
       await (menuBarProps.onDeleteBoard as () => Promise<void>)()
     })
 
-    expect(confirmSpy).toHaveBeenCalledWith('Är du säker på att du vill ta bort 2 bord?')
+    expect(confirmSpy).toHaveBeenCalledWith(
+      'Är du säker på att du vill ta bort bord 1 och 2 i rond 1?',
+    )
     expect(mockDeleteGames).toHaveBeenCalledWith(1, 1, [1, 2])
     expect(mockDeleteGame).not.toHaveBeenCalled()
     expect(selected()).toEqual([])
@@ -583,7 +585,7 @@ describe('AppLayout board selection (single source of truth)', () => {
       await (menuBarProps.onDeleteBoard as () => Promise<void>)()
     })
 
-    expect(confirmSpy).toHaveBeenCalledWith('Är du säker på att du vill ta bort bord 3?')
+    expect(confirmSpy).toHaveBeenCalledWith('Är du säker på att du vill ta bort bord 3 i rond 1?')
     expect(mockDeleteGame).toHaveBeenCalledWith(1, 1, 3)
   })
 
