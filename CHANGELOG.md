@@ -1,3 +1,11 @@
+## [1.23.2](https://github.com/wbern/lotta/compare/v1.23.1...v1.23.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* align seven UX details with what users already expect ([f05beac](https://github.com/wbern/lotta/commit/f05beac998df6df11f266afae01dca7cd170bc54))
+* editing a player without a club no longer fails ([3667dee](https://github.com/wbern/lotta/commit/3667dee8d8770d6ecec3cbc46eaa5f7fea650e41))
+
 ## [1.23.1](https://github.com/wbern/lotta/compare/v1.23.0...v1.23.1) (2026-10-28)
 
 
