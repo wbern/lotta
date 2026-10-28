@@ -1,3 +1,35 @@
+# [1.23.0](https://github.com/wbern/lotta/compare/v1.22.1...v1.23.0) (2026-10-28)
+
+
+### Bug Fixes
+
+* block adding players to a paired Berger tournament in the UI ([153b338](https://github.com/wbern/lotta/commit/153b33879d483d6bbfe3f887843e50310021aa0a))
+* compute Prestationsrating over played games only ([97bebf9](https://github.com/wbern/lotta/commit/97bebf970e7f947d1c73bc4c525bf3a1b359619d))
+* count own bye as half points per round in Median Buchholz ([d91b785](https://github.com/wbern/lotta/commit/d91b7852a055ea039db3e6a9f8c3f8a3cda0157d))
+* disable Ångra lottning until a round is paired ([6248416](https://github.com/wbern/lotta/commit/62484162fd05c2826beac764eabea34d99684b60))
+* explain how to resolve an impossible pairing ([6f95ce0](https://github.com/wbern/lotta/commit/6f95ce0bea99f974e66b56ee238d31da79ef77bf))
+* explain that Ångra lottning removes all rounds in Berger ([2523316](https://github.com/wbern/lotta/commit/25233168f778470bda1e51d80230eaf734757b14))
+* fill tiebreak cells in published and printed standings ([a0687bb](https://github.com/wbern/lotta/commit/a0687bbbc85abfa5515288d2879b1f8bf9d3ce39))
+* list tied players by rating, then Swedish name order ([05b10f7](https://github.com/wbern/lotta/commit/05b10f766d37954d83a7902a39028ffd914be017))
+* make Inbördes möte independent of player input order ([9a2c12e](https://github.com/wbern/lotta/commit/9a2c12ee06c72b5c89cca707e8ee03fae8ab6227))
+* make the pairings board selection a single source of truth ([e3278ce](https://github.com/wbern/lotta/commit/e3278ce380f8af1d029aba411599365d1019dd81))
+* name the boards and round when confirming Ta bort bord ([638235b](https://github.com/wbern/lotta/commit/638235bfb79b7437696095d49d13a767422b8bce))
+* refuse deleting a club that players still belong to ([4461656](https://github.com/wbern/lotta/commit/44616569bd9b584012a8260ce65b81bc0c411861))
+* refuse deleting the last board of a round when later rounds exist ([81ec67d](https://github.com/wbern/lotta/commit/81ec67d54ac4f417e861723f0450242c376faab8))
+* require a paired round to print standings ([2346f90](https://github.com/wbern/lotta/commit/2346f90948a2a95d15059e0ecfd4fdfd9cee47c6))
+* require a paired round to publish standings ([fbfcbd4](https://github.com/wbern/lotta/commit/fbfcbd40abcaf7ade79f69c1a92a9ea708a4a392))
+* seed equal-rated players in Swedish name order ([8ff9f6e](https://github.com/wbern/lotta/commit/8ff9f6e632f259afc1021d2bb9956c5de24fcbfb))
+* suppress undo/redo shortcuts while a modal dialog is open ([0f7630f](https://github.com/wbern/lotta/commit/0f7630fe1d7dddd73599bef1b00e62dd71edd170))
+* treat withdrawnFromRound 0 as not withdrawn ([044327e](https://github.com/wbern/lotta/commit/044327e2984eda80fc3f83ba91f09a8b7759bb85))
+* validate Editera poäng input and accept decimal comma ([a2fd077](https://github.com/wbern/lotta/commit/a2fd0775b6f4824d747cbaae4504d89b1e6bfebb))
+
+
+### Features
+
+* disable local-only menu actions while connected to a host ([6b93250](https://github.com/wbern/lotta/commit/6b932506e4a03d1a74a4765f1dcc12b2ca27a244))
+* label the performance-rating tiebreak "Prestationsrating" ([8962e46](https://github.com/wbern/lotta/commit/8962e4639e62496e1b2442b76b6806454e7c5d71))
+* show "(utgått rN)" on withdrawn players in standings ([a18ef7f](https://github.com/wbern/lotta/commit/a18ef7fbb55426b95af3095d5f2baf234cb7ebb1))
+
 ## [1.22.1](https://github.com/wbern/lotta/compare/v1.22.0...v1.22.1) (2026-10-27)
 
 
