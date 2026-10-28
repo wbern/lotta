@@ -540,48 +540,207 @@ describe('publishChess4Standings', () => {
 })
 
 describe('publishCrossTable', () => {
-  it('generates cross table with opponents and colors', () => {
+  // Hand-computed 4-player example (ppg 1, maxWin 1, tiebreak Manuell).
+  // R1: Anna(v)-Dan(s) 1-0, Bo(v)-Cilla(s) ½-½.
+  // R2: Cilla(v)-Anna(s) 0-1 WO, Dan(v)-Bo(s) postponed (0 for both in standings).
+  // Scores: Anna 2, Bo ½, Cilla ½, Dan 0. Bo ahead of Cilla on Manuell 5 > 3.
+  // Rows: 1 Anna, 2 Bo, 3 Cilla, 4 Dan. Round 3 is not paired yet.
+  const fourPlayers = (): CrossTablePublishInput => ({
+    tournamentName: 'Höstturneringen',
+    roundCount: 3,
+    showGroup: false,
+    showELO: true,
+    tiebreakNames: ['Manuell'],
+    players: [
+      {
+        place: 1,
+        name: 'Anna Andersson',
+        playerGroup: 'A',
+        rating: 1800,
+        rounds: [
+          { opponentPlace: 4, color: 'v', result: '1' },
+          { opponentPlace: 3, color: 's', result: 'i' },
+          null,
+        ],
+        scoreDisplay: '2',
+        tiebreaks: { Man: '0' },
+      },
+      {
+        place: 2,
+        name: 'Bo Björk',
+        playerGroup: 'B',
+        rating: 1700,
+        rounds: [
+          { opponentPlace: 3, color: 'v', result: '½' },
+          { opponentPlace: 4, color: 's', result: 'u' },
+          null,
+        ],
+        scoreDisplay: '½',
+        tiebreaks: { Man: '5' },
+      },
+      {
+        place: 3,
+        name: 'Cilla Carlsson',
+        playerGroup: 'A',
+        rating: 1600,
+        rounds: [
+          { opponentPlace: 2, color: 's', result: '½' },
+          { opponentPlace: 1, color: 'v', result: 'o' },
+          null,
+        ],
+        scoreDisplay: '½',
+        tiebreaks: { Man: '3' },
+      },
+      {
+        place: 4,
+        name: 'Dan Dahl',
+        playerGroup: 'B',
+        rating: 1500,
+        rounds: [
+          { opponentPlace: 1, color: 's', result: '0' },
+          { opponentPlace: 2, color: 'v', result: 'u' },
+          null,
+        ],
+        scoreDisplay: '0',
+        tiebreaks: { Man: '0' },
+      },
+    ],
+  })
+
+  it('given the 4-player example, when published, then the title and header follow Java', () => {
+    const html = publishCrossTable(fourPlayers())
+    expect(html).toContain('<h2>Höstturneringen - Korstabell</h2>')
+    expect(html).toContain(
+      '<tr class="CP_TableHeader"><td>Plac</td><td>Namn</td><td>Rating</td><td>1</td><td>2</td><td>3</td><td>Poäng</td><td>Man</td></tr>',
+    )
+  })
+
+  it('given the 4-player example, when published, then each row shows opponent row, colour and own result', () => {
+    const html = publishCrossTable(fourPlayers())
+    const empty = '<td class="CP_Round"></td>'
+    expect(html).toContain(
+      '<tr class="CP_Row"><td class="CP_Place">1</td><td class="CP_Player">Anna Andersson</td><td class="CP_Rating">1800</td>' +
+        '<td class="CP_Round"><div class="CP_White">4v</div>1</td>' +
+        '<td class="CP_Round"><div class="CP_Black">3s</div>i</td>' +
+        empty +
+        '<td class="CP_Score">2</td><td class="CP_Tiebreak">0</td></tr>',
+    )
+    expect(html).toContain(
+      '<tr class="CP_Row"><td class="CP_Place">2</td><td class="CP_Player">Bo Björk</td><td class="CP_Rating">1700</td>' +
+        '<td class="CP_Round"><div class="CP_White">3v</div>½</td>' +
+        '<td class="CP_Round"><div class="CP_Black">4s</div>u</td>' +
+        empty +
+        '<td class="CP_Score">½</td><td class="CP_Tiebreak">5</td></tr>',
+    )
+    expect(html).toContain(
+      '<tr class="CP_Row"><td class="CP_Place">3</td><td class="CP_Player">Cilla Carlsson</td><td class="CP_Rating">1600</td>' +
+        '<td class="CP_Round"><div class="CP_Black">2s</div>½</td>' +
+        '<td class="CP_Round"><div class="CP_White">1v</div>o</td>' +
+        empty +
+        '<td class="CP_Score">½</td><td class="CP_Tiebreak">3</td></tr>',
+    )
+    expect(html).toContain(
+      '<tr class="CP_Row"><td class="CP_Place">4</td><td class="CP_Player">Dan Dahl</td><td class="CP_Rating">1500</td>' +
+        '<td class="CP_Round"><div class="CP_Black">1s</div>0</td>' +
+        '<td class="CP_Round"><div class="CP_White">2v</div>u</td>' +
+        empty +
+        '<td class="CP_Score">0</td><td class="CP_Tiebreak">0</td></tr>',
+    )
+    expect(html).not.toContain('+/-')
+  })
+
+  it('given showGroup, when published, then a Grp column follows Namn', () => {
+    const html = publishCrossTable({ ...fourPlayers(), showGroup: true })
+    expect(html).toContain('<td>Plac</td><td>Namn</td><td>Grp</td><td>Rating</td>')
+    expect(html).toContain(
+      '<td class="CP_Player">Bo Björk</td><td class="CP_Group">B</td><td class="CP_Rating">1700</td>',
+    )
+  })
+
+  it('given showELO false, when published, then there is no Rating column', () => {
+    const html = publishCrossTable({ ...fourPlayers(), showELO: false })
+    expect(html).toContain('<td>Plac</td><td>Namn</td><td>1</td>')
+    expect(html).not.toContain('<td>Rating</td>')
+    expect(html).not.toContain('<td class="CP_Rating">')
+    expect(html).toContain(
+      '<td class="CP_Player">Anna Andersson</td><td class="CP_Round"><div class="CP_White">4v</div>1</td>',
+    )
+  })
+
+  it('given an unrated player, when published, then the rating cell is blank', () => {
+    const input = fourPlayers()
+    input.players[3].rating = 0
+    const html = publishCrossTable(input)
+    expect(html).toContain('<td class="CP_Player">Dan Dahl</td><td class="CP_Rating"></td>')
+  })
+
+  it('given a withdrawn player, when published, then the name is shown verbatim and the missing round is empty', () => {
+    const input = fourPlayers()
+    input.players[3].name = 'Dan Dahl (utgått r2)'
+    input.players[3].rounds = [{ opponentPlace: 1, color: 's', result: '0' }, null, null]
+    const html = publishCrossTable(input)
+    expect(html).toContain(
+      '<td class="CP_Player">Dan Dahl (utgått r2)</td><td class="CP_Rating">1500</td>' +
+        '<td class="CP_Round"><div class="CP_Black">1s</div>0</td>' +
+        '<td class="CP_Round"></td><td class="CP_Round"></td>',
+    )
+  })
+
+  it('given a chess4 bye, when published, then the cell has no opponent and shows the bye score', () => {
+    // Schackfyran ppg 4, maxWin 3. R1: Ada(v)-Bea(s) 3-1, Cid bye (3).
+    // Scores Ada 3, Cid 3, Bea 1; Ada ahead of Cid on rating.
     const input: CrossTablePublishInput = {
-      tournamentName: 'Test',
-      roundCount: 2,
+      tournamentName: 'Schackfyran',
+      roundCount: 1,
+      showGroup: false,
+      showELO: false,
+      tiebreakNames: [],
       players: [
         {
-          nr: 1,
-          name: 'Andersson, Anna',
-          rounds: [
-            { opponentNr: 2, color: 'v' },
-            { opponentNr: 3, color: 's' },
-          ],
-          totalScore: '1½',
+          place: 1,
+          name: 'Ada',
+          playerGroup: '',
+          rating: 1800,
+          rounds: [{ opponentPlace: 3, color: 'v', result: '3' }],
+          scoreDisplay: '3',
+          tiebreaks: {},
         },
         {
-          nr: 2,
-          name: 'Björk, Bo',
-          rounds: [
-            { opponentNr: 1, color: 's' },
-            { opponentNr: null, color: '' },
-          ],
-          totalScore: '½',
+          place: 2,
+          name: 'Cid',
+          playerGroup: '',
+          rating: 1600,
+          rounds: [{ opponentPlace: null, color: 'v', result: '3' }],
+          scoreDisplay: '3',
+          tiebreaks: {},
         },
         {
-          nr: 3,
-          name: 'Carlsson, Cilla',
-          rounds: [
-            { opponentNr: null, color: '' },
-            { opponentNr: 1, color: 'v' },
-          ],
-          totalScore: '1',
+          place: 3,
+          name: 'Bea',
+          playerGroup: '',
+          rating: 1700,
+          rounds: [{ opponentPlace: 1, color: 's', result: '1' }],
+          scoreDisplay: '1',
+          tiebreaks: {},
         },
       ],
     }
-
     const html = publishCrossTable(input)
-    expect(html).toContain('Korstabell')
-    expect(html).toContain('Andersson, Anna')
-    expect(html).toContain('2v')
-    expect(html).toContain('3s')
-    expect(html).toContain('1½')
-    expect(html).toContain('-') // Empty round cell
+    expect(html).toContain(
+      '<td class="CP_Player">Cid</td><td class="CP_Round"><div class="CP_White">v</div>3</td><td class="CP_Score">3</td>',
+    )
+    expect(html).toContain(
+      '<td class="CP_Player">Bea</td><td class="CP_Round"><div class="CP_Black">1s</div>1</td><td class="CP_Score">1</td>',
+    )
+  })
+
+  it('given a Buchholz tiebreak, when published, then the header uses the short name and the cell its value', () => {
+    const input = fourPlayers()
+    input.tiebreakNames = ['Buchholz']
+    input.players[0].tiebreaks = { Buch: '4.5' }
+    const html = publishCrossTable(input)
+    expect(html).toContain('<td>Poäng</td><td>Buch</td></tr>')
+    expect(html).toContain('<td class="CP_Score">2</td><td class="CP_Tiebreak">4.5</td></tr>')
   })
 })
 

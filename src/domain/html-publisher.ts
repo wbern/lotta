@@ -90,6 +90,16 @@ h3 {
   color: #212529;
   font-variant-numeric: tabular-nums;
 }
+.CP_Round {
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.CP_White, .CP_Black {
+  font-size: 8pt;
+  color: #495057;
+  line-height: 1.1;
+}
 .CP_Board {
   text-align: center;
   color: #495057;
@@ -629,15 +639,38 @@ ${script}
 </html>`
 }
 
+export interface CrossTableRoundCell {
+  /** 1-based row of the opponent in this table; null for a bye. */
+  opponentPlace: number | null
+  color: 'v' | 's'
+  result: string
+}
+
 export interface CrossTablePublishInput {
   tournamentName: string
   roundCount: number
+  showGroup: boolean
+  showELO: boolean
+  tiebreakNames: string[]
   players: {
-    nr: number
+    place: number
     name: string
-    rounds: { opponentNr: number | null; color: string }[]
-    totalScore: string
+    playerGroup: string
+    rating: number
+    /** One entry per round 1..roundCount; null when the player has no game. */
+    rounds: (CrossTableRoundCell | null)[]
+    scoreDisplay: string
+    tiebreaks: Record<string, string>
   }[]
+}
+
+function crossTableRoundCell(cell: CrossTableRoundCell | null): string {
+  if (!cell) return '<td class="CP_Round"></td>'
+  const colorClass = cell.color === 'v' ? 'CP_White' : 'CP_Black'
+  return (
+    `<td class="CP_Round"><div class="${colorClass}">${cell.opponentPlace ?? ''}${cell.color}</div>` +
+    `${esc(cell.result)}</td>`
+  )
 }
 
 export function publishCrossTable(input: CrossTablePublishInput): string {
@@ -645,27 +678,32 @@ export function publishCrossTable(input: CrossTablePublishInput): string {
   body += `<h2>${esc(input.tournamentName)} - Korstabell</h2>\n`
   body += '<table class="CP_Table">\n'
   body += '<tr class="CP_TableHeader">'
-  body += '<td>Nr</td><td>Namn</td>'
+  body += '<td>Plac</td><td>Namn</td>'
+  if (input.showGroup) body += '<td>Grp</td>'
+  if (input.showELO) body += '<td>Rating</td>'
   for (let r = 1; r <= input.roundCount; r++) {
-    body += `<td>R${r}</td>`
+    body += `<td>${r}</td>`
   }
   body += '<td>Poäng</td>'
+  for (const tb of input.tiebreakNames) {
+    body += `<td>${esc(tiebreakShortName(tb))}</td>`
+  }
   body += '</tr>\n'
 
   for (const p of input.players) {
     body += '<tr class="CP_Row">'
-    body += `<td class="CP_Place">${p.nr}</td>`
+    body += `<td class="CP_Place">${p.place}</td>`
     body += `<td class="CP_Player">${esc(p.name)}</td>`
-
-    for (const r of p.rounds) {
-      if (r.opponentNr != null) {
-        body += `<td class="CP_Tiebreak">${r.opponentNr}${r.color}</td>`
-      } else {
-        body += '<td class="CP_Tiebreak">-</td>'
-      }
+    if (input.showGroup) body += `<td class="CP_Group">${esc(p.playerGroup)}</td>`
+    if (input.showELO) body += `<td class="CP_Rating">${p.rating > 0 ? p.rating : ''}</td>`
+    for (const cell of p.rounds) {
+      body += crossTableRoundCell(cell)
     }
-
-    body += `<td class="CP_Score">${esc(p.totalScore)}</td>`
+    body += `<td class="CP_Score">${esc(p.scoreDisplay)}</td>`
+    for (const tb of input.tiebreakNames) {
+      const value = p.tiebreaks[tiebreakShortName(tb)] ?? p.tiebreaks[tb] ?? ''
+      body += `<td class="CP_Tiebreak">${esc(value)}</td>`
+    }
     body += '</tr>\n'
   }
 
