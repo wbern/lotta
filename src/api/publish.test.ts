@@ -199,6 +199,50 @@ describe('publish API (local)', () => {
     expect(cells.every((c) => c !== '')).toBe(true)
   })
 
+  it('given a Schackfyran tournament, when chess4 standings are published, then each club row shows players, class size and the scaled score', async () => {
+    const t = service.tournaments.create({
+      name: 'Schackfyran',
+      group: 'A',
+      pairingSystem: 'Monrad',
+      initialPairing: 'Rating',
+      nrOfRounds: 3,
+      barredPairing: false,
+      compensateWeakPlayerPP: false,
+      pointsPerGame: 4,
+      chess4: true,
+      ratingChoice: 'ELO',
+      showELO: false,
+      showGroup: false,
+    })
+    const c4a = service.clubs.create({ name: '4A', chess4Members: 12 })
+    const c4b = service.clubs.create({ name: '4B', chess4Members: 8 })
+    for (const [firstName, lastName, clubIndex, ratingI] of [
+      ['Anna', 'Ahl', c4a.id, 1200],
+      ['Bo', 'Berg', c4a.id, 1100],
+      ['Cilla', 'Cedh', c4b.id, 1150],
+      ['Dan', 'Dahl', c4b.id, 1050],
+    ] as [string, string, number, number][]) {
+      service.tournamentPlayers.add(t.id, { firstName, lastName, clubIndex, ratingI })
+    }
+    // Lots by rating: Ahl 1, Cedh 2, Berg 3, Dahl 4 → Cedh–Ahl, Dahl–Berg
+    // (lower lot white). White wins both: win 3, loss 4 − 3 = 1.
+    const round = await pairNextRound(t.id)
+    for (const g of round.games) {
+      await setResult(t.id, 1, g.boardNr, { resultType: 'WHITE_WIN' })
+    }
+
+    const html = await (await publishHtml(t.id, 'chess4-standings', 1)).text()
+
+    // 4B: Cedh 3 + Dahl 3 = 6 points, class size 8 → max(10, 8) = 10 → round(40/10·6) = 24.
+    // 4A: Ahl 1 + Berg 1 = 2 points, class size 12 → round(40/12·2) = round(6.67) = 7.
+    expect(html).toContain(
+      '<td class="CP_Place">1</td><td class="CP_Player">4B</td><td class="CP_Rating">2</td><td class="CP_Rating">8</td><td class="CP_Score">24</td>',
+    )
+    expect(html).toContain(
+      '<td class="CP_Place">2</td><td class="CP_Player">4A</td><td class="CP_Rating">2</td><td class="CP_Rating">12</td><td class="CP_Score">7</td>',
+    )
+  })
+
   it('publishClubStandingsHtml generates HTML', async () => {
     const round = await pairNextRound(tournamentId)
     for (const g of round.games) {
