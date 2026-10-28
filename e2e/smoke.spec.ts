@@ -128,3 +128,79 @@ test('imports players from a tab-separated file', async ({ page }) => {
     playerGroup: '2',
   })
 })
+
+test.describe('rating choice chosen in the tournament dialog', () => {
+  // Regression: the dialog saved the Swedish label, so every choice but ELO read
+  // all ratings as 0: no ratings shown and round 1 seeded by name, not rating.
+  test('given "Blixt-ELO annars ELO" is chosen when creating the tournament, when round 1 is paired, then ratings are shown and seeding follows them', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await waitForApi(page)
+    await page.getByTestId('menu-bar').getByRole('button', { name: 'Turnering' }).click()
+    await page.getByTestId('menu-dropdown').getByText('Ny', { exact: true }).click()
+    const dialog = page.getByTestId('dialog-overlay')
+    await dialog.getByTestId('tournament-name-input').fill('Blixtkväll')
+    await dialog.getByTestId('tournament-group-input').fill('A')
+    await dialog
+      .getByTestId('tournament-rating-choice-select')
+      .selectOption({ label: 'Blixt-ELO annars ELO' })
+    await dialog.getByRole('button', { name: 'Spara' }).click()
+    await expect(dialog).not.toBeVisible()
+
+    const $ = apiClient(page)
+    const created = (await $.get('/api/tournaments')).find(
+      (t: { name: string }) => t.name === 'Blixtkväll',
+    )
+    // Alphabetical order (Andersson, Berg, Carlsson, Dahl) is the reverse of the
+    // effective rating order, so name-order seeding cannot pass by accident.
+    const players = [
+      { lastName: 'Andersson', firstName: 'Anna', ratingI: 1500, ratingB: 0 },
+      { lastName: 'Berg', firstName: 'Bo', ratingI: 1900, ratingB: 0 },
+      { lastName: 'Carlsson', firstName: 'Cia', ratingI: 1700, ratingB: 1990 },
+      { lastName: 'Dahl', firstName: 'Dan', ratingI: 2105, ratingB: 2080 },
+    ]
+    for (const p of players) {
+      await $.post(`/api/tournaments/${created.id}/players`, {
+        ...p,
+        ratingN: 0,
+        ratingQ: 0,
+        ratingK: 0,
+        ratingKQ: 0,
+        ratingKB: 0,
+        clubIndex: 0,
+        title: '',
+        sex: '',
+        federation: 'SWE',
+        fideId: 0,
+        ssfId: 0,
+        playerGroup: '',
+        withdrawnFromRound: -1,
+        manualTiebreak: 0,
+      })
+    }
+    await page.reload()
+    await waitForApi(page)
+    // No round yet, so there is no pairings table to wait for (selectTournament does).
+    const selector = page.getByTestId('tournament-selector').locator('select').first()
+    await selector.locator('option', { hasText: 'Blixtkväll' }).waitFor({ state: 'attached' })
+    await selector.selectOption('Blixtkväll')
+
+    await page.getByTestId('menu-bar').getByRole('button', { name: 'Lotta', exact: true }).click()
+    await page.getByTestId('menu-dropdown').getByText('Lotta nästa rond').click()
+
+    // Effective ratings: Dahl 2080 (blitz), Carlsson 1990 (blitz), Berg 1900
+    // (ELO fallback), Andersson 1500 (ELO fallback). The dialog's default system
+    // is Nordisk Schweizer: round 1 pairs top half vs bottom half, seed 1–3 and
+    // 2–4. Name-order seeding would instead give Andersson–Carlsson, Berg–Dahl.
+    const board1 = page.locator('tr[data-board-nr="1"]').first()
+    const board2 = page.locator('tr[data-board-nr="2"]').first()
+    await expect(board1).toContainText('Dahl')
+    await expect(board1).toContainText('Berg')
+    await expect(board1).toContainText('2080')
+    await expect(board1).toContainText('1900')
+    await expect(board2).toContainText('Carlsson')
+    await expect(board2).toContainText('Andersson')
+    await expect(board2).toContainText('1990')
+  })
+})

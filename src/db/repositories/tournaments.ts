@@ -1,4 +1,5 @@
 import type { Database } from 'sql.js'
+import { normaliseRatingChoice } from '../../domain/ratings.ts'
 import { LOCK_GUARDS, tournamentLockState } from '../../domain/tournament-lock.ts'
 import { validateTournamentRequest } from '../../domain/validation.ts'
 import type {
@@ -60,7 +61,7 @@ export class TournamentRepository {
       String(req.compensateWeakPlayerPP),
       String(req.chess4),
       req.pointsPerGame,
-      req.ratingChoice,
+      normaliseRatingChoice(req.ratingChoice),
       String(req.showELO),
       String(req.showGroup),
       req.city ?? null,
@@ -116,7 +117,10 @@ export class TournamentRepository {
     return this.get(id)!
   }
 
-  update(id: number, req: CreateTournamentRequest): TournamentDto {
+  update(id: number, rawReq: CreateTournamentRequest): TournamentDto {
+    // Normalise before the lock guards so an older client sending a label for an
+    // unchanged choice is not mistaken for a change.
+    const req = { ...rawReq, ratingChoice: normaliseRatingChoice(rawReq.ratingChoice) }
     const validated = validateTournamentRequest(req)
     const current = this.get(id)
 
@@ -236,7 +240,7 @@ export class TournamentRepository {
       pointsPerGame,
       chess4,
       maxPointsForWin,
-      ratingChoice: row[10] as string,
+      ratingChoice: normaliseRatingChoice(row[10] as string),
       showELO: row[11] === 'true',
       showGroup: row[12] === 'true',
       city: (row[13] as string) ?? '',

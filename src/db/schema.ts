@@ -1,4 +1,5 @@
 import type { Database } from 'sql.js'
+import { RATING_CHOICE_CODES, RATING_CHOICE_LABELS } from '../domain/ratings.ts'
 
 const SCHEMA_SQL = `
 CREATE TABLE clubs (
@@ -169,5 +170,17 @@ export function migrateSchema(db: Database): void {
   const t = columnNames(db, 'tournaments')
   if (t.size > 0 && !t.has('maxpointsforwin')) {
     db.run('ALTER TABLE tournaments ADD COLUMN maxpointsforwin INTEGER')
+  }
+
+  // Up to v1.23 the tournament dialog stored the Swedish rating-choice label
+  // instead of the code, which made every non-ELO choice read all ratings as 0.
+  if (t.size > 0) {
+    for (const code of RATING_CHOICE_CODES) {
+      if (RATING_CHOICE_LABELS[code] === code) continue
+      db.run('UPDATE tournaments SET ratingchoice = ? WHERE ratingchoice = ?', [
+        code,
+        RATING_CHOICE_LABELS[code],
+      ])
+    }
   }
 }

@@ -640,4 +640,55 @@ describe('TournamentRepository', () => {
     expect(tournaments.list()).toEqual([])
     expect(tournaments.get(created.id)).toBeNull()
   })
+
+  describe('rating choice codes', () => {
+    const req = (ratingChoice: string) => ({
+      name: 'Klubbkväll',
+      group: 'A',
+      pairingSystem: 'Monrad',
+      initialPairing: 'Rating',
+      nrOfRounds: 5,
+      barredPairing: false,
+      compensateWeakPlayerPP: false,
+      pointsPerGame: 1,
+      chess4: false,
+      ratingChoice,
+      showELO: true,
+      showGroup: false,
+    })
+
+    it('given a request with the Swedish label "Blixt-ELO annars ELO", when the tournament is created, then it is stored and read as BLITZ_THEN_ELO', () => {
+      const created = tournaments.create(req('Blixt-ELO annars ELO'))
+
+      expect(created.ratingChoice).toBe('BLITZ_THEN_ELO')
+      const stored = db.exec('SELECT ratingchoice FROM tournaments WHERE "index" = ?', [created.id])
+      expect(stored[0].values[0][0]).toBe('BLITZ_THEN_ELO')
+    })
+
+    it.each([
+      ['Snabb-ELO', 'QUICK'],
+      ['Blixt-ELO', 'BLITZ'],
+      ['Snabb-ELO annars ELO', 'QUICK_THEN_ELO'],
+      ['Blixt-ELO annars ELO', 'BLITZ_THEN_ELO'],
+      ['ELO', 'ELO'],
+    ])('given a tournament saved by an older version with label "%s", when it is read, then ratingChoice is %s', (label, code) => {
+      const created = tournaments.create(req('ELO'))
+      db.run('UPDATE tournaments SET ratingchoice = ? WHERE "index" = ?', [label, created.id])
+
+      expect(tournaments.get(created.id)!.ratingChoice).toBe(code)
+    })
+
+    it('given an in-progress tournament saved with a label, when it is saved again with the matching code, then the round-1 lock does not reject it', () => {
+      const created = tournaments.create(req('ELO'))
+      db.run('UPDATE tournaments SET ratingchoice = ? WHERE "index" = ?', ['Snabb-ELO', created.id])
+      db.run(
+        `INSERT INTO tournamentgames (tournament, round, boardnr, whiteplayer, blackplayer, resulttype, whitescore, blackscore, whiteplayerlotnr, blackplayerlotnr)
+         VALUES (?, 1, 1, NULL, NULL, 0, 0.0, 0.0, 1, 2)`,
+        [created.id],
+      )
+
+      expect(() => tournaments.update(created.id, req('QUICK'))).not.toThrow()
+      expect(tournaments.get(created.id)!.ratingChoice).toBe('QUICK')
+    })
+  })
 })

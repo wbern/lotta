@@ -1,4 +1,5 @@
 import type { Database } from 'sql.js'
+import { normaliseRatingChoice } from '../../domain/ratings.ts'
 import { calculateScores } from '../../domain/scoring.ts'
 import type {
   GameDto,
@@ -303,7 +304,9 @@ export class GameRepository {
     const rc = this.db.exec('SELECT ratingchoice FROM tournaments WHERE "index" = ?', [
       tournamentId,
     ])
-    const ratingChoice = rc.length > 0 ? (rc[0].values[0][0] as string) : 'ELO'
+    const ratingChoice = normaliseRatingChoice(
+      rc.length > 0 ? (rc[0].values[0][0] as string) : null,
+    )
 
     switch (ratingChoice) {
       case 'ELO':

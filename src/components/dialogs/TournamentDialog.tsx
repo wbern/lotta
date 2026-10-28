@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { generateRandomName } from '../../domain/random-name'
+import { RATING_CHOICE_CODES, RATING_CHOICE_LABELS } from '../../domain/ratings'
 import { tiebreakLabel } from '../../domain/standings'
 import { isFieldLocked, tournamentLockState } from '../../domain/tournament-lock'
 import { useCreateTournament, useTournament, useUpdateTournament } from '../../hooks/useTournaments'
@@ -29,14 +30,6 @@ const ALL_TIEBREAKS = [
   'Svarta partier',
   'Manuell',
   'Random',
-]
-
-const RATING_CHOICES = [
-  'ELO',
-  'Snabb-ELO',
-  'Blixt-ELO',
-  'Snabb-ELO annars ELO',
-  'Blixt-ELO annars ELO',
 ]
 
 type PointSystemPreset = 'standard' | 'schack4an' | 'skollags' | 'manual'
@@ -510,9 +503,9 @@ export function TournamentDialog({
                 onChange={(e) => update({ ratingChoice: e.target.value })}
                 disabled={form.chess4 || isFieldLocked('ratingChoice', lockState)}
               >
-                {RATING_CHOICES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
+                {RATING_CHOICE_CODES.map((code) => (
+                  <option key={code} value={code}>
+                    {RATING_CHOICE_LABELS[code]}
                   </option>
                 ))}
               </select>

@@ -212,4 +212,23 @@ describe('GameRepository', () => {
       expect(games.listRounds(tournamentId).map((r) => r.roundNr)).toEqual([1])
     })
   })
+
+  it('given a tournament saved by an older version with the label "Blixt-ELO annars ELO", when a round is read, then boards show the blitz rating, falling back to ELO', () => {
+    db.run('UPDATE tournaments SET ratingchoice = ? WHERE "index" = ?', [
+      'Blixt-ELO annars ELO',
+      tournamentId,
+    ])
+    db.run('UPDATE tournamentplayers SET ratingb = 2080, ratingi = 2105 WHERE "index" = ?', [
+      whitePlayerId,
+    ])
+    db.run('UPDATE tournamentplayers SET ratingb = 0, ratingi = 1980 WHERE "index" = ?', [
+      blackPlayerId,
+    ])
+    games.insertGame(tournamentId, 1, 1, whitePlayerId, blackPlayerId)
+
+    const game = games.getRound(tournamentId, 1)!.games[0]
+
+    expect(game.whitePlayer?.rating).toBe(2080)
+    expect(game.blackPlayer?.rating).toBe(1980)
+  })
 })

@@ -453,9 +453,7 @@ test.describe('Tournament dialog — create mode', () => {
     await expect(compensateCheckbox).not.toBeChecked()
 
     // Rating choice select should be disabled with ELO
-    const ratingSelect = dialog.locator(
-      'select:has(option[value="ELO"]):has(option[value="Snabb-ELO"])',
-    )
+    const ratingSelect = dialog.getByTestId('tournament-rating-choice-select')
     await expect(ratingSelect).toBeDisabled()
     await expect(ratingSelect).toHaveValue('ELO')
 

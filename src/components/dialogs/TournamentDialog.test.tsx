@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { sv } from '../../lib/swedish-text'
 import type { TournamentDto } from '../../types/api'
@@ -581,5 +582,40 @@ describe('TournamentDialog tiebreak labels', () => {
 
     fireEvent.click(screen.getByText('Spara'))
     expect(mockMutate.mock.calls[0][0].selectedTiebreaks).toEqual(['Prestationsrating LASK'])
+  })
+})
+
+describe('TournamentDialog rating choice', () => {
+  // The dialog must save the internal code that getPlayerRating understands
+  // (Java Lotta's enum names), not the Swedish label shown to the user.
+  it.each([
+    ['ELO', 'ELO'],
+    ['Snabb-ELO', 'QUICK'],
+    ['Blixt-ELO', 'BLITZ'],
+    ['Snabb-ELO annars ELO', 'QUICK_THEN_ELO'],
+    ['Blixt-ELO annars ELO', 'BLITZ_THEN_ELO'],
+  ])('given a new tournament, when the arbiter picks "%s", then the tournament is saved with ratingChoice %s', async (label, code) => {
+    const user = userEvent.setup()
+    render(<TournamentDialog open tournamentId={undefined} onClose={vi.fn()} />)
+
+    await user.type(screen.getByTestId('tournament-name-input'), 'Klubbkväll')
+    await user.type(screen.getByTestId('tournament-group-input'), 'A')
+    await user.selectOptions(
+      screen.getByTestId('tournament-rating-choice-select'),
+      screen.getByRole('option', { name: label }),
+    )
+    await user.click(screen.getByText('Spara'))
+
+    expect(mockMutate).toHaveBeenCalledTimes(1)
+    expect(mockMutate.mock.calls[0][0]).toMatchObject({ ratingChoice: code })
+  })
+
+  it('given an existing tournament stored with BLITZ_THEN_ELO, when the dialog opens, then "Blixt-ELO annars ELO" is shown as selected', () => {
+    mockExisting.value = { ...baseTournament, ratingChoice: 'BLITZ_THEN_ELO' } as TournamentDto
+    render(<TournamentDialog open tournamentId={1} onClose={vi.fn()} />)
+
+    const select = screen.getByTestId('tournament-rating-choice-select') as HTMLSelectElement
+    expect(select.value).toBe('BLITZ_THEN_ELO')
+    expect(select.selectedOptions[0].textContent).toBe('Blixt-ELO annars ELO')
   })
 })
