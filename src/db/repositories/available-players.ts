@@ -84,7 +84,13 @@ export class AvailablePlayerRepository {
       const value = dto[dtoField as keyof PlayerDto]
       if (value !== undefined) {
         fields.push(`${dbColumn} = ?`)
-        values.push(value as string | number | null)
+        // clubIndex 0 means "no club" (as on insert); storing 0 would break the
+        // clubs foreign key and fail every edit of a club-less player.
+        values.push(
+          dtoField === 'clubIndex' && !((value as number) > 0)
+            ? null
+            : (value as string | number | null),
+        )
       }
     }
 

@@ -26,6 +26,37 @@ describe('TournamentPlayerRepository', () => {
     db.close()
   })
 
+  describe('players without a club', () => {
+    // The player form sends clubIndex 0 for "no club". Insert already stores
+    // that as NULL; update must too, or the clubs foreign key rejects every edit
+    // of a club-less player ("Kunde inte spara ändringarna").
+    it('given a player without a club, when they are withdrawn via the form (clubIndex 0), then the update succeeds', () => {
+      const added = tournamentPlayers.add(tournamentId, { lastName: 'Dahl', firstName: 'Dan' })
+
+      const updated = tournamentPlayers.update(added.id, {
+        ...added,
+        clubIndex: 0,
+        withdrawnFromRound: 2,
+      })
+
+      expect(updated.withdrawnFromRound).toBe(2)
+      expect(updated.club).toBeNull()
+    })
+
+    it('given a player in a club, when the club is cleared (clubIndex 0), then they have no club', () => {
+      const added = tournamentPlayers.add(tournamentId, {
+        lastName: 'Dahl',
+        firstName: 'Dan',
+        clubIndex: 1,
+      })
+
+      const updated = tournamentPlayers.update(added.id, { clubIndex: 0 })
+
+      expect(updated.club).toBeNull()
+      expect(updated.clubIndex).toBe(0)
+    })
+  })
+
   it('returns empty list when no players exist', () => {
     expect(tournamentPlayers.list(tournamentId)).toEqual([])
   })

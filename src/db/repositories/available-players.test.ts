@@ -19,6 +19,19 @@ describe('AvailablePlayerRepository', () => {
     db.close()
   })
 
+  describe('players without a club', () => {
+    // Same contract as tournament players: clubIndex 0 from the form means
+    // "no club" and must be stored as NULL, not as a reference to club 0.
+    it('given a pool player without a club, when edited via the form (clubIndex 0), then the update succeeds', () => {
+      const created = players.create({ lastName: 'Dahl', firstName: 'Dan' })
+
+      const updated = players.update(created.id, { ...created, clubIndex: 0, ratingI: 1800 })
+
+      expect(updated.ratingI).toBe(1800)
+      expect(updated.club).toBeNull()
+    })
+  })
+
   it('returns empty list when no players exist', () => {
     expect(players.list()).toEqual([])
   })
