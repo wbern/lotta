@@ -32,11 +32,9 @@ const classesFixture = [
   },
 ]
 
-vi.mock('../../api/publish-data', () => ({
-  buildAlphabeticalPairingsInput: () => ({
-    tournamentName: 'Höstturneringen',
-    roundNr: 1,
-    classes: classesFixture,
+vi.mock('../../hooks/useAlphabeticalPairings', () => ({
+  useAlphabeticalPairings: () => ({
+    data: { tournamentName: 'Höstturneringen', roundNr: 1, classes: classesFixture },
   }),
 }))
 

@@ -206,3 +206,28 @@ test('changing a Schack4an class size updates Schack4an-ställning', async ({ pa
   await openTab(page, 'Schack4an ställning')
   await expect(row.locator('td').nth(3)).toHaveText('25')
 })
+
+test('the Alfabetisk lottning print view shows a renamed player while the tab is open', async ({
+  page,
+}) => {
+  const { tid } = await setup(page, { name: 'Utskrift' })
+  await openTab(page, 'Alfabetisk lottning')
+  const print = page.getByTestId('alphabetical-print')
+  await expect(print).toContainText('Anna Svensson')
+
+  const dialog = await openTournamentPlayers(page)
+  await dialog.getByTestId('data-table').locator('tbody tr', { hasText: 'Anna' }).click()
+  await dialog.getByRole('button', { name: 'Editera', exact: true }).click()
+  await dialog.getByTestId('first-name-input').fill('Annika')
+  await dialog.getByTestId('update-player').click()
+  await expect
+    .poll(async () => {
+      const players = await apiClient(page).get(`/api/tournaments/${tid}/players`)
+      return players.some((p: { firstName: string }) => p.firstName === 'Annika')
+    })
+    .toBe(true)
+  await closeDialog(page)
+
+  await expect(table(page)).toContainText('Annika Svensson')
+  await expect(print).toContainText('Annika Svensson')
+})

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { buildAlphabeticalPairingsInput } from '../../api/publish-data'
+import { useAlphabeticalPairings } from '../../hooks/useAlphabeticalPairings'
 import { useTableSort } from '../../hooks/useTableSort'
 import { sv } from '../../lib/swedish-text'
 import type { RoundDto } from '../../types/api'
@@ -40,11 +40,8 @@ export function AlphabeticalPairingTab({
 
   // Grouped-by-class view used only when printing. Same data source as the
   // downloaded HTML publish, so screen and paper stay consistent.
-  const printClasses = useMemo(() => {
-    if (roundNr == null) return []
-    const grouped = buildAlphabeticalPairingsInput(tournamentId, roundNr)
-    return grouped?.classes ?? []
-  }, [tournamentId, roundNr])
+  const { data: printData } = useAlphabeticalPairings(tournamentId, roundNr)
+  const printClasses = printData?.classes ?? []
 
   const playerRows = useMemo(() => {
     if (!round) return []
@@ -137,7 +134,11 @@ export function AlphabeticalPairingTab({
           </tbody>
         </table>
       </div>
-      <div className={`print-only${printCompact ? ' CP_compact' : ''}`} aria-hidden="true">
+      <div
+        className={`print-only${printCompact ? ' CP_compact' : ''}`}
+        data-testid="alphabetical-print"
+        aria-hidden="true"
+      >
         {printGroupByClass ? (
           printClasses.map((klass) => (
             <div key={klass.className || '__unclubbed__'} className="CP_AlphabeticalClass">
