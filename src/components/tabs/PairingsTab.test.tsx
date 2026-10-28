@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '../toast/ToastProvider'
 
@@ -65,17 +66,28 @@ function renderTab(props?: {
   pointsPerGame?: number
   maxPointsImmediately?: boolean
   chess4?: boolean
+  onDeleteSelected?: () => void
 }) {
+  // PairingsTab no longer owns the board selection (AppLayout does, so the menu
+  // and the table act on the same boards). This harness plays AppLayout's part.
+  const SelectionHarness = () => {
+    const [selectedBoards, setSelectedBoards] = useState<Set<number>>(new Set())
+    return (
+      <PairingsTab
+        tournamentId={1}
+        round={1}
+        rounds={[{ roundNr: 1, hasAllResults: false, gameCount: 0, games: [] }]}
+        selectedBoards={selectedBoards}
+        onSelectedBoardsChange={(updater) => setSelectedBoards((prev) => updater(prev))}
+        {...props}
+      />
+    )
+  }
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={qc}>
       <ToastProvider>
-        <PairingsTab
-          tournamentId={1}
-          round={1}
-          rounds={[{ roundNr: 1, hasAllResults: false, gameCount: 0, games: [] }]}
-          {...props}
-        />
+        <SelectionHarness />
       </ToastProvider>
     </QueryClientProvider>,
   )
@@ -635,5 +647,45 @@ describe('PairingsTab conflict notification', () => {
     const dismiss = screen.getByTestId('toast-dismiss')
     dismiss.click()
     expect(mockMutationState.reset).toHaveBeenCalled()
+  })
+})
+
+describe('PairingsTab Delete key with a multi-board selection', () => {
+  afterEach(() => {
+    cleanup()
+    vi.clearAllMocks()
+  })
+
+  it('given two boards are selected, when Delete is pressed on a focused row, then onDeleteSelected is called once', async () => {
+    const user = userEvent.setup()
+    const onDeleteSelected = vi.fn()
+    renderTab({ onDeleteSelected })
+    const rowA = screen.getByText('White A').closest('tr') as HTMLTableRowElement
+    const rowB = screen.getByText('White B').closest('tr') as HTMLTableRowElement
+
+    await user.click(rowA)
+    await user.keyboard('{Shift>}')
+    await user.click(rowB)
+    await user.keyboard('{/Shift}')
+    expect(rowA.className).toContain('selected')
+    expect(rowB.className).toContain('selected')
+
+    await user.keyboard('{Delete}')
+
+    expect(onDeleteSelected).toHaveBeenCalledOnce()
+    expect(mockDeleteGames).not.toHaveBeenCalled()
+  })
+
+  it('given no row has focus, when Delete is pressed, then onDeleteSelected is not called', async () => {
+    const user = userEvent.setup()
+    const onDeleteSelected = vi.fn()
+    renderTab({ onDeleteSelected })
+    const rowA = screen.getByText('White A').closest('tr') as HTMLTableRowElement
+
+    await user.click(rowA)
+    rowA.blur()
+    await user.keyboard('{Delete}')
+
+    expect(onDeleteSelected).not.toHaveBeenCalled()
   })
 })

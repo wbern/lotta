@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Outlet, useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   downloadBackup,
   downloadEncryptedBackup,
@@ -9,15 +9,16 @@ import {
   restoreBackup,
 } from '../../api/backup'
 import { publishHtml } from '../../api/publish'
-import { deleteGame } from '../../api/results'
+import { deleteGame, deleteGames } from '../../api/results'
 import { exportTournamentPlayers, importPlayers } from '../../api/tournaments'
 import { tournamentLockState } from '../../domain/tournament-lock'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useLiveStatus } from '../../hooks/useLiveStatus'
-import { useRounds, useUnpairLastRound } from '../../hooks/useRounds'
+import { useRound, useRounds, useUnpairLastRound } from '../../hooks/useRounds'
 import { useSettings } from '../../hooks/useSettings'
 import { useDeleteTournament, useTournament, useTournaments } from '../../hooks/useTournaments'
 import { useTimeline, useUndoActions, useUndoState } from '../../hooks/useUndo'
+import { actionErrorMessage } from '../../lib/save-error-bus'
 import { useClientP2PStore } from '../../stores/client-p2p-store'
 import { ClientOverlay } from '../ClientOverlay'
 import { AddGroupDialog } from '../dialogs/AddGroupDialog'
@@ -63,6 +64,8 @@ function importResultToast({
   if (imported === 0) return { message: parts.join(' '), variant: 'info', autoDismissMs: 6000 }
   return { message: parts.join(' '), variant: 'success', autoDismissMs: 4000 }
 }
+
+const EMPTY_BOARD_SET: Set<number> = new Set()
 
 export function AppLayout() {
   const search = useSearch({ strict: false }) as {
@@ -115,6 +118,43 @@ export function AppLayout() {
     currentRound != null && (rounds?.some((r) => r.roundNr === currentRound) ?? false)
   const activeRound = roundExists ? currentRound : latestRoundNr
 
+  // Board selection in the pairings table. AppLayout owns it so the Lotta menu
+  // (Editera/Ta bort bord) and the table's Delete key act on the same boards.
+  // It is derived against the shown round's games (ADR-0002): switching round or
+  // tournament, or a board disappearing (undo, another client), empties it.
+  const [boardSelection, setBoardSelection] = useState<{
+    tournamentId: number
+    roundNr: number
+    boardNrs: Set<number>
+  } | null>(null)
+  const { data: activeRoundData } = useRound(tournamentId, activeRound)
+  const selectedBoardNrs = useMemo(() => {
+    if (
+      boardSelection == null ||
+      boardSelection.tournamentId !== tournamentId ||
+      boardSelection.roundNr !== activeRound
+    ) {
+      return EMPTY_BOARD_SET
+    }
+    const games = activeRoundData?.games ?? []
+    return new Set([...boardSelection.boardNrs].filter((n) => games.some((g) => g.boardNr === n)))
+  }, [boardSelection, tournamentId, activeRound, activeRoundData])
+  const updateBoardSelection = useCallback(
+    (updater: (prev: Set<number>) => Set<number>) => {
+      if (tournamentId == null || activeRound == null) return
+      setBoardSelection((prev) => ({
+        tournamentId,
+        roundNr: activeRound,
+        boardNrs: updater(
+          prev?.tournamentId === tournamentId && prev.roundNr === activeRound
+            ? prev.boardNrs
+            : new Set(),
+        ),
+      }))
+    },
+    [tournamentId, activeRound],
+  )
+
   // Keep the URL in sync with the data: if ?round dangles at a round that no
   // longer exists, replace it with the nearest valid round (or clear it). This
   // self-heals the view for every cause — switch, unpair, undo, redo, restore —
@@ -162,9 +202,6 @@ export function AppLayout() {
   const [restoreError, setRestoreError] = useState('')
   const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null)
   const importFileRef = useRef<HTMLInputElement>(null)
-
-  // Selected board for edit/delete operations
-  const [selectedBoard, setSelectedBoard] = useState<number | undefined>()
 
   const setTournamentId = (id: number | undefined) => {
     navigate({ to: '/', search: { tournamentId: id, round: currentRound, tab: currentTab } })
@@ -281,11 +318,10 @@ export function AppLayout() {
   }
 
   const handleEditBoard = () => {
-    if (selectedBoard != null) {
-      setEditBoardMode('edit')
-      setEditBoardNr(selectedBoard)
-      setShowEditBoard(true)
-    }
+    if (selectedBoardNrs.size !== 1) return
+    setEditBoardMode('edit')
+    setEditBoardNr([...selectedBoardNrs][0])
+    setShowEditBoard(true)
   }
 
   const handleEditBoardByNr = (boardNr: number) => {
@@ -294,13 +330,28 @@ export function AppLayout() {
     setShowEditBoard(true)
   }
 
-  const handleDeleteBoard = async () => {
-    if (selectedBoard == null) return
-    if (tournamentId != null && activeRound != null) {
-      if (confirm(`Är du säker på att du vill ta bort bord ${selectedBoard}?`)) {
-        await deleteGame(tournamentId, activeRound, selectedBoard)
-        queryClient.invalidateQueries({ queryKey: ['tournaments', tournamentId, 'rounds'] })
+  // Shared by the Lotta menu's Ta bort bord and the pairings table's Delete key.
+  const handleDeleteSelectedBoards = async () => {
+    if (selectedBoardNrs.size === 0 || tournamentId == null || activeRound == null) return
+    const boardNrs = [...selectedBoardNrs].sort((a, b) => a - b)
+    const msg =
+      boardNrs.length === 1
+        ? `Är du säker på att du vill ta bort bord ${boardNrs[0]}?`
+        : `Är du säker på att du vill ta bort ${boardNrs.length} bord?`
+    if (!confirm(msg)) return
+    try {
+      if (boardNrs.length === 1) {
+        await deleteGame(tournamentId, activeRound, boardNrs[0])
+      } else {
+        await deleteGames(tournamentId, activeRound, boardNrs)
       }
+      setBoardSelection(null)
+    } catch (e) {
+      // Persistence failures are already toasted by SaveErrorToaster (ADR-0001).
+      const message = actionErrorMessage(e)
+      if (message) showActionError(message)
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ['tournaments', tournamentId, 'rounds'] })
     }
   }
 
@@ -481,6 +532,7 @@ export function AppLayout() {
         tournamentId={tournamentId}
         roundNr={activeRound}
         chess4={tournament?.chess4}
+        isP2PClient={liveStatus?.role === 'client'}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={handleUndo}
@@ -497,7 +549,9 @@ export function AppLayout() {
         onRestore={handleRestore}
         onAddBoard={handleAddBoard}
         onEditBoard={handleEditBoard}
-        onDeleteBoard={handleDeleteBoard}
+        onDeleteBoard={handleDeleteSelectedBoards}
+        canEditBoard={selectedBoardNrs.size === 1}
+        canDeleteBoard={selectedBoardNrs.size >= 1}
         onPrint={handlePrint}
         onExportPlayers={handleExportPlayers}
         onImportPlayers={handleImportPlayers}
@@ -525,7 +579,9 @@ export function AppLayout() {
         tournamentName={tournament?.name}
         round={activeRound}
         rounds={rounds || []}
-        onBoardSelect={setSelectedBoard}
+        selectedBoards={selectedBoardNrs}
+        onSelectedBoardsChange={updateBoardSelection}
+        onDeleteSelected={handleDeleteSelectedBoards}
         onEditBoard={handleEditBoardByNr}
         chess4={tournament?.chess4}
         showELO={tournament?.showELO}
@@ -595,7 +651,11 @@ export function AppLayout() {
       <ConfirmDialog
         open={showUnpairConfirm}
         title="Ångra lottning"
-        message="Är du säker på att du vill ångra lottningen för den senaste ronden? Om resultat finns så kommer de att tas bort."
+        message={
+          tournament?.pairingSystem === 'Berger'
+            ? 'Är du säker på att du vill ångra lottningen? I en Berger-turnering tas alla lottade ronder bort. Om resultat finns så kommer de att tas bort.'
+            : 'Är du säker på att du vill ångra lottningen för den senaste ronden? Om resultat finns så kommer de att tas bort.'
+        }
         onConfirm={() => {
           unpairMutation.mutate(undefined, {
             onSuccess: () => setShowUnpairConfirm(false),

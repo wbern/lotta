@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Dialog } from './Dialog'
+import { isAnyModalOpen } from './modal-registry'
 
 afterEach(cleanup)
 
@@ -53,5 +54,42 @@ describe('Dialog overlay close behavior', () => {
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(onClose).not.toHaveBeenCalled()
+  })
+})
+
+describe('Dialog modal registry', () => {
+  it('given a dialog is open, when queried, then isAnyModalOpen is true; and after it closes, then false', () => {
+    const { rerender } = render(
+      <Dialog title="Test" open onClose={() => {}}>
+        <p>Content</p>
+      </Dialog>,
+    )
+    expect(isAnyModalOpen()).toBe(true)
+
+    rerender(
+      <Dialog title="Test" open={false} onClose={() => {}}>
+        <p>Content</p>
+      </Dialog>,
+    )
+    expect(isAnyModalOpen()).toBe(false)
+  })
+
+  it('given a closed dialog is mounted, when queried, then isAnyModalOpen is false', () => {
+    render(
+      <Dialog title="Test" open={false} onClose={() => {}}>
+        <p>Content</p>
+      </Dialog>,
+    )
+    expect(isAnyModalOpen()).toBe(false)
+  })
+
+  it('given an open dialog, when it unmounts, then isAnyModalOpen is false', () => {
+    const { unmount } = render(
+      <Dialog title="Test" open onClose={() => {}}>
+        <p>Content</p>
+      </Dialog>,
+    )
+    unmount()
+    expect(isAnyModalOpen()).toBe(false)
   })
 })

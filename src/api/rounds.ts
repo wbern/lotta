@@ -446,12 +446,12 @@ export async function unpairLastRoundLocal(tournamentId: number): Promise<void> 
   const db = getDatabaseService()
   const rounds = db.games.listRounds(tournamentId)
   const lastRoundNr = rounds.length > 0 ? rounds[rounds.length - 1].roundNr : 0
+  const isBerger = db.tournaments.get(tournamentId)?.pairingSystem === 'Berger'
   return withSave(
     () => {
-      const tournament = db.tournaments.get(tournamentId)
       if (rounds.length === 0) throw new Error('No rounds to unpair')
 
-      if (tournament?.pairingSystem === 'Berger') {
+      if (isBerger) {
         // Berger: remove all rounds
         for (const r of rounds) {
           db.games.unpairRound(tournamentId, r.roundNr)
@@ -461,7 +461,7 @@ export async function unpairLastRoundLocal(tournamentId: number): Promise<void> 
       }
     },
     'Ångra lottning',
-    `Rond ${lastRoundNr}`,
+    isBerger ? 'Alla ronder' : `Rond ${lastRoundNr}`,
   )
 }
 

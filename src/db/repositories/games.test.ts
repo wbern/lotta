@@ -172,4 +172,44 @@ describe('GameRepository', () => {
     expect(blackWin.blackScore).toBe(2)
     expect(blackWin.resultDisplay).toBe('0-2')
   })
+
+  describe('deleting boards must not leave a gap in the rounds', () => {
+    const GAP_MESSAGE =
+      'Det går inte att ta bort det sista bordet i rond 1 eftersom senare ronder finns. Ångra lottningen av de senare ronderna först.'
+
+    beforeEach(() => {
+      for (const roundNr of [1, 2]) {
+        games.insertGame(tournamentId, roundNr, 1, whitePlayerId, blackPlayerId)
+        games.insertGame(tournamentId, roundNr, 2, blackPlayerId, whitePlayerId)
+      }
+    })
+
+    const boardsIn = (roundNr: number) =>
+      (games.getRound(tournamentId, roundNr)?.games ?? []).map((g) => g.boardNr)
+
+    it('given rounds 1 and 2, when every board of round 1 is deleted in one batch, then it throws and both boards remain', () => {
+      expect(() => games.deleteGames(tournamentId, 1, [1, 2])).toThrow(GAP_MESSAGE)
+      expect(boardsIn(1)).toEqual([1, 2])
+    })
+
+    it('given round 1 has one board left and round 2 exists, when that board is deleted, then it throws and the board remains', () => {
+      games.deleteGame(tournamentId, 1, 2)
+
+      expect(() => games.deleteGame(tournamentId, 1, 1)).toThrow(GAP_MESSAGE)
+      expect(boardsIn(1)).toEqual([1])
+    })
+
+    it('given rounds 1 and 2, when one board of round 1 is deleted, then it succeeds', () => {
+      games.deleteGames(tournamentId, 1, [2])
+
+      expect(boardsIn(1)).toEqual([1])
+      expect(games.listRounds(tournamentId).map((r) => r.roundNr)).toEqual([1, 2])
+    })
+
+    it('given rounds 1 and 2, when every board of the latest round is deleted, then it succeeds and only round 1 remains', () => {
+      games.deleteGames(tournamentId, 2, [1, 2])
+
+      expect(games.listRounds(tournamentId).map((r) => r.roundNr)).toEqual([1])
+    })
+  })
 })

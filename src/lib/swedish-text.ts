@@ -112,6 +112,14 @@ export const sv = {
     noClubs: 'Inga klubbar',
     noChess4Standings: 'Ingen Schack4an-ställning',
   },
+  /** Tooltips explaining why a menu item or button is disabled. */
+  disabledReason: {
+    noRoundPaired: 'Ingen rond är lottad',
+    selectBoardFirst: 'Markera ett bord i lottningen först',
+    selectExactlyOneBoard: 'Markera exakt ett bord',
+    selectBoardsFirst: 'Markera ett eller flera bord i lottningen först',
+    p2pClient: 'Inte tillgängligt när du är ansluten till en värd',
+  },
   guidance: {
     step1Path: 'Turnering \u2192 Ny',
     step1Label: 'Skapa en ny turnering',

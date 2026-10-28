@@ -63,4 +63,54 @@ describe('ClubRepository', () => {
 
     expect(clubs.list()).toEqual([])
   })
+
+  describe('delete when the club is in use', () => {
+    const IN_USE = 'Klubben används av spelare och kan inte tas bort.'
+
+    function insertTournament(): number {
+      db.run(
+        `INSERT INTO tournaments (tournament, tournamentgroup, pairingsystem, initialpairing, rounds, barredpairing, compensateweakplayerpp, chess4, pointspergame, ratingchoice, showelo, showgroup)
+         VALUES ('Test', 'A', 'Monrad', 'Slumpad', 7, 'false', 'false', 'false', 1, 'ELO', 'true', 'true')`,
+      )
+      return db.exec('SELECT last_insert_rowid()')[0].values[0][0] as number
+    }
+
+    it('given a club with a tournament player, when it is deleted, then it throws a Swedish message and the club remains', () => {
+      const club = clubs.create({ name: 'SK Rockaden' })
+      const tid = insertTournament()
+      db.run(
+        'INSERT INTO tournamentplayers (lastname, firstname, clubindex, tournamentindex) VALUES (?, ?, ?, ?)',
+        ['Andersson', 'Erik', club.id, tid],
+      )
+
+      expect(() => clubs.delete(club.id)).toThrow(IN_USE)
+      expect(clubs.list().map((c) => c.id)).toEqual([club.id])
+    })
+
+    it('given a club with a pool player, when it is deleted, then it throws a Swedish message and the club remains', () => {
+      const club = clubs.create({ name: 'SK Rockaden' })
+      db.run('INSERT INTO availableplayers (lastname, firstname, clubindex) VALUES (?, ?, ?)', [
+        'Berg',
+        'Anna',
+        club.id,
+      ])
+
+      expect(() => clubs.delete(club.id)).toThrow(IN_USE)
+      expect(clubs.list().map((c) => c.id)).toEqual([club.id])
+    })
+
+    it('given a club without members while another club has players, when it is deleted, then only that club is removed', () => {
+      const used = clubs.create({ name: 'SK Rockaden' })
+      const empty = clubs.create({ name: 'Tom Klubb' })
+      db.run('INSERT INTO availableplayers (lastname, firstname, clubindex) VALUES (?, ?, ?)', [
+        'Berg',
+        'Anna',
+        used.id,
+      ])
+
+      clubs.delete(empty.id)
+
+      expect(clubs.list().map((c) => c.id)).toEqual([used.id])
+    })
+  })
 })

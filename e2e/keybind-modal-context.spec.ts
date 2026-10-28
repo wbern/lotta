@@ -37,3 +37,39 @@ test('result keybinds do not fire while an edit dialog is open over the board', 
   // Expected: the underlying board result is unchanged while a modal is open.
   expect(after).toBe(before)
 })
+
+test('given the Editera bord dialog is open, when Ctrl+Z is pressed, then the last entered result is still present', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await seedHeroTournament(page)
+  await page.goto('/')
+  await selectTournament(page, 'Hjälteturneringen 2025')
+
+  const result = page.getByTestId('result-dropdown-1')
+  const before = (await result.textContent())?.trim()
+
+  // Enter a result through the UI so it is the latest undoable action.
+  // The hero seed never draws (higher rated wins), so a draw is a visible change.
+  const row = page.locator('tr[data-board-nr="1"]').first()
+  await row.click()
+  await page.keyboard.press('r')
+  await expect(result).not.toHaveText(before ?? '')
+  const entered = (await result.textContent())?.trim()
+
+  // Open Editera bord over board 1 and press Ctrl+Z while the modal is up.
+  await row.dblclick()
+  await expect(page.getByTestId('dialog-overlay')).toBeVisible()
+  await page.keyboard.press('Control+z')
+  await page.waitForTimeout(700)
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('dialog-overlay')).not.toBeVisible()
+
+  // The undo must not have fired behind the modal.
+  await expect(result).toHaveText(entered ?? '')
+
+  // Positive control: with the modal closed, Ctrl+Z on the pairings undoes the result.
+  await row.click()
+  await page.keyboard.press('Control+z')
+  await expect(result).toHaveText(before ?? '')
+})

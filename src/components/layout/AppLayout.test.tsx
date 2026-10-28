@@ -2,6 +2,7 @@
 
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { setLiveStatus } from '../../hooks/useLiveStatus'
 import { ToastProvider } from '../toast/ToastProvider'
 import { AppLayout } from './AppLayout'
 
@@ -43,7 +44,13 @@ vi.mock('../dialogs/ConfirmDialog', () => ({
     return null
   },
 }))
-vi.mock('../dialogs/EditBoardDialog', () => ({ EditBoardDialog: () => null }))
+let editBoardDialogProps: Record<string, unknown> = {}
+vi.mock('../dialogs/EditBoardDialog', () => ({
+  EditBoardDialog: (props: Record<string, unknown>) => {
+    editBoardDialogProps = props
+    return null
+  },
+}))
 vi.mock('../dialogs/BackupExportDialog', () => ({ BackupExportDialog: () => null }))
 vi.mock('../dialogs/BackupRestoreDialog', () => ({ BackupRestoreDialog: () => null }))
 vi.mock('../dialogs/SeedPlayersDialog', () => ({ SeedPlayersDialog: () => null }))
@@ -72,10 +79,13 @@ vi.mock('../../hooks/useTournaments', () => ({
   useDeleteTournament: () => ({ mutate: vi.fn() }),
 }))
 
+// Games returned for the active round (same query PairingsTab uses).
+let activeRoundBoardNrs = [1, 2, 3]
 vi.mock('../../hooks/useRounds', () => ({
   useRounds: () => ({
     data: [{ roundNr: 1 }, { roundNr: 2 }, { roundNr: 3 }],
   }),
+  useRound: () => ({ data: { games: activeRoundBoardNrs.map((boardNr) => ({ boardNr })) } }),
   useUnpairLastRound: () => ({ mutate: vi.fn() }),
 }))
 
@@ -97,8 +107,11 @@ vi.mock('../../api/backup', () => ({
   EncryptedBackupError: class extends Error {},
 }))
 
+const mockDeleteGame = vi.fn()
+const mockDeleteGames = vi.fn()
 vi.mock('../../api/results', () => ({
-  deleteGame: vi.fn(),
+  deleteGame: (...args: unknown[]) => mockDeleteGame(...args),
+  deleteGames: (...args: unknown[]) => mockDeleteGames(...args),
 }))
 
 vi.mock('../../api/publish', () => ({
@@ -129,6 +142,11 @@ afterEach(() => {
   // Reset tournament fixture (fresh object each test, no shared mutable state)
   currentTournament = { ...DEFAULT_TOURNAMENT }
   confirmDialogProps.length = 0
+  activeRoundBoardNrs = [1, 2, 3]
+  editBoardDialogProps = {}
+  mockDeleteGame.mockReset()
+  mockDeleteGames.mockReset()
+  vi.restoreAllMocks()
 })
 
 describe('AppLayout round prop', () => {
@@ -413,5 +431,253 @@ describe('AppLayout alphabetical print options', () => {
       vi.useRealTimers()
       window.print = originalPrint
     }
+  })
+})
+
+describe('AppLayout Ångra lottning confirmation text', () => {
+  const findUnpairDialog = () =>
+    confirmDialogProps.findLast((p) => p.open === true && p.title === 'Ångra lottning')
+
+  function openUnpairConfirm() {
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    const onUnpair = menuBarProps.onUnpair as () => void
+    act(() => {
+      onUnpair()
+    })
+    return findUnpairDialog()
+  }
+
+  it('given a Berger tournament, when Ångra lottning is chosen, then the confirmation warns that all paired rounds are removed', () => {
+    currentTournament = { id: 1, name: 'Allsvenskan', pairingSystem: 'Berger', roundsPlayed: 3 }
+
+    const dialog = openUnpairConfirm()
+
+    expect(dialog).toBeDefined()
+    expect(dialog?.message).toContain('alla lottade ronder')
+    expect(dialog?.message).not.toContain('senaste ronden')
+  })
+
+  it('given a Monrad tournament, when Ångra lottning is chosen, then the confirmation mentions only the latest round', () => {
+    currentTournament = { id: 1, name: 'Höstblixten', pairingSystem: 'Monrad', roundsPlayed: 3 }
+
+    const dialog = openUnpairConfirm()
+
+    expect(dialog).toBeDefined()
+    expect(dialog?.message).toContain('senaste ronden')
+    expect(dialog?.message).not.toContain('alla lottade ronder')
+  })
+})
+
+describe('AppLayout board selection (single source of truth)', () => {
+  type Updater = (prev: Set<number>) => Set<number>
+
+  function renderLayout() {
+    const view = render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    const rerender = () =>
+      view.rerender(
+        <ToastProvider>
+          <AppLayout />
+        </ToastProvider>,
+      )
+    return { rerender }
+  }
+
+  function selectBoards(...boardNrs: number[]) {
+    const change = tabPanelProps.onSelectedBoardsChange as (updater: Updater) => void
+    act(() => {
+      change(() => new Set(boardNrs))
+    })
+  }
+
+  const selected = () => [...(tabPanelProps.selectedBoards as Set<number>)].sort()
+
+  it('given board 2 is selected in round 1, when the round selector switches to round 2, then the selection is empty and Editera bord is unavailable', () => {
+    mockSearch.round = 1
+    const { rerender } = renderLayout()
+    selectBoards(2)
+    expect(menuBarProps.canEditBoard).toBe(true)
+
+    mockSearch.round = 2
+    rerender()
+
+    expect(selected()).toEqual([])
+    expect(menuBarProps.canEditBoard).toBe(false)
+    expect(menuBarProps.canDeleteBoard).toBe(false)
+  })
+
+  it('given board 2 is selected, when board 2 disappears from the round (undo/other client), then Ta bort bord is unavailable', () => {
+    mockSearch.round = 1
+    const { rerender } = renderLayout()
+    selectBoards(2)
+    expect(menuBarProps.canDeleteBoard).toBe(true)
+
+    activeRoundBoardNrs = [1, 3]
+    rerender()
+
+    expect(selected()).toEqual([])
+    expect(menuBarProps.canDeleteBoard).toBe(false)
+  })
+
+  it('given board 2 is selected, when another tournament with the same round is chosen, then the selection does not carry over', () => {
+    mockSearch.round = 1
+    const { rerender } = renderLayout()
+    selectBoards(2)
+
+    mockSearch.tournamentId = 2
+    rerender()
+
+    expect(selected()).toEqual([])
+    expect(menuBarProps.canEditBoard).toBe(false)
+  })
+
+  it('given boards 1 and 2 are selected, when Ta bort bord is confirmed, then both boards are deleted and the selection cleared', async () => {
+    mockSearch.round = 1
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockDeleteGames.mockResolvedValue(undefined)
+    renderLayout()
+    selectBoards(1, 2)
+
+    expect(menuBarProps.canEditBoard).toBe(false)
+    expect(menuBarProps.canDeleteBoard).toBe(true)
+
+    await act(async () => {
+      await (menuBarProps.onDeleteBoard as () => Promise<void>)()
+    })
+
+    expect(confirmSpy).toHaveBeenCalledWith('Är du säker på att du vill ta bort 2 bord?')
+    expect(mockDeleteGames).toHaveBeenCalledWith(1, 1, [1, 2])
+    expect(mockDeleteGame).not.toHaveBeenCalled()
+    expect(selected()).toEqual([])
+  })
+
+  it('given boards 1 and 2 are selected, when Delete is pressed in the pairings, then the same delete runs', async () => {
+    mockSearch.round = 1
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockDeleteGames.mockResolvedValue(undefined)
+    renderLayout()
+    selectBoards(1, 2)
+
+    await act(async () => {
+      await (tabPanelProps.onDeleteSelected as () => Promise<void>)()
+    })
+
+    expect(mockDeleteGames).toHaveBeenCalledWith(1, 1, [1, 2])
+  })
+
+  it('given one board is selected, when Ta bort bord is confirmed, then that board is deleted', async () => {
+    mockSearch.round = 1
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockDeleteGame.mockResolvedValue(undefined)
+    renderLayout()
+    selectBoards(3)
+
+    await act(async () => {
+      await (menuBarProps.onDeleteBoard as () => Promise<void>)()
+    })
+
+    expect(confirmSpy).toHaveBeenCalledWith('Är du säker på att du vill ta bort bord 3?')
+    expect(mockDeleteGame).toHaveBeenCalledWith(1, 1, 3)
+  })
+
+  it('given the delete is cancelled in the confirm, when Ta bort bord is chosen, then nothing is deleted and the selection stays', async () => {
+    mockSearch.round = 1
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    renderLayout()
+    selectBoards(1, 2)
+
+    await act(async () => {
+      await (menuBarProps.onDeleteBoard as () => Promise<void>)()
+    })
+
+    expect(mockDeleteGames).not.toHaveBeenCalled()
+    expect(selected()).toEqual([1, 2])
+  })
+
+  it('given deleting boards is rejected, when Ta bort bord is confirmed, then an error toast shows the reason', async () => {
+    mockSearch.round = 1
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockDeleteGames.mockRejectedValue(new Error('Borden kunde inte tas bort.'))
+    renderLayout()
+    selectBoards(1, 2)
+
+    await act(async () => {
+      await (menuBarProps.onDeleteBoard as () => Promise<void>)()
+    })
+
+    const toast = await screen.findByTestId('toast')
+    expect(toast.textContent).toContain('Borden kunde inte tas bort.')
+    expect(toast.className).toContain('toast--error')
+  })
+
+  it('given exactly one board is selected, when Editera bord is chosen, then the board editor opens for that board', () => {
+    mockSearch.round = 1
+    renderLayout()
+    selectBoards(2)
+
+    act(() => {
+      ;(menuBarProps.onEditBoard as () => void)()
+    })
+
+    expect(editBoardDialogProps.open).toBe(true)
+    expect(editBoardDialogProps.mode).toBe('edit')
+    expect(editBoardDialogProps.boardNr).toBe(2)
+  })
+
+  it('given round 2 exists, when every board of round 1 is deleted, then the refusal is shown as an error toast', async () => {
+    const GAP_MESSAGE =
+      'Det går inte att ta bort det sista bordet i rond 1 eftersom senare ronder finns. Ångra lottningen av de senare ronderna först.'
+    mockSearch.round = 1
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockDeleteGames.mockRejectedValue(new Error(GAP_MESSAGE))
+    renderLayout()
+    selectBoards(1, 2, 3)
+
+    await act(async () => {
+      await (menuBarProps.onDeleteBoard as () => Promise<void>)()
+    })
+
+    const toast = await screen.findByTestId('toast')
+    expect(toast.textContent).toContain(GAP_MESSAGE)
+    // The refused boards stay selected so the arbiter can see what was not deleted.
+    expect(selected()).toEqual([1, 2, 3])
+  })
+})
+
+describe('AppLayout P2P client gating', () => {
+  afterEach(() => {
+    act(() => setLiveStatus(null))
+  })
+
+  it('given this device is connected to a host as a client, when the menu renders, then MenuBar is told it is a P2P client', () => {
+    setLiveStatus({ state: 'connected', role: 'client', peerCount: 1 })
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+
+    expect(menuBarProps.isP2PClient).toBe(true)
+  })
+
+  it.each([
+    ['hosting', { state: 'connected' as const, role: 'host' as const, peerCount: 2 }],
+    ['not live', null],
+  ])('given this device is %s, when the menu renders, then MenuBar is not in client mode', (_label, status) => {
+    setLiveStatus(status)
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+
+    expect(menuBarProps.isP2PClient).toBe(false)
   })
 })

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePairNextRound } from '../../hooks/useRounds'
+import { sv } from '../../lib/swedish-text'
 import { Dialog } from '../dialogs/Dialog'
 import { PrintDialog } from '../dialogs/PrintDialog'
 import { PublishDialog } from '../dialogs/PublishDialog'
@@ -26,6 +27,12 @@ interface Props {
   onAddBoard?: () => void
   onEditBoard?: () => void
   onDeleteBoard?: () => void
+  /** Exactly one board is selected in the pairings table. */
+  canEditBoard?: boolean
+  /** At least one board is selected in the pairings table. */
+  canDeleteBoard?: boolean
+  /** Connected to a host as a P2P client (positive signal: liveStatus.role === 'client'). */
+  isP2PClient?: boolean
   onPrint?: (what: string) => void
   onExportPlayers?: () => void
   onImportPlayers?: () => void
@@ -58,6 +65,9 @@ export function MenuBar({
   onAddBoard,
   onEditBoard,
   onDeleteBoard,
+  canEditBoard = false,
+  canDeleteBoard = false,
+  isP2PClient = false,
   onPrint,
   onExportPlayers,
   onImportPlayers,
@@ -99,6 +109,9 @@ export function MenuBar({
   }
 
   const hasTournament = tournamentId != null
+  // Local-only actions (undo history, backup/restore, publish, import/export)
+  // would act on this device's database, not the host's.
+  const clientTitle = isP2PClient ? sv.disabledReason.p2pClient : undefined
   const hasRound = hasTournament && roundNr != null
 
   return (
@@ -132,16 +145,30 @@ export function MenuBar({
         </button>
         {openMenu === 'edit' && (
           <div className="menu-dropdown" data-testid="menu-dropdown">
-            <button onClick={() => action(onUndo)} disabled={!canUndo}>
+            <button
+              onClick={() => action(onUndo)}
+              disabled={!canUndo || isP2PClient}
+              title={clientTitle}
+            >
               Ångra
               <span className="menu-shortcut">Ctrl+Z</span>
             </button>
-            <button onClick={() => action(onRedo)} disabled={!canRedo}>
+            <button
+              onClick={() => action(onRedo)}
+              disabled={!canRedo || isP2PClient}
+              title={clientTitle}
+            >
               Gör om
               <span className="menu-shortcut">Ctrl+Y</span>
             </button>
             <div className="menu-separator" />
-            <button onClick={() => action(onShowTimeline)}>Historik...</button>
+            <button
+              onClick={() => action(onShowTimeline)}
+              disabled={isP2PClient}
+              title={clientTitle}
+            >
+              Historik...
+            </button>
           </div>
         )}
       </div>
@@ -188,22 +215,41 @@ export function MenuBar({
                 setOpenMenu(null)
                 setShowLottaPublish(true)
               }}
-              disabled={!hasRound}
+              disabled={!hasRound || isP2PClient}
+              title={clientTitle}
             >
               Publicera...
             </button>
             <div className="menu-separator" />
-            <button onClick={() => action(onUnpair)} disabled={!hasTournament}>
+            <button
+              onClick={() => action(onUnpair)}
+              disabled={!hasRound}
+              title={!hasRound ? sv.disabledReason.noRoundPaired : undefined}
+            >
               Ångra lottning
             </button>
             <div className="menu-separator" />
             <button onClick={() => action(onAddBoard)} disabled={!hasRound}>
               Lägg till bord
             </button>
-            <button onClick={() => action(onEditBoard)} disabled={!hasRound}>
+            <button
+              onClick={() => action(onEditBoard)}
+              disabled={!hasRound || !canEditBoard}
+              title={
+                !canDeleteBoard
+                  ? sv.disabledReason.selectBoardFirst
+                  : !canEditBoard
+                    ? sv.disabledReason.selectExactlyOneBoard
+                    : undefined
+              }
+            >
               Editera bord
             </button>
-            <button onClick={() => action(onDeleteBoard)} disabled={!hasRound}>
+            <button
+              onClick={() => action(onDeleteBoard)}
+              disabled={!hasRound || !canDeleteBoard}
+              title={!canDeleteBoard ? sv.disabledReason.selectBoardsFirst : undefined}
+            >
               Ta bort bord
             </button>
           </div>
@@ -234,6 +280,8 @@ export function MenuBar({
                 setOpenMenu(null)
                 setShowStandingsPublish(true)
               }}
+              disabled={isP2PClient}
+              title={clientTitle}
             >
               Publicera...
             </button>
@@ -256,16 +304,36 @@ export function MenuBar({
             <button onClick={() => action(() => onPrint?.('players'))} disabled={!hasTournament}>
               Skriv ut spelarlista
             </button>
-            <button onClick={() => action(() => onPublish?.('players'))} disabled={!hasTournament}>
+            <button
+              onClick={() => action(() => onPublish?.('players'))}
+              disabled={!hasTournament || isP2PClient}
+              title={clientTitle}
+            >
               Publicera spelarlista
             </button>
             <div className="menu-separator" />
-            <button onClick={() => action(onExportPlayers)} disabled={!hasTournament}>
+            <button
+              onClick={() => action(onExportPlayers)}
+              disabled={!hasTournament || isP2PClient}
+              title={clientTitle}
+            >
               Exportera turneringsspelare
             </button>
-            <button onClick={() => action(onImportPlayers)}>Importera till spelarpool</button>
+            <button
+              onClick={() => action(onImportPlayers)}
+              disabled={isP2PClient}
+              title={clientTitle}
+            >
+              Importera till spelarpool
+            </button>
             <div className="menu-separator" />
-            <button onClick={() => action(onSeedPlayers)}>Skapa testspelare</button>
+            <button
+              onClick={() => action(onSeedPlayers)}
+              disabled={isP2PClient}
+              title={clientTitle}
+            >
+              Skapa testspelare
+            </button>
           </div>
         )}
       </div>
@@ -279,8 +347,12 @@ export function MenuBar({
           <div className="menu-dropdown" data-testid="menu-dropdown">
             <button onClick={() => action(onSettings)}>Inställningar</button>
             <div className="menu-separator" />
-            <button onClick={() => action(onBackup)}>Säkerhetskopiera databas</button>
-            <button onClick={() => action(onRestore)}>Återställ databas</button>
+            <button onClick={() => action(onBackup)} disabled={isP2PClient} title={clientTitle}>
+              Säkerhetskopiera databas
+            </button>
+            <button onClick={() => action(onRestore)} disabled={isP2PClient} title={clientTitle}>
+              Återställ databas
+            </button>
             <div className="menu-separator" />
             <button onClick={() => action(onRollback)} disabled={!onRollback}>
               Byt till tidigare version…
@@ -386,7 +458,6 @@ export function MenuBar({
       <PublishDialog
         open={showLottaPublish}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="lotta"
         onClose={() => setShowLottaPublish(false)}
@@ -395,7 +466,6 @@ export function MenuBar({
       <PublishDialog
         open={showStandingsPublish}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="standings"
         onClose={() => setShowStandingsPublish(false)}
@@ -404,7 +474,6 @@ export function MenuBar({
       <PrintDialog
         open={showLottaPrint}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="lotta"
         onClose={() => setShowLottaPrint(false)}
@@ -413,7 +482,6 @@ export function MenuBar({
       <PrintDialog
         open={showStandingsPrint}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="standings"
         onClose={() => setShowStandingsPrint(false)}

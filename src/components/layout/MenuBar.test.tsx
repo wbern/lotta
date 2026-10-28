@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MenuBar } from './MenuBar'
 
@@ -311,5 +312,184 @@ describe('MenuBar pairing success callback', () => {
     act(() => capturedOpts.onSuccess?.())
 
     expect(onPaired).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('MenuBar Ångra lottning', () => {
+  it('given a tournament with no paired round, when the Lotta menu is opened, then Ångra lottning is disabled with an explanation', async () => {
+    const user = userEvent.setup()
+    const onUnpair = vi.fn()
+    render(<MenuBar tournamentId={1} roundNr={undefined} onUnpair={onUnpair} />)
+
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    const item = screen.getByRole('button', { name: 'Ångra lottning' }) as HTMLButtonElement
+
+    expect(item.disabled).toBe(true)
+    expect(item.title).toBe('Ingen rond är lottad')
+    await user.click(item)
+    expect(onUnpair).not.toHaveBeenCalled()
+  })
+
+  it('given round 1 is paired, when Ångra lottning is clicked, then onUnpair fires', async () => {
+    const user = userEvent.setup()
+    const onUnpair = vi.fn()
+    render(<MenuBar tournamentId={1} roundNr={1} onUnpair={onUnpair} />)
+
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    const item = screen.getByRole('button', { name: 'Ångra lottning' }) as HTMLButtonElement
+
+    expect(item.disabled).toBe(false)
+    expect(item.title).toBe('')
+    await user.click(item)
+    expect(onUnpair).toHaveBeenCalledOnce()
+  })
+})
+
+describe('MenuBar board actions follow the pairings selection', () => {
+  async function openLotta(props: {
+    canEditBoard: boolean
+    canDeleteBoard: boolean
+    onEditBoard?: () => void
+    onDeleteBoard?: () => void
+  }) {
+    const user = userEvent.setup()
+    render(<MenuBar tournamentId={1} roundNr={1} {...props} />)
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    return {
+      user,
+      edit: screen.getByRole('button', { name: 'Editera bord' }) as HTMLButtonElement,
+      remove: screen.getByRole('button', { name: 'Ta bort bord' }) as HTMLButtonElement,
+    }
+  }
+
+  it('given no board is selected, when the Lotta menu opens, then Editera bord and Ta bort bord are disabled with explanations', async () => {
+    const onEditBoard = vi.fn()
+    const onDeleteBoard = vi.fn()
+    const { user, edit, remove } = await openLotta({
+      canEditBoard: false,
+      canDeleteBoard: false,
+      onEditBoard,
+      onDeleteBoard,
+    })
+
+    expect(edit.disabled).toBe(true)
+    expect(edit.title).toBe('Markera ett bord i lottningen först')
+    expect(remove.disabled).toBe(true)
+    expect(remove.title).toBe('Markera ett eller flera bord i lottningen först')
+    await user.click(edit)
+    await user.click(remove)
+    expect(onEditBoard).not.toHaveBeenCalled()
+    expect(onDeleteBoard).not.toHaveBeenCalled()
+  })
+
+  it('given exactly one board is selected, when Editera bord and Ta bort bord are clicked, then both fire', async () => {
+    const onEditBoard = vi.fn()
+    const onDeleteBoard = vi.fn()
+    const { user, edit } = await openLotta({
+      canEditBoard: true,
+      canDeleteBoard: true,
+      onEditBoard,
+      onDeleteBoard,
+    })
+
+    expect(edit.disabled).toBe(false)
+    expect(edit.title).toBe('')
+    await user.click(edit)
+    expect(onEditBoard).toHaveBeenCalledOnce()
+
+    await user.click(screen.getByRole('button', { name: 'Lotta' }))
+    const remove = screen.getByRole('button', { name: 'Ta bort bord' }) as HTMLButtonElement
+    expect(remove.disabled).toBe(false)
+    expect(remove.title).toBe('')
+    await user.click(remove)
+    expect(onDeleteBoard).toHaveBeenCalledOnce()
+  })
+
+  it('given two boards are selected, when the Lotta menu opens, then only Ta bort bord is enabled and Editera bord asks for exactly one board', async () => {
+    const onDeleteBoard = vi.fn()
+    const { user, edit, remove } = await openLotta({
+      canEditBoard: false,
+      canDeleteBoard: true,
+      onDeleteBoard,
+    })
+
+    expect(edit.disabled).toBe(true)
+    expect(edit.title).toBe('Markera exakt ett bord')
+    expect(remove.disabled).toBe(false)
+    await user.click(remove)
+    expect(onDeleteBoard).toHaveBeenCalledOnce()
+  })
+})
+
+describe('MenuBar when connected to a host as a P2P client', () => {
+  const CLIENT_TITLE = 'Inte tillgängligt när du är ansluten till en värd'
+  const GATED: [menu: string, item: string][] = [
+    ['Redigera', 'Ångra'],
+    ['Redigera', 'Gör om'],
+    ['Redigera', 'Historik...'],
+    ['Lotta', 'Publicera...'],
+    ['Ställning', 'Publicera...'],
+    ['Spelare', 'Publicera spelarlista'],
+    ['Spelare', 'Exportera turneringsspelare'],
+    ['Spelare', 'Importera till spelarpool'],
+    ['Spelare', 'Skapa testspelare'],
+    ['Inställningar', 'Säkerhetskopiera databas'],
+    ['Inställningar', 'Återställ databas'],
+  ]
+  const STILL_ENABLED: [menu: string, item: string][] = [
+    ['Lotta', 'Lotta nästa rond'],
+    ['Lotta', 'Skriv ut...'],
+    ['Ställning', 'Skriv ut...'],
+    ['Spelare', 'Turneringsspelare'],
+    ['Spelare', 'Skriv ut spelarlista'],
+    ['Inställningar', 'Byt till tidigare version…'],
+  ]
+
+  function renderClientMenu(isP2PClient: boolean) {
+    render(
+      <MenuBar
+        tournamentId={1}
+        roundNr={1}
+        canUndo
+        canRedo
+        isP2PClient={isP2PClient}
+        onRollback={vi.fn()}
+      />,
+    )
+  }
+
+  async function menuItem(menu: string, item: string) {
+    const user = userEvent.setup()
+    await user.click(within(screen.getByTestId('menu-bar')).getByRole('button', { name: menu }))
+    const dropdown = screen.getByTestId('menu-dropdown')
+    return within(dropdown).getByRole('button', { name: new RegExp(`^${escapeRe(item)}`) })
+  }
+
+  const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  it.each(
+    GATED,
+  )('given a P2P client, when %s is opened, then %s is disabled with an explanation', async (menu, item) => {
+    renderClientMenu(true)
+    const button = (await menuItem(menu, item)) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    expect(button.title).toBe(CLIENT_TITLE)
+  })
+
+  it.each(
+    STILL_ENABLED,
+  )('given a P2P client, when %s is opened, then %s stays enabled', async (menu, item) => {
+    renderClientMenu(true)
+    const button = (await menuItem(menu, item)) as HTMLButtonElement
+    expect(button.disabled).toBe(false)
+  })
+
+  it.each(
+    GATED,
+  )('given the host (not a client), when %s is opened, then %s is enabled', async (menu, item) => {
+    renderClientMenu(false)
+    const button = (await menuItem(menu, item)) as HTMLButtonElement
+    expect(button.disabled).toBe(false)
+    expect(button.title).toBe('')
   })
 })

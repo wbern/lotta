@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { registerOpenModal } from './modal-registry'
 
 interface Props {
   title: string
@@ -25,6 +26,12 @@ export function Dialog({
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Let document-level shortcuts know a modal is up (ADR-0005).
+  useEffect(() => {
+    if (!open) return
+    return registerOpenModal()
+  }, [open])
 
   useEffect(() => {
     if (!open) return

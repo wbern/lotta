@@ -1,26 +1,18 @@
 import { useState } from 'react'
+import { sv } from '../../lib/swedish-text'
 import { AlphabeticalOptionsCheckboxes } from './AlphabeticalOptionsCheckboxes'
 import { Dialog } from './Dialog'
 
 interface Props {
   open: boolean
   hasRound: boolean
-  hasTournament: boolean
   chess4: boolean
   category: 'lotta' | 'standings'
   onClose: () => void
   onPublish: (what: string) => void
 }
 
-export function PublishDialog({
-  open,
-  hasRound,
-  hasTournament,
-  chess4,
-  category,
-  onClose,
-  onPublish,
-}: Props) {
+export function PublishDialog({ open, hasRound, chess4, category, onClose, onPublish }: Props) {
   const [alphaColumns, setAlphaColumns] = useState(2)
   const [alphaGroupByClass, setAlphaGroupByClass] = useState(true)
   const [alphaCompact, setAlphaCompact] = useState(false)
@@ -109,7 +101,8 @@ export function PublishDialog({
               className="btn"
               data-testid="publish-standings"
               onClick={() => publish('standings')}
-              disabled={!hasTournament}
+              disabled={!hasRound}
+              title={!hasRound ? sv.disabledReason.noRoundPaired : undefined}
             >
               Ställning
             </button>
@@ -130,7 +123,8 @@ export function PublishDialog({
                 className="btn"
                 data-testid="publish-chess4-standings"
                 onClick={() => publish('chess4-standings')}
-                disabled={!hasTournament}
+                disabled={!hasRound}
+                title={!hasRound ? sv.disabledReason.noRoundPaired : undefined}
               >
                 Schack4an-ställning
               </button>
@@ -139,7 +133,8 @@ export function PublishDialog({
                 className="btn"
                 data-testid="publish-club-standings"
                 onClick={() => publish('club-standings')}
-                disabled={!hasTournament}
+                disabled={!hasRound}
+                title={!hasRound ? sv.disabledReason.noRoundPaired : undefined}
               >
                 Klubbställning
               </button>

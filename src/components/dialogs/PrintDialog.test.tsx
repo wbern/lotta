@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PrintDialog } from './PrintDialog'
 
@@ -17,7 +18,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={onClose}
@@ -36,7 +36,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="standings"
         onClose={vi.fn()}
@@ -54,7 +53,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound={false}
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -73,7 +71,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -94,7 +91,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -113,7 +109,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -124,5 +119,65 @@ describe('PrintDialog', () => {
     expect(screen.getByTestId('print-pairings')).toBeTruthy()
     expect(screen.getByTestId('print-alphabetical')).toBeTruthy()
     expect(screen.queryByTestId('print-standings')).toBeNull()
+  })
+})
+
+describe('PrintDialog standings gating', () => {
+  const cases = [
+    { testId: 'print-standings', what: 'standings', chess4: false },
+    { testId: 'print-club-standings', what: 'club-standings', chess4: false },
+    { testId: 'print-chess4-standings', what: 'chess4-standings', chess4: true },
+  ]
+
+  it.each(
+    cases,
+  )('given a tournament with no paired round, when $testId is clicked, then it is disabled with an explanation and onPrint is not called', async ({
+    testId,
+    chess4,
+  }) => {
+    const user = userEvent.setup()
+    const onPrint = vi.fn()
+    render(
+      <PrintDialog
+        open
+        hasRound={false}
+        chess4={chess4}
+        category="standings"
+        onClose={vi.fn()}
+        onPrint={onPrint}
+      />,
+    )
+
+    const button = screen.getByTestId(testId) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    expect(button.title).toBe('Ingen rond är lottad')
+    await user.click(button)
+    expect(onPrint).not.toHaveBeenCalled()
+  })
+
+  it.each(
+    cases,
+  )('given a paired round, when $testId is clicked, then onPrint fires with $what', async ({
+    testId,
+    what,
+    chess4,
+  }) => {
+    const user = userEvent.setup()
+    const onPrint = vi.fn()
+    render(
+      <PrintDialog
+        open
+        hasRound
+        chess4={chess4}
+        category="standings"
+        onClose={vi.fn()}
+        onPrint={onPrint}
+      />,
+    )
+
+    const button = screen.getByTestId(testId) as HTMLButtonElement
+    expect(button.title).toBe('')
+    await user.click(button)
+    expect(onPrint).toHaveBeenCalledWith(what)
   })
 })

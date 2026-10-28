@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { withdrawnSuffix } from '../../domain/player-names'
-import { tournamentLockState } from '../../domain/tournament-lock'
+import { BERGER_ADD_BLOCKED, tournamentLockState } from '../../domain/tournament-lock'
 import { hasPlayerName } from '../../domain/validation'
 import { useAddClub, useClubs, useDeleteClub, useRenameClub } from '../../hooks/useClubs'
 import { usePoolPlayers } from '../../hooks/usePlayers'
@@ -15,6 +15,7 @@ import {
 } from '../../hooks/useTournamentPlayers'
 import { useTournament } from '../../hooks/useTournaments'
 import { useTransientSuccess } from '../../hooks/useTransientSuccess'
+import { actionErrorMessage } from '../../lib/save-error-bus'
 import { sv } from '../../lib/swedish-text'
 import type { PlayerDto } from '../../types/api'
 import { SortableHeader } from '../SortableHeader'
@@ -69,6 +70,8 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
     : null
   const removeBlocked = lockState === null || lockState !== 'draft'
   const pastDraft = lockState !== null && lockState !== 'draft'
+  // Berger pairs every round up front, so the repository refuses late additions.
+  const bergerAddBlocked = !!tournament && tournament.pairingSystem === 'Berger' && pastDraft
   const addPlayer = useAddTournamentPlayer(tournamentId)
   const addPlayers = useAddTournamentPlayers(tournamentId)
   const updatePlayer = useUpdateTournamentPlayer(tournamentId)
@@ -91,6 +94,11 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
   const { show: showToast } = useToast()
 
   const isDirty = !samePlayer(editPlayer, baseline)
+
+  const showAddError = (err: unknown) => {
+    const message = actionErrorMessage(err)
+    if (message) showToast({ message, variant: 'error' })
+  }
 
   // Edit-mode reveal: the protect-from-bye toggle is only meaningful for
   // late-added players whose debut round (addedAtRound + 1) has not yet been
@@ -185,6 +193,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
           handleNew()
           setActiveTab('tournament')
         },
+        onError: showAddError,
       })
     } else {
       setNameError(sv.player.nameRequired)
@@ -219,6 +228,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
             setSelectedPoolPlayers(new Set())
             setActiveTab('tournament')
           },
+          onError: showAddError,
         })
       }
     }
@@ -257,7 +267,8 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                   className="btn btn-primary"
                   data-testid="add-player"
                   onClick={handleAdd}
-                  disabled={!isNew}
+                  disabled={!isNew || bergerAddBlocked}
+                  title={bergerAddBlocked ? BERGER_ADD_BLOCKED : undefined}
                 >
                   {sv.common.add}
                 </button>
@@ -305,7 +316,8 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                   className="btn btn-primary"
                   data-testid="add-from-pool"
                   onClick={handleAddFromPool}
-                  disabled={selectedPoolPlayers.size === 0}
+                  disabled={selectedPoolPlayers.size === 0 || bergerAddBlocked}
+                  title={bergerAddBlocked ? BERGER_ADD_BLOCKED : undefined}
                 >
                   {sv.common.addToTournament}
                 </button>
@@ -359,7 +371,16 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                 }
               }}
               onRenameClub={(id, name) => renameClub.mutate({ id, dto: { name } })}
-              onDeleteClub={(id) => deleteClub.mutate(id)}
+              onDeleteClub={async (id) => {
+                try {
+                  await deleteClub.mutateAsync(id)
+                  return true
+                } catch (e) {
+                  const message = actionErrorMessage(e)
+                  if (message) showToast({ message, variant: 'error' })
+                  return false
+                }
+              }}
             />
             {((isNew && pastDraft) || (!isNew && editingLateBeforeDebut)) && (
               <label
