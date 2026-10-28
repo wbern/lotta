@@ -70,7 +70,8 @@
   --border-radius: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
+/* Dark theme is screen-only: paper is always white, so print keeps the light palette. */
+@media screen and (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --color-bg: #1a1a1a;
@@ -107,38 +108,40 @@
 }
 
 /* Explicit dark theme toggle (e2e demos, kiosk mode) — reuses same values */
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --color-bg: #1a1a1a;
-  --color-surface: #252525;
-  --color-border: #404040;
-  --color-text: #e0e0e0;
-  --color-text-muted: #a0a0a0;
-  --color-primary: #4477aa;
-  --color-primary-hover: #3366aa;
-  --color-selected: #2a3545;
-  --color-hover: #303030;
-  --color-danger: #cc4444;
-  --color-border-light: #303030;
-  --color-text-on-primary: #ffffff;
-  --color-shadow: rgba(0, 0, 0, 0.3);
-  --color-shadow-strong: rgba(0, 0, 0, 0.4);
-  --color-overlay: rgba(0, 0, 0, 0.5);
-  --color-success: #388e3c;
-  --color-danger-hover: #b71c1c;
-  --color-status-connected: #4caf50;
-  --color-status-warning: #ffa726;
-  --color-status-error: #ef5350;
-  --color-status-offline: #ff9800;
-  --color-banner-warning-bg: #3e2723;
-  --color-banner-warning-text: #ffcc80;
-  --color-banner-warning-border: #5d4037;
-  --color-badge-viewer-bg: #1a2a3a;
-  --color-badge-viewer-text: #64b5f6;
-  --color-badge-referee-bg: #3e2723;
-  --color-badge-referee-text: #ffab40;
-  --color-badge-organizer-bg: #1b3a1b;
-  --color-badge-organizer-text: #81c784;
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-bg: #1a1a1a;
+    --color-surface: #252525;
+    --color-border: #404040;
+    --color-text: #e0e0e0;
+    --color-text-muted: #a0a0a0;
+    --color-primary: #4477aa;
+    --color-primary-hover: #3366aa;
+    --color-selected: #2a3545;
+    --color-hover: #303030;
+    --color-danger: #cc4444;
+    --color-border-light: #303030;
+    --color-text-on-primary: #ffffff;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-shadow-strong: rgba(0, 0, 0, 0.4);
+    --color-overlay: rgba(0, 0, 0, 0.5);
+    --color-success: #388e3c;
+    --color-danger-hover: #b71c1c;
+    --color-status-connected: #4caf50;
+    --color-status-warning: #ffa726;
+    --color-status-error: #ef5350;
+    --color-status-offline: #ff9800;
+    --color-banner-warning-bg: #3e2723;
+    --color-banner-warning-text: #ffcc80;
+    --color-banner-warning-border: #5d4037;
+    --color-badge-viewer-bg: #1a2a3a;
+    --color-badge-viewer-text: #64b5f6;
+    --color-badge-referee-bg: #3e2723;
+    --color-badge-referee-text: #ffab40;
+    --color-badge-organizer-bg: #1b3a1b;
+    --color-badge-organizer-text: #81c784;
+  }
 }
 
 *,

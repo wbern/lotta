@@ -25,6 +25,7 @@ interface Props {
   chess4?: boolean
   showELO?: boolean
   showGroup?: boolean
+  ratingChoice?: string
   pointsPerGame?: number
   maxPointsForWin?: number
   maxPointsImmediately?: boolean
@@ -47,6 +48,7 @@ export function TabPanel({
   chess4,
   showELO,
   showGroup,
+  ratingChoice,
   pointsPerGame,
   maxPointsForWin,
   maxPointsImmediately,
@@ -140,7 +142,12 @@ export function TabPanel({
               />
             )}
             {activeTab === 'players' && (
-              <PlayersTab tournamentId={tournamentId} showELO={showELO} showGroup={showGroup} />
+              <PlayersTab
+                tournamentId={tournamentId}
+                showELO={showELO}
+                showGroup={showGroup}
+                ratingChoice={ratingChoice}
+              />
             )}
             {activeTab === 'club-standings' && (
               <ClubStandingsTab tournamentId={tournamentId} round={round} />

@@ -44,6 +44,7 @@ export function useUpdateTournamentPlayer(tournamentId: number) {
       api.updateTournamentPlayer(tournamentId, playerId, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: tournamentPlayerKeys.list(tournamentId) })
+      qc.invalidateQueries({ queryKey: tournamentKeys.detail(tournamentId) })
     },
   })
 }

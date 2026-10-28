@@ -299,19 +299,24 @@ describe('MenuBar outside-tap dismissal', () => {
 })
 
 describe('MenuBar pairing success callback', () => {
-  it('invokes onPaired when pairing succeeds', () => {
-    let capturedOpts: { onSuccess?: () => void } = {}
-    mockPairMutate.mockImplementation((_: unknown, opts: { onSuccess?: () => void }) => {
-      capturedOpts = opts
-    })
+  // pairNext returns the round to show: the new round for Monrad/Nordisk
+  // Schweizer, round 1 for Berger (which pairs every round at once).
+  it('given pairing succeeds, then onPaired receives the round number the pairing returned', () => {
+    let capturedOpts: { onSuccess?: (round: { roundNr: number }) => void } = {}
+    mockPairMutate.mockImplementation(
+      (_: unknown, opts: { onSuccess?: (round: { roundNr: number }) => void }) => {
+        capturedOpts = opts
+      },
+    )
     const onPaired = vi.fn()
     render(<MenuBar tournamentId={1} roundNr={undefined} onPaired={onPaired} />)
 
     openMenu('Lotta')
     fireEvent.click(screen.getByText('Lotta nästa rond'))
-    act(() => capturedOpts.onSuccess?.())
+    act(() => capturedOpts.onSuccess?.({ roundNr: 1 }))
 
     expect(onPaired).toHaveBeenCalledTimes(1)
+    expect(onPaired).toHaveBeenCalledWith(1)
   })
 })
 

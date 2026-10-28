@@ -93,6 +93,8 @@ export function TournamentDialog({
   const updateMutation = useUpdateTournament()
 
   const [form, setForm] = useState<CreateTournamentRequest>(defaults)
+  // The form as seeded on open; any difference counts as unsaved changes.
+  const [baseline, setBaseline] = useState<CreateTournamentRequest>(defaults)
   const [activeTab, setActiveTab] = useState<'settings' | 'web' | 'fide'>('settings')
   const [manualMode, setManualMode] = useState(false)
   const [preChess4, setPreChess4] = useState<Partial<CreateTournamentRequest> | null>(null)
@@ -115,8 +117,12 @@ export function TournamentDialog({
 
   useEffect(() => {
     if (!open) return
+    const seedForm = (seeded: CreateTournamentRequest) => {
+      setForm(seeded)
+      setBaseline(seeded)
+    }
     if (isEdit && existing) {
-      setForm({
+      seedForm({
         name: existing.name,
         group: existing.group,
         pairingSystem: existing.pairingSystem,
@@ -150,7 +156,7 @@ export function TournamentDialog({
       )
     } else if (!isEdit) {
       if (presetTournament) {
-        setForm({
+        seedForm({
           name: initialName ?? '',
           group: '',
           pairingSystem: presetTournament.pairingSystem,
@@ -186,7 +192,7 @@ export function TournamentDialog({
           ) === 'manual',
         )
       } else {
-        setForm({ ...defaults, name: initialName ?? '' })
+        seedForm({ ...defaults, name: initialName ?? '' })
         setManualMode(false)
       }
     }
@@ -333,7 +339,12 @@ export function TournamentDialog({
       open={open}
       onClose={onClose}
       width={620}
-      isDirty={isEdit || form.name !== '' || form.group !== ''}
+      isDirty={
+        isEdit ||
+        form.name !== '' ||
+        form.group !== '' ||
+        JSON.stringify(form) !== JSON.stringify(baseline)
+      }
       footer={
         <>
           <button

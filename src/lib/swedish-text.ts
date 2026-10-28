@@ -123,7 +123,7 @@ export const sv = {
   guidance: {
     step1Path: 'Turnering \u2192 Ny',
     step1Label: 'Skapa en ny turnering',
-    step2Path: 'Spelare \u2192 Spelarpool',
+    step2Path: 'Spelare \u2192 Turneringsspelare',
     step2Label: 'Lägg till spelare',
     step3Path: 'Lotta \u2192 Lotta nästa rond',
     step3Label: 'Starta lottningen',

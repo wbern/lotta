@@ -17,7 +17,7 @@ export async function setResultLocal(
           withSave(
             () => getDatabaseService().games.setResult(tid, rn, bn, r),
             'Ange resultat',
-            (game) => `Bord ${bn}: ${game.resultDisplay}`,
+            (game) => `Rond ${rn}, Bord ${bn}: ${game.resultDisplay}`,
             { kind: 'results', tournamentId: tid, roundNr: rn },
           ),
       },
@@ -45,7 +45,7 @@ export async function setResultLocal(
   return withSave(
     () => getDatabaseService().games.setResult(tournamentId, roundNr, boardNr, req),
     'Ange resultat',
-    (game) => `Bord ${boardNr}: ${game.resultDisplay}`,
+    (game) => `Rond ${roundNr}, Bord ${boardNr}: ${game.resultDisplay}`,
     { kind: 'results', tournamentId, roundNr },
   )
 }

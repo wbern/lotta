@@ -563,8 +563,8 @@ export function AppLayout() {
         onUnpair={() => setShowUnpairConfirm(true)}
         onCheckUpdates={handleCheckUpdates}
         onRollback={() => setShowRollbackDialog(true)}
-        onPaired={() =>
-          navigate({ to: '/', search: { tournamentId, round: undefined, tab: 'pairings' } })
+        onPaired={(roundNr) =>
+          navigate({ to: '/', search: { tournamentId, round: roundNr, tab: 'pairings' } })
         }
       />
       <TournamentSelector
@@ -588,6 +588,7 @@ export function AppLayout() {
         onEditBoard={handleEditBoardByNr}
         chess4={tournament?.chess4}
         showELO={tournament?.showELO}
+        ratingChoice={tournament?.ratingChoice}
         showGroup={tournament?.showGroup}
         pointsPerGame={tournament?.pointsPerGame}
         maxPointsForWin={tournament?.maxPointsForWin}

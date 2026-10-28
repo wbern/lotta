@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { withdrawnSuffix } from '../../domain/player-names'
+import { getPlayerRating, normaliseRatingChoice } from '../../domain/ratings'
 import { useTableSort } from '../../hooks/useTableSort'
 import { useTournamentPlayers } from '../../hooks/useTournamentPlayers'
 import { sv } from '../../lib/swedish-text'
@@ -11,18 +12,24 @@ interface Props {
   tournamentId: number
   showELO?: boolean
   showGroup?: boolean
+  /** The tournament's rating choice; the column shows the same rating as Lottning/Ställning. */
+  ratingChoice?: string
 }
 
-export function PlayersTab({ tournamentId, showELO, showGroup }: Props) {
+export function PlayersTab({ tournamentId, showELO, showGroup, ratingChoice }: Props) {
   const { data: players, isLoading } = useTournamentPlayers(tournamentId)
+  const choice = normaliseRatingChoice(ratingChoice)
 
-  const getValue = useCallback((p: PlayerDto, col: string): string | number | null => {
-    if (col === 'name') return `${p.firstName}, ${p.lastName}`
-    if (col === 'group') return p.playerGroup
-    if (col === 'club') return p.club
-    if (col === 'rating') return p.ratingN
-    return null
-  }, [])
+  const getValue = useCallback(
+    (p: PlayerDto, col: string): string | number | null => {
+      if (col === 'name') return `${p.firstName}, ${p.lastName}`
+      if (col === 'group') return p.playerGroup
+      if (col === 'club') return p.club
+      if (col === 'rating') return getPlayerRating(p, choice)
+      return null
+    },
+    [choice],
+  )
 
   const { sorted, sort, toggleSort } = useTableSort(
     players || [],
@@ -85,7 +92,11 @@ export function PlayersTab({ tournamentId, showELO, showGroup }: Props) {
               </td>
               {showGroup && <td>{p.playerGroup || ''}</td>}
               <td>{p.club || ''}</td>
-              {showELO && <td className="number-cell">{p.ratingN > 0 ? p.ratingN : ''}</td>}
+              {showELO && (
+                <td className="number-cell">
+                  {getPlayerRating(p, choice) > 0 ? getPlayerRating(p, choice) : ''}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

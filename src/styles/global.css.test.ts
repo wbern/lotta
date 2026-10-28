@@ -28,7 +28,7 @@ function stripRootBlocks(css: string): string {
     }
 
     // Detect :root inside @media block (depth === 1 from @media)
-    if (!inRoot && depth === 1 && css.slice(i).match(/^:root(?::not\([^)]*\))?\s*\{/)) {
+    if (!inRoot && depth === 1 && css.slice(i).match(/^:root(?::not\([^)]*\)|\[[^\]]*\])?\s*\{/)) {
       inRoot = true
       while (i < css.length && css[i] !== '{') i++
       depth = 2
@@ -275,8 +275,19 @@ describe('global.css dark theme', () => {
 
     // Must have @media (prefers-color-scheme: dark) with :root:not([data-theme="light"])
     expect(css).toMatch(
-      /@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{[^}]*:root:not\(\[data-theme=['"]light['"]\]\)/s,
+      /@media\s*(?:screen\s+and\s+)?\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{[^}]*:root:not\(\[data-theme=['"]light['"]\]\)/s,
     )
+  })
+
+  // Paper is always white: the dark palette must apply to the screen only, so
+  // printing from dark mode keeps the light (paper) colours.
+  it('scopes both dark-theme blocks to screen media', () => {
+    const css = readGlobalCss()
+
+    expect(css).toMatch(/@media\s+screen\s+and\s+\(\s*prefers-color-scheme\s*:\s*dark\s*\)/)
+    expect(css).not.toMatch(/@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)/)
+    expect(css).toMatch(/@media\s+screen\s*\{\s*:root\[data-theme=['"]dark['"]\]\s*\{/)
+    expect(css).not.toMatch(/^:root\[data-theme=['"]dark['"]\]/m)
   })
 
   it('defines dark overrides via [data-theme="dark"] selector', () => {
@@ -290,12 +301,12 @@ describe('global.css dark theme', () => {
 
     // Both dark selectors should set color-scheme: dark
     const mediaBlock = css.match(
-      /@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{([\s\S]*?)\n\}/,
+      /@media\s*(?:screen\s+and\s+)?\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{([\s\S]*?)\n\}/,
     )
     expect(mediaBlock).not.toBeNull()
     expect(mediaBlock![1]).toContain('color-scheme: dark')
 
-    const dataThemeBlock = css.match(/\[data-theme=['"]dark['"]\]\s*\{([\s\S]*?)\n\}/)
+    const dataThemeBlock = css.match(/\[data-theme=['"]dark['"]\]\s*\{([\s\S]*?)\n\s*\}/)
     expect(dataThemeBlock).not.toBeNull()
     expect(dataThemeBlock![1]).toContain('color-scheme: dark')
   })

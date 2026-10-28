@@ -41,7 +41,8 @@ interface Props {
   onUnpair?: () => void
   onCheckUpdates?: () => void
   onRollback?: () => void
-  onPaired?: () => void
+  /** Called with the round to show: the new round, or round 1 for Berger. */
+  onPaired?: (roundNr: number) => void
 }
 
 export function MenuBar({
@@ -188,9 +189,9 @@ export function MenuBar({
               onClick={() =>
                 action(() =>
                   pairMutation.mutate(undefined, {
-                    onSuccess: () => {
+                    onSuccess: (round) => {
                       setPairError('')
-                      onPaired?.()
+                      onPaired?.(round.roundNr)
                     },
                     onError: (err) => setPairError(err.message),
                   }),

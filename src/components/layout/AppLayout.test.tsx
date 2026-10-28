@@ -180,7 +180,7 @@ describe('AppLayout round prop', () => {
 })
 
 describe('AppLayout pairing focus', () => {
-  it('clears explicit round and switches to pairings tab when MenuBar reports a successful pairing', () => {
+  it('given a successful pairing, then it shows the paired round on the pairings tab', () => {
     mockSearch.tournamentId = 1
     mockSearch.round = 2
     mockSearch.tab = 'standings'
@@ -191,15 +191,17 @@ describe('AppLayout pairing focus', () => {
       </ToastProvider>,
     )
 
-    const onPaired = menuBarProps.onPaired as () => void
+    const onPaired = menuBarProps.onPaired as (roundNr: number) => void
     expect(onPaired).toBeDefined()
     act(() => {
-      onPaired()
+      onPaired(1)
     })
 
+    // Berger pairs all rounds at once and returns round 1: show that round,
+    // not the latest one.
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/',
-      search: { tournamentId: 1, round: undefined, tab: 'pairings' },
+      search: { tournamentId: 1, round: 1, tab: 'pairings' },
     })
   })
 })

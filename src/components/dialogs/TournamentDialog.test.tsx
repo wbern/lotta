@@ -476,6 +476,48 @@ describe('TournamentDialog overlay close', () => {
   })
 })
 
+describe('TournamentDialog unsaved settings', () => {
+  // Any change to the form counts, not only name and group: a user who picks
+  // a pairing system, rounds or rating choice and then clicks outside (or
+  // presses Escape) must not silently lose those choices.
+  it('given a new tournament with an empty name, when the pairing system is changed and the overlay is clicked, then the dialog stays open', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(<TournamentDialog open tournamentId={undefined} onClose={onClose} />)
+
+    await user.selectOptions(screen.getByTestId('tournament-pairing-system-select'), 'Berger')
+    fireEvent.click(screen.getByTestId('dialog-overlay'))
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('given a new tournament, when the number of rounds is changed and Escape is pressed, then the dialog stays open', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(<TournamentDialog open tournamentId={undefined} onClose={onClose} />)
+
+    await user.clear(screen.getByTestId('tournament-nr-of-rounds-input'))
+    await user.type(screen.getByTestId('tournament-nr-of-rounds-input'), '5')
+    await user.keyboard('{Escape}')
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('given a new tournament, when a setting is changed and changed back, then clicking the overlay closes it', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(<TournamentDialog open tournamentId={undefined} onClose={onClose} />)
+    const select = screen.getByTestId('tournament-pairing-system-select') as HTMLSelectElement
+    const original = select.value
+
+    await user.selectOptions(select, 'Berger')
+    await user.selectOptions(select, original)
+    fireEvent.click(screen.getByTestId('dialog-overlay'))
+
+    expect(onClose).toHaveBeenCalled()
+  })
+})
+
 describe('TournamentDialog save errors', () => {
   const failWith = (message: string) =>
     mockMutate.mockImplementation((_data: unknown, options?: { onError?: (e: Error) => void }) => {
