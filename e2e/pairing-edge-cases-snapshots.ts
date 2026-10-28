@@ -3,54 +3,6 @@
  * DO NOT EDIT BY HAND.
  */
 
-export const BYE_ROTATION: any[] = [
-  {
-    roundNr: 1,
-    pairings: [
-      { boardNr: 1, white: 'B Beta', black: 'A Alfa' },
-      { boardNr: 2, white: 'D Delta', black: 'C Gamma' },
-      { boardNr: 3, white: 'E Epsilon', black: '(bye)' },
-    ],
-    byeRecipient: 'E Epsilon',
-  },
-  {
-    roundNr: 2,
-    pairings: [
-      { boardNr: 1, white: 'A Alfa', black: 'E Epsilon' },
-      { boardNr: 2, white: 'C Gamma', black: 'B Beta' },
-      { boardNr: 3, white: 'D Delta', black: '(bye)' },
-    ],
-    byeRecipient: 'D Delta',
-  },
-  {
-    roundNr: 3,
-    pairings: [
-      { boardNr: 1, white: 'A Alfa', black: 'D Delta' },
-      { boardNr: 2, white: 'E Epsilon', black: 'B Beta' },
-      { boardNr: 3, white: 'C Gamma', black: '(bye)' },
-    ],
-    byeRecipient: 'C Gamma',
-  },
-  {
-    roundNr: 4,
-    pairings: [
-      { boardNr: 1, white: 'C Gamma', black: 'A Alfa' },
-      { boardNr: 2, white: 'E Epsilon', black: 'D Delta' },
-      { boardNr: 3, white: 'B Beta', black: '(bye)' },
-    ],
-    byeRecipient: 'B Beta',
-  },
-  {
-    roundNr: 5,
-    pairings: [
-      { boardNr: 1, white: 'D Delta', black: 'B Beta' },
-      { boardNr: 2, white: 'E Epsilon', black: 'C Gamma' },
-      { boardNr: 3, white: 'A Alfa', black: '(bye)' },
-    ],
-    byeRecipient: 'A Alfa',
-  },
-]
-
 export const BERGER_3P: any[] = [
   {
     roundNr: 1,
@@ -146,9 +98,4 @@ export const NS_COLOR: any[] = [
   { name: 'F Zeta', whites: 4, blacks: 3 },
   { name: 'G Eta', whites: 3, blacks: 4 },
   { name: 'H Theta', whites: 3, blacks: 4 },
-]
-
-export const IDENTICAL_RATINGS: any[] = [
-  { boardNr: 1, white: 'B Beta', black: 'A Alfa' },
-  { boardNr: 2, white: 'D Delta', black: 'C Gamma' },
 ]
