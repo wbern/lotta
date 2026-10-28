@@ -204,3 +204,41 @@ test.describe('rating choice chosen in the tournament dialog', () => {
     await expect(board2).toContainText('1990')
   })
 })
+
+test.describe('printing in dark mode', () => {
+  // Paper is always white: printing from dark mode must not carry the dark
+  // theme's light-grey text onto white paper.
+  const luminance = (rgb: string) => {
+    const [r, g, b] = (rgb.match(/\d+/g) ?? []).slice(0, 3).map(Number)
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+  }
+
+  for (const [label, setup] of [
+    [
+      'the system dark preference',
+      async (page: import('@playwright/test').Page) => {
+        await page.emulateMedia({ colorScheme: 'dark' })
+      },
+    ],
+    [
+      'the explicit dark theme',
+      async (page: import('@playwright/test').Page) => {
+        await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
+      },
+    ],
+  ] as const) {
+    test(`given ${label}, when the pairings are printed, then the table text is dark`, async ({
+      page,
+    }) => {
+      await setup(page)
+      const cell = page.getByTestId('data-table').locator('tbody td').nth(1)
+      expect(luminance(await cell.evaluate((el) => getComputedStyle(el).color))).toBeGreaterThan(
+        0.6,
+      )
+
+      await page.emulateMedia({ media: 'print' })
+
+      expect(luminance(await cell.evaluate((el) => getComputedStyle(el).color))).toBeLessThan(0.4)
+    })
+  }
+})

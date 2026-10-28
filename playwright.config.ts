@@ -121,6 +121,7 @@ export default defineConfig({
       testMatch: 'schack4an-coupling-edge-cases.spec.ts',
     },
     { name: 'smoke', testMatch: 'smoke.spec.ts' },
+    { name: 'ux-confirmation', testMatch: 'ux-confirmation.spec.ts' },
     { name: 'menus', testMatch: 'menus.spec.ts' },
     { name: 'navigation', testMatch: 'navigation.spec.ts' },
     { name: 'pairings', testMatch: 'pairings.spec.ts' },
