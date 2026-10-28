@@ -186,11 +186,17 @@ describe('chess4 reported standings stability across class size changes', () => 
     // roster that existed at snapshot time so we still catch the corruption
     // we actually care about: scores for already-registered players must
     // not drift when later rounds add/withdraw students or edit class sizes.
+    // The withdrawal suffix is shown in every round's standings by design
+    // (Java Player.toString), so it is the one intended change to old rows:
+    // strip it before comparing.
+    expect(player1After.map((r) => r.name)).toContain('Bo Björk (utgått r3)')
+    const withoutSuffix = <T extends { name: string }>(rows: T[]) =>
+      rows.map((r) => ({ ...r, name: r.name.replace(/ \(utgått r\d+\)$/, '') }))
     const namesAt = (rows: { name: string }[]) => new Set(rows.map((r) => r.name))
     const namesAtR1 = namesAt(player1)
     const namesAtR2 = namesAt(player2)
-    expect(player1After.filter((r) => namesAtR1.has(r.name))).toEqual(player1)
-    expect(player2After.filter((r) => namesAtR2.has(r.name))).toEqual(player2)
+    expect(withoutSuffix(player1After).filter((r) => namesAtR1.has(r.name))).toEqual(player1)
+    expect(withoutSuffix(player2After).filter((r) => namesAtR2.has(r.name))).toEqual(player2)
     // Club standings sum per-player scores; phantom 0-score rows don't
     // alter any club total, so the full structure must remain equal.
     expect(club1After).toEqual(club1)
