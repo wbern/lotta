@@ -1354,18 +1354,21 @@ test.describe('EditBoard dialog', () => {
     const roundSelect = page.getByTestId('tournament-selector').locator('select').last()
     await roundSelect.selectOption('1')
     await expect(page).toHaveURL(/round=1(&|$)/)
-    await page.locator('tr[data-board-nr="1"]').first().click()
+    // Click the board-number cell: the row's centre can land on the result
+    // button, which opens the result menu instead of selecting the row.
+    await page.locator('tr[data-board-nr="1"]').first().locator('td').first().click()
+    await expect(page.locator('tr[data-board-nr="1"].selected')).toHaveCount(1)
 
     const menuBar = page.getByTestId('menu-bar')
-    await menuBar.getByRole('button', { name: 'Lotta' }).click()
+    await menuBar.getByRole('button', { name: 'Lotta', exact: true }).click()
     await expect(page.getByTestId('menu-dropdown').getByText('Editera bord')).toBeEnabled()
-    await menuBar.getByRole('button', { name: 'Lotta' }).click()
+    await menuBar.getByRole('button', { name: 'Lotta', exact: true }).click()
 
     await roundSelect.selectOption('2')
     await expect(page).toHaveURL(/round=2(&|$)/)
     await expect(page.locator('tr[data-board-nr="1"].selected')).toHaveCount(0)
 
-    await menuBar.getByRole('button', { name: 'Lotta' }).click()
+    await menuBar.getByRole('button', { name: 'Lotta', exact: true }).click()
     const editBoard = page.getByTestId('menu-dropdown').getByText('Editera bord')
     await expect(editBoard).toBeDisabled()
     await expect(editBoard).toHaveAttribute('title', 'Markera ett bord i lottningen först')
