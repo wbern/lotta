@@ -66,6 +66,15 @@ const TIEBREAK_SHORT_NAMES: Record<string, string> = {
   Manuell: 'Man',
 }
 
+/**
+ * Key under which calculateStandings stores a tiebreak value in
+ * StandingDto.tiebreaks (e.g. 'Buchholz' → 'Buch'). Unknown names map to
+ * themselves.
+ */
+export function tiebreakShortName(name: string): string {
+  return TIEBREAK_SHORT_NAMES[name] ?? name
+}
+
 const INT_FORMAT_TIEBREAKS = new Set([
   'Vinster',
   'Prestationsrating LASK',
@@ -245,7 +254,7 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
     const tiebreaks: Record<string, string> = {}
     for (let j = 0; j < selectedTiebreaks.length; j++) {
       const tbName = selectedTiebreaks[j]
-      const shortName = TIEBREAK_SHORT_NAMES[tbName] ?? tbName
+      const shortName = tiebreakShortName(tbName)
       const value = pd.tiebreakValues[j]
       tiebreaks[shortName] = INT_FORMAT_TIEBREAKS.has(tbName)
         ? Math.floor(value).toString()

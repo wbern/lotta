@@ -124,6 +124,39 @@ describe('publish API (local)', () => {
     expect(html).toContain('<td class="CP_Player">Anna Andersson</td>')
   })
 
+  it('given a tournament with Buchholz and Vinster selected, when standings are published, then the tiebreak cells carry the computed values', async () => {
+    service.tournaments.update(tournamentId, {
+      name: 'Testturneringen',
+      group: 'A',
+      pairingSystem: 'Monrad',
+      initialPairing: 'Rating',
+      nrOfRounds: 7,
+      barredPairing: false,
+      compensateWeakPlayerPP: false,
+      pointsPerGame: 1,
+      chess4: false,
+      ratingChoice: 'ELO',
+      showELO: true,
+      showGroup: true,
+      selectedTiebreaks: ['Buchholz', 'Vinster'],
+    })
+    const round = await pairNextRound(tournamentId)
+    for (const g of round.games) {
+      await setResult(tournamentId, 1, g.boardNr, { resultType: 'WHITE_WIN' })
+    }
+
+    const html = await (await publishStandingsHtml(tournamentId, 1)).text()
+
+    // After one round with two decisive games the two winners (1 point) rank
+    // first: Buchholz = their opponent's score 0, Vinster 1. The two losers
+    // follow: Buchholz = their opponent's score 1, Vinster 0.
+    const cells = [...html.matchAll(/<td class="CP_Tiebreak">([^<]*)<\/td>/g)].map((m) => m[1])
+    expect(cells).toHaveLength(8)
+    expect(cells.every((c) => c !== '')).toBe(true)
+    expect(cells.slice(0, 4)).toEqual(['0', '1', '0', '1'])
+    expect(cells.slice(4)).toEqual(['1', '0', '1', '0'])
+  })
+
   it('publishClubStandingsHtml generates HTML', async () => {
     const round = await pairNextRound(tournamentId)
     for (const g of round.games) {
