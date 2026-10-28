@@ -75,6 +75,19 @@ export function tiebreakShortName(name: string): string {
   return TIEBREAK_SHORT_NAMES[name] ?? name
 }
 
+/**
+ * Display labels for persisted tiebreak ids whose id is not what the user
+ * should read. The id 'Prestationsrating LASK' is stored in existing
+ * tournaments and must stay; only the visible text changes.
+ */
+const TIEBREAK_LABELS: Record<string, string> = {
+  'Prestationsrating LASK': 'Prestationsrating',
+}
+
+export function tiebreakLabel(id: string): string {
+  return TIEBREAK_LABELS[id] ?? id
+}
+
 const INT_FORMAT_TIEBREAKS = new Set([
   'Vinster',
   'Prestationsrating LASK',

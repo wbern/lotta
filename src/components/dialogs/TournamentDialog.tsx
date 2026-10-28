@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { generateRandomName } from '../../domain/random-name'
+import { tiebreakLabel } from '../../domain/standings'
 import { isFieldLocked, tournamentLockState } from '../../domain/tournament-lock'
 import { useCreateTournament, useTournament, useUpdateTournament } from '../../hooks/useTournaments'
 import { sv } from '../../lib/swedish-text'
@@ -584,7 +585,7 @@ export function TournamentDialog({
                 >
                   {availableTiebreaks.map((t) => (
                     <option key={t} value={t}>
-                      {t}
+                      {tiebreakLabel(t)}
                     </option>
                   ))}
                 </select>
@@ -629,7 +630,7 @@ export function TournamentDialog({
                 >
                   {selectedTiebreaks.map((t) => (
                     <option key={t} value={t}>
-                      {t}
+                      {tiebreakLabel(t)}
                     </option>
                   ))}
                 </select>

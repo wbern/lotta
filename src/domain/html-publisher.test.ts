@@ -442,6 +442,18 @@ describe('publishStandings', () => {
     expect(html).toContain('<td class="CP_Tiebreak">3.5</td><td class="CP_Tiebreak">1725</td>')
   })
 
+  it('given the persisted id "Prestationsrating LASK", when published, then the column header reads "Prestationsrating"', () => {
+    const html = publishStandings({
+      tournamentName: 'Test',
+      roundNr: 1,
+      showELO: false,
+      tiebreakNames: ['Buchholz', 'Prestationsrating LASK'],
+      standings: [],
+    })
+    expect(html).toContain('<td>Buchholz</td><td>Prestationsrating</td>')
+    expect(html).not.toContain('LASK')
+  })
+
   it('hides rating column when showELO is false', () => {
     const input: StandingsPublishInput = {
       tournamentName: 'Test',

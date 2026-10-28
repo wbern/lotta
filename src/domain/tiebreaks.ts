@@ -218,8 +218,8 @@ export function tiebreakBerger(
   return tiebreak
 }
 
-// LASK performance rating lookup table
-const LASK_TABLE: [number, number][] = [
+// Performance rating dp lookup table (score fraction → rating difference)
+const DP_TABLE: [number, number][] = [
   [0.99, 800],
   [0.98, 677],
   [0.97, 589],
@@ -305,7 +305,7 @@ export function tiebreakRatingPerformance(games: TiebreakGameInfo[], roundNr: nu
   }
 
   let addon = 0
-  for (const [threshold, value] of LASK_TABLE) {
+  for (const [threshold, value] of DP_TABLE) {
     if (fracScore > threshold) {
       addon = value
       break

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DatabaseService } from '../db/database-service.ts'
 import { deleteDatabase } from '../db/persistence.ts'
+import { publishStandings } from '../domain/html-publisher.ts'
 import { setLocalProviderFactory } from './active-provider.ts'
 import { getLocalProvider } from './local-data-provider.ts'
 import {
@@ -11,6 +12,7 @@ import {
   publishPlayerListHtml,
   publishStandingsHtml,
 } from './publish.ts'
+import { buildStandingsInput } from './publish-data.ts'
 import { setResult } from './results.ts'
 import { pairNextRound } from './rounds.ts'
 import { setDatabaseService } from './service-provider.ts'
@@ -155,6 +157,46 @@ describe('publish API (local)', () => {
     expect(cells.every((c) => c !== '')).toBe(true)
     expect(cells.slice(0, 4)).toEqual(['0', '1', '0', '1'])
     expect(cells.slice(4)).toEqual(['1', '0', '1', '0'])
+  })
+
+  it('given Buchholz and Prestationsrating LASK, when buildStandingsInput feeds publishStandings, then both cells are filled and the header has no "LASK"', async () => {
+    service.tournaments.update(tournamentId, {
+      name: 'Testturneringen',
+      group: 'A',
+      pairingSystem: 'Monrad',
+      initialPairing: 'Rating',
+      nrOfRounds: 7,
+      barredPairing: false,
+      compensateWeakPlayerPP: false,
+      pointsPerGame: 1,
+      chess4: false,
+      ratingChoice: 'ELO',
+      showELO: true,
+      showGroup: true,
+      selectedTiebreaks: ['Buchholz', 'Prestationsrating LASK'],
+    })
+    const round = await pairNextRound(tournamentId)
+    for (const g of round.games) {
+      await setResult(tournamentId, 1, g.boardNr, { resultType: 'WHITE_WIN' })
+    }
+
+    const input = await buildStandingsInput(tournamentId, 1)
+    const html = publishStandings(input!)
+
+    // Monrad by rating pairs Anna 1800 – Bo 1700 and Cilla 1600 – Dan 1500.
+    // White won both, so each winner's Pres = opponent rating + 800 (p = 1)
+    // and each loser's = opponent rating − 800 (p = 0 mirrored to 1).
+    const pres = Object.fromEntries(input!.standings.map((s) => [s.name, s.tiebreaks.Pres]))
+    const games = round.games.map((g) => [g.whitePlayer!, g.blackPlayer!])
+    for (const [w, b] of games) {
+      expect(pres[w.name]).toBe(String(b.rating + 800))
+      expect(pres[b.name]).toBe(String(w.rating - 800))
+    }
+    expect(html).toContain('<td>Buchholz</td><td>Prestationsrating</td>')
+    expect(html).not.toContain('LASK')
+    const cells = [...html.matchAll(/<td class="CP_Tiebreak">([^<]*)<\/td>/g)].map((m) => m[1])
+    expect(cells).toHaveLength(8)
+    expect(cells.every((c) => c !== '')).toBe(true)
   })
 
   it('publishClubStandingsHtml generates HTML', async () => {

@@ -1,5 +1,5 @@
 import { formatResultLabel } from './scoring.ts'
-import { tiebreakShortName } from './standings.ts'
+import { tiebreakLabel, tiebreakShortName } from './standings.ts'
 
 const CSS = `
 @page {
@@ -284,7 +284,7 @@ export function publishStandings(input: StandingsPublishInput): string {
   if (input.showELO) body += '<td>Rating</td>'
   body += '<td>Poäng</td>'
   for (const tb of input.tiebreakNames) {
-    body += `<td>${esc(tb)}</td>`
+    body += `<td>${esc(tiebreakLabel(tb))}</td>`
   }
   body += '</tr>\n'
 
