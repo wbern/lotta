@@ -60,6 +60,11 @@ function game(
   }
 }
 
+/** A bye as the pairing engine stores it: white = player, black = null, WHITE_WIN_WO. */
+function bye(roundNr: number, boardNr: number, playerId: number, scoring: ScoringOpts = {}) {
+  return game(roundNr, boardNr, playerId, null, 'WHITE_WIN_WO', scoring)
+}
+
 function standings(
   players: StandingsPlayerInfo[],
   games: StandingsGameInfo[],
@@ -178,5 +183,64 @@ describe('Inbördes möte (INB)', () => {
     expect(rows['Bo B'].tiebreaks.Inb).toBe('0')
     expect(rows['Anna A'].place).toBe(2)
     expect(rows['Bo B'].place).toBe(3)
+  })
+})
+
+describe('Median Buchholz (MEDIAN)', () => {
+  // ppg 1. r1 A>B, C>D, E bye; r2 A>C, B>E, D bye; r3 A>D, B>C, E bye.
+  // An own bye adds (ppg/2)·roundNr to Buchholz AND Median Buchholz (Java's
+  // comment says rounds/2; the old ppg·roundNr was a port of a Java typo).
+  const players = [
+    player(1, 'Anna', 'A'),
+    player(2, 'Bo', 'B'),
+    player(3, 'Cilla', 'C'),
+    player(4, 'Dan', 'D'),
+    player(5, 'Eva', 'E'),
+  ]
+  const games = [
+    game(1, 1, 1, 2, 'WHITE_WIN'),
+    game(1, 2, 3, 4, 'WHITE_WIN'),
+    bye(1, 3, 5),
+    game(2, 1, 1, 3, 'WHITE_WIN'),
+    game(2, 2, 2, 5, 'WHITE_WIN'),
+    bye(2, 3, 4),
+    game(3, 1, 1, 4, 'WHITE_WIN'),
+    game(3, 2, 2, 3, 'WHITE_WIN'),
+    bye(3, 3, 5),
+  ]
+  const tb = ['Buchholz', 'Median Buchholz']
+
+  it('given standings after round 2, when D and E each had one bye, then their own bye counts ½·2 = 1 in both Buchholz and Median Buchholz', () => {
+    // Opponent scores after r2 (bye/WO win/unplayed = ½): A 1+1 = 2, B 0+1 = 1,
+    // C 1+0 = 1, D 0+½ = ½, E ½+0 = ½.
+    // D: C 1 + own bye ½·2 = 1 → Buch 2; Median (r ≤ 2, nothing trimmed) 2.
+    // E: own bye 1 + B 1 → Buch 2; Median 2.
+    const rows = byName(standings(players, games, tb, 2))
+    expect(rows['Dan D'].tiebreaks).toEqual({ Buch: '2', 'M.Buch': '2' })
+    expect(rows['Eva E'].tiebreaks).toEqual({ Buch: '2', 'M.Buch': '2' })
+  })
+
+  it('given standings after round 3, when Median Buchholz trims the highest and lowest, then own byes count ½·3 = 1.5', () => {
+    // Opponent scores after r3: A 1+1+1 = 3, B 0+1+1 = 2, C 1+0+0 = 1,
+    // D 0+½+0 = ½, E ½+0+½ = 1.
+    // A: B 2 + C 1 + D ½ = 3.5;          Median 3.5 − ½ − 2 = 1.
+    // B: A 3 + E 1 + C 1 = 5;            Median 5 − 1 − 3 = 1.
+    // D: C 1 + bye 1.5 + A 3 = 5.5;      Median 5.5 − 1 − 3 = 1.5 (old code 3).
+    // E: bye 1.5 + B 2 + bye 1.5 = 5;    Median 5 − 1.5 − 2 = 1.5 (old code 3).
+    const rows = byName(standings(players, games, tb, 3))
+    expect(rows['Anna A'].tiebreaks).toEqual({ Buch: '3.5', 'M.Buch': '1' })
+    expect(rows['Bo B'].tiebreaks).toEqual({ Buch: '5', 'M.Buch': '1' })
+    expect(rows['Dan D'].tiebreaks).toEqual({ Buch: '5.5', 'M.Buch': '1.5' })
+    expect(rows['Eva E'].tiebreaks).toEqual({ Buch: '5', 'M.Buch': '1.5' })
+  })
+
+  it('given any round, when standings are calculated, then no player has Median Buchholz above Buchholz', () => {
+    for (const round of [1, 2, 3]) {
+      for (const row of standings(players, games, tb, round)) {
+        expect(Number(row.tiebreaks['M.Buch']), `${row.name} r${round}`).toBeLessThanOrEqual(
+          Number(row.tiebreaks.Buch),
+        )
+      }
+    }
   })
 })

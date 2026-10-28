@@ -122,7 +122,8 @@ export function tiebreakMedianBuchholz(
   const scores: number[] = []
   for (const game of gamesUpToRound(games, roundNr)) {
     if (game.isBye) {
-      scores.push(ctx.pointsPerGame * roundNr)
+      // Own bye: (ppg/2)·roundNr, same as Buchholz (Java comment: rounds/2).
+      scores.push((ctx.pointsPerGame / 2) * roundNr)
     } else if (game.opponentId != null) {
       const opponentGames = ctx.getPlayerGames(game.opponentId)
       scores.push(opponentTiebreakScore(opponentGames, roundNr, ctx.pointsPerGame))
