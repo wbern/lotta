@@ -79,8 +79,9 @@ vi.mock('@tanstack/react-router', () => ({
   Outlet: () => null,
 }))
 
+const mockInvalidateQueries = vi.hoisted(() => vi.fn())
 vi.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
 }))
 
 const DEFAULT_TOURNAMENT: Record<string, unknown> = { id: 1, name: 'Test' }
@@ -317,6 +318,36 @@ describe('AppLayout action errors', () => {
         Object.defineProperty(navigator, 'serviceWorker', swDescriptor)
       }
     }
+  })
+
+  // Import creates clubs as well as players; the long-mounted player dialogs
+  // must see them without a reload (the new-player form offered no clubs).
+  it('given an import succeeds, then both the player and the club lists are refreshed', async () => {
+    mockSearch.tournamentId = 1
+    mockInvalidateQueries.mockClear()
+    const { importPlayers: mockImportPlayers } = await import('../../api/tournaments')
+    vi.mocked(mockImportPlayers).mockResolvedValue({ imported: 2, duplicates: 0, unreadable: 0 })
+    render(
+      <ToastProvider>
+        <AppLayout />
+      </ToastProvider>,
+    )
+    const fileInput = document.querySelector(
+      'input[type="file"][accept*=".tsv"]',
+    ) as HTMLInputElement
+    Object.defineProperty(fileInput, 'files', {
+      value: [new File(['x'], 'players.tsv', { type: 'text/tab-separated-values' })],
+      configurable: true,
+    })
+
+    await act(async () => {
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+    await waitFor(() => {
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['players'] })
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['clubs'] })
+    })
   })
 
   it('surfaces import success via the global success toast', async () => {

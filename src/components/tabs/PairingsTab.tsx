@@ -162,6 +162,12 @@ export function PairingsTab({
 
       // Result keys only apply with exactly one board selected
       if (singleSelected == null) return
+      // A bye ("frirond") has no opponent: no quick key may award, remove or
+      // clear its point (Java Lotta refused this too). The result menu still works.
+      const selectedGame = games.find((g) => g.boardNr === singleSelected)
+      if (!selectedGame || selectedGame.whitePlayer == null || selectedGame.blackPlayer == null) {
+        return
+      }
 
       const slot = matchKeybindSlot(key, keybinds)
       if (!slot) return

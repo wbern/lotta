@@ -7,7 +7,8 @@ import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ToastProvider } from '../toast/ToastProvider'
 
-const { mockDeleteGames, mockMutate, mockMutationState } = vi.hoisted(() => ({
+const { mockDeleteGames, mockMutate, mockMutationState, mockExtraGames } = vi.hoisted(() => ({
+  mockExtraGames: [] as Record<string, unknown>[],
   mockDeleteGames: vi.fn(),
   mockMutate: vi.fn(),
   mockMutationState: {
@@ -46,6 +47,7 @@ vi.mock('../../hooks/useRounds', () => ({
           whiteScore: 0,
           blackScore: 0,
         },
+        ...mockExtraGames,
       ],
     },
   }),
@@ -687,5 +689,62 @@ describe('PairingsTab Delete key with a multi-board selection', () => {
     await user.keyboard('{Delete}')
 
     expect(onDeleteSelected).not.toHaveBeenCalled()
+  })
+})
+
+describe('PairingsTab keyboard on a bye row', () => {
+  // A bye ("frirond") has no opponent: no quick key may award, remove or clear
+  // its point (Java Lotta refused this too). The result menu still works.
+  const bye = {
+    boardNr: 4,
+    whitePlayer: { name: 'Bye Player', rating: 1100 },
+    blackPlayer: null,
+    resultType: 'WHITE_WIN_WO',
+    resultDisplay: '1-0 wo',
+    whiteScore: 1,
+    blackScore: 0,
+  }
+  afterEach(() => {
+    cleanup()
+    mockMutate.mockClear()
+    mockExtraGames.length = 0
+  })
+
+  it.each([
+    '0',
+    'f',
+    'r',
+    '1',
+    'v',
+    ' ',
+  ])('given the bye row is selected, when %j is pressed, then no result is set', (key) => {
+    mockExtraGames.push(bye)
+    renderTab()
+    const byeRow = screen.getByText('Bye Player').closest('tr') as HTMLTableRowElement
+    byeRow.focus()
+    fireEvent.click(byeRow)
+
+    fireEvent.keyDown(document, { key })
+
+    expect(mockMutate).not.toHaveBeenCalled()
+  })
+
+  it('given board 3 is selected, when "v" auto-advances onto the bye row and "0" is pressed, then only board 3 changes', () => {
+    mockExtraGames.push(bye)
+    renderTab()
+    const rowC = screen.getByText('White C').closest('tr') as HTMLTableRowElement
+    rowC.focus()
+    fireEvent.click(rowC)
+
+    fireEvent.keyDown(document, { key: 'v' })
+    const byeRow = screen.getByText('Bye Player').closest('tr') as HTMLTableRowElement
+    expect(document.activeElement).toBe(byeRow)
+    fireEvent.keyDown(document, { key: '0' })
+
+    expect(mockMutate).toHaveBeenCalledTimes(1)
+    expect(mockMutate.mock.calls[0][0]).toMatchObject({
+      boardNr: 3,
+      req: { resultType: 'WHITE_WIN' },
+    })
   })
 })

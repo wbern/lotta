@@ -4,6 +4,7 @@ import { BERGER_ADD_BLOCKED, tournamentLockState } from '../../domain/tournament
 import { hasPlayerName } from '../../domain/validation'
 import { useAddClub, useClubs, useDeleteClub, useRenameClub } from '../../hooks/useClubs'
 import { usePoolPlayers } from '../../hooks/usePlayers'
+import { useRounds } from '../../hooks/useRounds'
 import { useShiftSelect } from '../../hooks/useShiftSelect'
 import { useTableSort } from '../../hooks/useTableSort'
 import {
@@ -57,6 +58,14 @@ const emptyPlayer: Partial<PlayerDto> = {
 export function TournamentPlayersDialog({ open, tournamentId, tournamentName, onClose }: Props) {
   const { data: tournamentPlayers } = useTournamentPlayers(tournamentId)
   const { data: tournament } = useTournament(tournamentId)
+  const { data: rounds } = useRounds(tournamentId)
+  // "Utgå från rond" default: the next round to pair; Berger pairs every round
+  // up front, so there it is the current round (first without all results, as
+  // in Java Lotta), else the last round.
+  const defaultWithdrawRound =
+    tournament?.pairingSystem === 'Berger'
+      ? (rounds?.find((r) => !r.hasAllResults)?.roundNr ?? tournament.nrOfRounds)
+      : (tournament?.roundsPlayed ?? 0) + 1
   const { data: poolPlayers } = usePoolPlayers()
   const { data: clubs } = useClubs()
   // While `tournament` is loading, treat the gate as engaged so the destructive
@@ -362,7 +371,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
               }}
               nameError={nameError}
               showTournamentFields
-              defaultWithdrawRound={(tournament?.roundsPlayed ?? 0) + 1}
+              defaultWithdrawRound={defaultWithdrawRound}
               onAddClub={async (name) => {
                 try {
                   const club = await addClub.mutateAsync({ name })

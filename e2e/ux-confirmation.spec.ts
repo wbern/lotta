@@ -4,7 +4,7 @@
  * fix; unit tests cover the details, these prove the user-visible outcome.
  */
 
-import { apiClient, createTournament, pairRound, waitForApi } from './api-helpers'
+import { apiClient, createTournament, pairRound, setResults, waitForApi } from './api-helpers'
 import { expect, test } from './fixtures'
 import { selectTournament } from './helpers'
 
@@ -198,4 +198,123 @@ test('(6) a new tournament dialog with changed settings survives an outside clic
   await dialog.getByTestId('tournament-pairing-system-select').selectOption('Nordisk Schweizer')
   await dialog.click({ position: { x: 5, y: 5 } })
   await expect(dialog).not.toBeVisible()
+})
+
+test('(8) quick result keys never change a bye, even after auto-advance lands on it', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await waitForApi(page)
+  const $ = apiClient(page)
+  const { tid } = await createTournament(
+    $,
+    { name: 'Frirond', pairingSystem: 'Monrad', nrOfRounds: 3 },
+    [...FOUR, { lastName: 'Ek', firstName: 'Eva', ratingI: 1300 }],
+  )
+  const round = await pairRound($, tid)
+  const byeBoard = round.games.find((g: { blackPlayer: unknown }) => g.blackPlayer == null).boardNr
+  const lastPlayed = byeBoard - 1
+  await page.reload()
+  await waitForApi(page)
+  await selectTournament(page, 'Frirond')
+  await expect(page.getByTestId(`result-dropdown-${byeBoard}`)).toContainText('1-0 wo')
+
+  // Enter the last real board by keyboard: auto-advance moves onto the bye row.
+  await page.locator(`tr[data-board-nr="${lastPlayed}"]`).locator('td').first().click()
+  await page.keyboard.press('v')
+  await expect(page.locator(`tr[data-board-nr="${byeBoard}"]`)).toBeFocused()
+  for (const key of ['0', 'f', 'r', '1', ' ']) await page.keyboard.press(key)
+
+  await expect(page.getByTestId(`result-dropdown-${byeBoard}`)).toContainText('1-0 wo')
+  const stored = (await $.get(`/api/tournaments/${tid}/rounds/1`)).games
+  expect(stored.find((g: { boardNr: number }) => g.boardNr === byeBoard).resultType).toBe(
+    'WHITE_WIN_WO',
+  )
+  expect(stored.find((g: { boardNr: number }) => g.boardNr === lastPlayed).resultType).toBe(
+    'WHITE_WIN',
+  )
+})
+
+test('(9) clubs created by an import are offered in the player form without a reload', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await waitForApi(page)
+  const $ = apiClient(page)
+  await createTournament($, { name: 'Klubbimport', pairingSystem: 'Monrad', nrOfRounds: 3 }, FOUR)
+  await page.reload()
+  await waitForApi(page)
+  const selector = page.getByTestId('tournament-selector').locator('select').first()
+  await selector.locator('option', { hasText: 'Klubbimport' }).waitFor({ state: 'attached' })
+  await selector.selectOption('Klubbimport')
+
+  // Open the player dialog once so its club list is loaded, as mid-event.
+  await menu(page, 'Spelare').click()
+  await page
+    .getByTestId('menu-dropdown')
+    .getByRole('button', { name: 'Turneringsspelare', exact: true })
+    .click()
+  const dialog = page.getByTestId('dialog-overlay')
+  await dialog.getByRole('button', { name: 'Skapa eller editera spelare' }).click()
+  await expect(
+    dialog.getByTestId('club-select').locator('option', { hasText: 'SK Importklubb' }),
+  ).toHaveCount(0)
+  await dialog.getByRole('button', { name: 'Stäng' }).click()
+
+  await page.locator('input[type="file"][accept*=".tsv"]').setInputFiles({
+    name: 'spelare.tsv',
+    mimeType: 'text/tab-separated-values',
+    buffer: Buffer.from('Ny\tNina\tSK Importklubb\n'),
+  })
+  await expect(
+    page.getByTestId('toast').filter({ hasText: '1 nya spelare tillagda' }),
+  ).toBeVisible()
+
+  await menu(page, 'Spelare').click()
+  await page
+    .getByTestId('menu-dropdown')
+    .getByRole('button', { name: 'Turneringsspelare', exact: true })
+    .click()
+  await dialog.getByRole('button', { name: 'Skapa eller editera spelare' }).click()
+  await expect(
+    dialog.getByTestId('club-select').locator('option', { hasText: 'SK Importklubb' }),
+  ).toHaveCount(1)
+})
+
+test('(10) in Berger, "Utgå från rond" defaults to the first round without all results', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await waitForApi(page)
+  const $ = apiClient(page)
+  const six = [
+    ...FOUR,
+    { lastName: 'Ek', firstName: 'Eva', ratingI: 1300 },
+    { lastName: 'Fors', firstName: 'Fia', ratingI: 1200 },
+  ]
+  const { tid } = await createTournament(
+    $,
+    { name: 'Bergerutgång', pairingSystem: 'Berger', nrOfRounds: 5 },
+    six,
+  )
+  await pairRound($, tid)
+  for (const r of [1, 2, 3]) {
+    const games = (await $.get(`/api/tournaments/${tid}/rounds/${r}`)).games
+    await setResults($, tid, r, games, () => 'DRAW')
+  }
+  await page.reload()
+  await waitForApi(page)
+  await selectTournament(page, 'Bergerutgång')
+
+  await menu(page, 'Spelare').click()
+  await page
+    .getByTestId('menu-dropdown')
+    .getByRole('button', { name: 'Turneringsspelare', exact: true })
+    .click()
+  const dialog = page.getByTestId('dialog-overlay')
+  await dialog.getByRole('button', { name: 'Turneringsspelare', exact: true }).click()
+  await dialog.getByTestId('data-table').first().getByText('Bo Berg').dblclick()
+  await dialog.getByTestId('withdrawn-checkbox').check()
+
+  await expect(dialog.getByTestId('withdrawn-round-input')).toHaveValue('4')
 })

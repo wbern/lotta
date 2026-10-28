@@ -117,6 +117,13 @@ vi.mock('../../hooks/useClubs', () => ({
 // without first migrating to `vi.mocked().mockReturnValueOnce()` per test.
 let phaseMode: 'draft' | 'seeded' | 'in_progress' | 'finalized' | 'loading' = 'draft'
 let pairingSystemMode: 'Monrad' | 'Berger' = 'Monrad'
+const mockRounds = vi.hoisted(() => ({
+  value: [] as { roundNr: number; hasAllResults: boolean }[],
+}))
+vi.mock('../../hooks/useRounds', () => ({
+  useRounds: () => ({ data: mockRounds.value }),
+}))
+
 vi.mock('../../hooks/useTournaments', () => ({
   useTournament: () => {
     if (phaseMode === 'loading') return { data: undefined }
@@ -733,6 +740,49 @@ describe('TournamentPlayersDialog Berger add gating', () => {
 describe('TournamentPlayersDialog withdrawal default', () => {
   afterEach(() => {
     phaseMode = 'draft'
+    pairingSystemMode = 'Monrad'
+    mockRounds.value = []
+  })
+
+  // Berger pairs every round up front, so "next round to pair" would be past the
+  // end. The current Berger round (Java Lotta) is the first without all results.
+  it('given a Berger tournament with rounds 1-3 reported out of 5, when the arbiter ticks "Utgå från rond", then the round field shows 4', async () => {
+    phaseMode = 'in_progress'
+    pairingSystemMode = 'Berger'
+    mockRounds.value = [1, 2, 3, 4, 5].map((roundNr) => ({ roundNr, hasAllResults: roundNr <= 3 }))
+    const user = userEvent.setup()
+    renderDialog()
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+
+    await user.click(screen.getByTestId('withdrawn-checkbox'))
+
+    expect((screen.getByTestId('withdrawn-round-input') as HTMLInputElement).value).toBe('4')
+  })
+
+  it('given a Berger tournament with every round reported, when "Utgå från rond" is ticked, then the round field shows the last round', async () => {
+    phaseMode = 'in_progress'
+    pairingSystemMode = 'Berger'
+    mockRounds.value = [1, 2, 3, 4, 5, 6, 7].map((roundNr) => ({ roundNr, hasAllResults: true }))
+    const user = userEvent.setup()
+    renderDialog()
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+
+    await user.click(screen.getByTestId('withdrawn-checkbox'))
+
+    // nrOfRounds is 7 in this file's tournament mock
+    expect((screen.getByTestId('withdrawn-round-input') as HTMLInputElement).value).toBe('7')
+  })
+
+  it('given a Monrad tournament with round 1 paired but not reported, when "Utgå från rond" is ticked, then it still shows 2 (next round to pair)', async () => {
+    phaseMode = 'in_progress'
+    mockRounds.value = [{ roundNr: 1, hasAllResults: false }]
+    const user = userEvent.setup()
+    renderDialog()
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+
+    await user.click(screen.getByTestId('withdrawn-checkbox'))
+
+    expect((screen.getByTestId('withdrawn-round-input') as HTMLInputElement).value).toBe('2')
   })
 
   it('given round 1 has been paired, when the arbiter ticks "Utgå från rond", then the round field shows 2 (the next round to pair)', async () => {

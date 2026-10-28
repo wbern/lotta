@@ -500,6 +500,8 @@ export function AppLayout() {
     try {
       showToast(importResultToast(await importPlayers(file)))
       queryClient.invalidateQueries({ queryKey: ['players'] })
+      // Import creates clubs too; the player dialogs stay mounted and must see them.
+      queryClient.invalidateQueries({ queryKey: ['clubs'] })
     } catch (err) {
       showActionError('Fel vid import: ' + (err instanceof Error ? err.message : String(err)))
     }
