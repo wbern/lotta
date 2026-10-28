@@ -1,3 +1,11 @@
+## [1.23.1](https://github.com/wbern/lotta/compare/v1.23.0...v1.23.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* default "Utgå från rond" to the next round to be paired ([c516353](https://github.com/wbern/lotta/commit/c516353691f77a9b4b66d5efd75c6681ae36caa4))
+* honour every rating choice, not only ELO ([067be70](https://github.com/wbern/lotta/commit/067be70faa442e6c2706c3c61465d4505e2e2f64))
+
 # [1.23.0](https://github.com/wbern/lotta/compare/v1.22.1...v1.23.0) (2026-10-28)
 
 
