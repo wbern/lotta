@@ -18,7 +18,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={onClose}
@@ -37,7 +36,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="standings"
         onClose={vi.fn()}
@@ -55,7 +53,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound={false}
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -74,7 +71,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -95,7 +91,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -114,7 +109,6 @@ describe('PrintDialog', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={false}
         category="lotta"
         onClose={vi.fn()}
@@ -147,7 +141,6 @@ describe('PrintDialog standings gating', () => {
       <PrintDialog
         open
         hasRound={false}
-        hasTournament
         chess4={chess4}
         category="standings"
         onClose={vi.fn()}
@@ -175,7 +168,6 @@ describe('PrintDialog standings gating', () => {
       <PrintDialog
         open
         hasRound
-        hasTournament
         chess4={chess4}
         category="standings"
         onClose={vi.fn()}

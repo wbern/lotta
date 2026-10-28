@@ -405,7 +405,6 @@ export function MenuBar({
       <PrintDialog
         open={showLottaPrint}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="lotta"
         onClose={() => setShowLottaPrint(false)}
@@ -414,7 +413,6 @@ export function MenuBar({
       <PrintDialog
         open={showStandingsPrint}
         hasRound={hasRound}
-        hasTournament={hasTournament}
         chess4={!!chess4}
         category="standings"
         onClose={() => setShowStandingsPrint(false)}
