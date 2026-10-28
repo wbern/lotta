@@ -26,3 +26,18 @@ export function validateTournamentRequest(req: CreateTournamentRequest): CreateT
   }
   return { ...req, name: req.name.trim(), group: req.group.trim() }
 }
+
+/**
+ * Normalise a "utgår från rond" value at the repository boundary. Java Lotta's
+ * tooltip reads "Tomt fält eller 0 = ej utgått": null and anything ≤ 0 mean
+ * "not withdrawn" (-1). A cleared form field arrives as Number('') === 0, and
+ * imports/restores may carry 0, so these are normalised rather than rejected.
+ * Non-integers (incl. NaN) are rejected like Java does. `undefined` is passed
+ * through so updates can skip the column; inserts default it to -1.
+ */
+export function normaliseWithdrawnFromRound(value: number | null | undefined): number | undefined {
+  if (value === undefined) return undefined
+  if (value === null) return -1
+  if (!Number.isInteger(value)) throw new Error('Utgå från rond måste vara ett heltal.')
+  return value <= 0 ? -1 : value
+}

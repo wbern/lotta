@@ -296,4 +296,72 @@ describe('TournamentPlayerRepository', () => {
       expect(list[0].protectFromByeInDebut).toBe(true)
     })
   })
+
+  describe('withdrawnFromRound normalisation', () => {
+    it('given a player added with withdrawnFromRound 0, when read back, then it is -1 (not withdrawn)', () => {
+      const added = tournamentPlayers.add(tournamentId, {
+        lastName: 'Åberg',
+        firstName: 'Siv',
+        withdrawnFromRound: 0,
+      })
+      expect(added.withdrawnFromRound).toBe(-1)
+      expect(tournamentPlayers.get(added.id)?.withdrawnFromRound).toBe(-1)
+    })
+
+    it('given a batch add with withdrawnFromRound 0, when listed, then every player reads -1', () => {
+      tournamentPlayers.addMany(tournamentId, [
+        { lastName: 'Åberg', firstName: 'Siv', withdrawnFromRound: 0 },
+        { lastName: 'Berg', firstName: 'Bo', withdrawnFromRound: -5 },
+      ])
+      expect(tournamentPlayers.list(tournamentId).map((p) => p.withdrawnFromRound)).toEqual([
+        -1, -1,
+      ])
+    })
+
+    it('given a withdrawn player, when updated to 0, then the stored value is -1', () => {
+      const added = tournamentPlayers.add(tournamentId, {
+        lastName: 'Åberg',
+        firstName: 'Siv',
+        withdrawnFromRound: 3,
+      })
+      const updated = tournamentPlayers.update(added.id, { withdrawnFromRound: 0 })
+      expect(updated.withdrawnFromRound).toBe(-1)
+      const raw = db.exec('SELECT withdrawnfromround FROM tournamentplayers WHERE "index" = ?', [
+        added.id,
+      ])
+      expect(raw[0].values[0][0]).toBe(-1)
+    })
+
+    it('given a player, when updated to 1.5, then it throws and the stored value is unchanged', () => {
+      const added = tournamentPlayers.add(tournamentId, {
+        lastName: 'Åberg',
+        firstName: 'Siv',
+        withdrawnFromRound: 3,
+      })
+      expect(() => tournamentPlayers.update(added.id, { withdrawnFromRound: 1.5 })).toThrow(
+        'Utgå från rond måste vara ett heltal.',
+      )
+      expect(tournamentPlayers.get(added.id)?.withdrawnFromRound).toBe(3)
+    })
+
+    it('given a row written with withdrawnfromround 0 by raw SQL (old backup), when listed or fetched, then it reads -1', () => {
+      db.run(
+        `INSERT INTO tournamentplayers (lastname, firstname, tournamentindex, withdrawnfromround)
+         VALUES ('Åberg', 'Siv', ?, 0)`,
+        [tournamentId],
+      )
+      const id = db.exec('SELECT last_insert_rowid()')[0].values[0][0] as number
+      expect(tournamentPlayers.list(tournamentId)[0].withdrawnFromRound).toBe(-1)
+      expect(tournamentPlayers.get(id)?.withdrawnFromRound).toBe(-1)
+    })
+
+    it('given a row with withdrawnfromround NULL, when listed, then it reads -1', () => {
+      db.run(
+        `INSERT INTO tournamentplayers (lastname, firstname, tournamentindex, withdrawnfromround)
+         VALUES ('Åberg', 'Siv', ?, NULL)`,
+        [tournamentId],
+      )
+      expect(tournamentPlayers.list(tournamentId)[0].withdrawnFromRound).toBe(-1)
+    })
+  })
 })

@@ -1,7 +1,21 @@
 import type { Database } from 'sql.js'
 import { tournamentLockState } from '../../domain/tournament-lock.ts'
+import { normaliseWithdrawnFromRound } from '../../domain/validation.ts'
 import type { PlayerDto } from '../../types/api.ts'
 import { mapPlayerRow } from './map-player-row.ts'
+
+const SELECT_PLAYER = `SELECT
+        p."index", p.lastname, p.firstname, c.club, COALESCE(p.clubindex, 0),
+        p.ratingn, p.ratingi, p.ratingq, p.ratingb, p.ratingk, p.ratingkq, p.ratingkb,
+        p.title, p.sex, p.federation, p.fideid, p.ssfid, p.birthdate, p.playergroup,
+        -- 0/NULL/negative mean "not withdrawn" (Java: "Tomt fält eller 0 = ej utgått");
+        -- normalised on read too so old backups and raw writes cannot exclude a player.
+        CASE WHEN p.withdrawnfromround IS NULL OR p.withdrawnfromround <= 0 THEN -1
+          ELSE p.withdrawnfromround END,
+        COALESCE(p.manualtiebreak, 0),
+        COALESCE(p.addedatround, 0), COALESCE(p.protectfrombyeindebut, 1)
+      FROM tournamentplayers p
+      LEFT JOIN clubs c ON c."index" = p.clubindex`
 
 export class TournamentPlayerRepository {
   private db: Database
@@ -59,7 +73,7 @@ export class TournamentPlayerRepository {
         dto.birthdate ?? null,
         dto.playerGroup ?? '',
         tournamentId,
-        dto.withdrawnFromRound ?? -1,
+        normaliseWithdrawnFromRound(dto.withdrawnFromRound) ?? -1,
         dto.manualTiebreak ?? 0,
         roundsPlayed,
         protect ? 1 : 0,
@@ -72,14 +86,7 @@ export class TournamentPlayerRepository {
 
   get(id: number): PlayerDto | null {
     const result = this.db.exec(
-      `SELECT
-        p."index", p.lastname, p.firstname, c.club, COALESCE(p.clubindex, 0),
-        p.ratingn, p.ratingi, p.ratingq, p.ratingb, p.ratingk, p.ratingkq, p.ratingkb,
-        p.title, p.sex, p.federation, p.fideid, p.ssfid, p.birthdate, p.playergroup,
-        COALESCE(p.withdrawnfromround, -1), COALESCE(p.manualtiebreak, 0),
-        COALESCE(p.addedatround, 0), COALESCE(p.protectfrombyeindebut, 1)
-      FROM tournamentplayers p
-      LEFT JOIN clubs c ON c."index" = p.clubindex
+      `${SELECT_PLAYER}
       WHERE p."index" = ?`,
       [id],
     )
@@ -90,6 +97,11 @@ export class TournamentPlayerRepository {
   update(id: number, dto: Partial<PlayerDto>): PlayerDto {
     const fields: string[] = []
     const values: (string | number | null)[] = []
+    // Validate before building the statement so a rejected value writes nothing.
+    const normalised = {
+      ...dto,
+      withdrawnFromRound: normaliseWithdrawnFromRound(dto.withdrawnFromRound),
+    }
 
     const fieldMap: Record<string, string> = {
       lastName: 'lastname',
@@ -116,7 +128,7 @@ export class TournamentPlayerRepository {
     }
 
     for (const [dtoField, dbColumn] of Object.entries(fieldMap)) {
-      const value = dto[dtoField as keyof PlayerDto]
+      const value = normalised[dtoField as keyof PlayerDto]
       if (value !== undefined) {
         fields.push(`${dbColumn} = ?`)
         values.push(value as string | number | null)
@@ -225,14 +237,7 @@ export class TournamentPlayerRepository {
 
   list(tournamentId: number): PlayerDto[] {
     const result = this.db.exec(
-      `SELECT
-        p."index", p.lastname, p.firstname, c.club, COALESCE(p.clubindex, 0),
-        p.ratingn, p.ratingi, p.ratingq, p.ratingb, p.ratingk, p.ratingkq, p.ratingkb,
-        p.title, p.sex, p.federation, p.fideid, p.ssfid, p.birthdate, p.playergroup,
-        COALESCE(p.withdrawnfromround, -1), COALESCE(p.manualtiebreak, 0),
-        COALESCE(p.addedatround, 0), COALESCE(p.protectfrombyeindebut, 1)
-      FROM tournamentplayers p
-      LEFT JOIN clubs c ON c."index" = p.clubindex
+      `${SELECT_PLAYER}
       WHERE p.tournamentindex = ?
       ORDER BY p.lastname, p.firstname`,
       [tournamentId],
