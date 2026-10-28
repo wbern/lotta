@@ -31,6 +31,7 @@ adr-lint --branch
 | 0004 | Single source of truth for field lock state            | accepted | `src/domain/tournament-lock.ts`, `tournaments.ts` repo, `TournamentDialog.tsx`   | —             |
 | 0005 | Global keyboard handlers are modal-aware               | accepted | `src/components/dialogs/Dialog.tsx`, `useKeyboardShortcuts.ts`, `PairingsTab.tsx` | —             |
 | 0006 | Scoring system is independent of the Schackfyran format | accepted | `src/domain/scoring.ts`, `standings.ts`, `tournament-lock.ts`, `TournamentDialog.tsx` | —         |
+| 0007 | Readers are notified of every write by the persistence layer | accepted | `database-service.ts`, `src/lib/*-bus.ts`, `query-client.ts`, `src/api/**`, `src/hooks/**`, `src/components/**/*.tsx` | — |
 
 ## Conventions
 
@@ -55,3 +56,4 @@ whole cluster green:
 - 0004 → `e2e/tournament-lock-enforcement.spec.ts`
 - 0005 → `e2e/keybind-modal-context.spec.ts`
 - 0006 → `e2e/schack4an-points-locks-settings.spec.ts` (+ a green `scoring.test.ts` unit test added at implementation time)
+- 0007 → `e2e/stale-view-after-write.spec.ts` (+ the WRITE MATRIX in `src/lib/query-invalidation.test.ts`)

@@ -150,7 +150,7 @@ pnpm secretlint '**/*'   # Secret scanning
 
 Before grading, walk this checklist of bug classes we've actually shipped and had to fix. Each entry says **what to look for** and **how to verify**, with commit SHAs as evidence — `git show <sha>` if you need full context. Skip checks that don't apply. Issues found here are usually MAJOR or CRITICAL.
 
-Note: Biome plugins (`pnpm check`) already catch four mechanically-detectable rules: `no-wait-for-response`, `no-hardcoded-resource-ids`, `no-navigator-online`, `no-online-network-mode`. Don't re-flag what Biome would catch — focus on the semantic checks below.
+Note: Biome plugins (`pnpm check`) already catch five mechanically-detectable rules: `no-wait-for-response`, `no-hardcoded-resource-ids`, `no-navigator-online`, `no-online-network-mode`, `no-direct-query-invalidation`. Don't re-flag what Biome would catch — focus on the semantic checks below.
 
 **1. P2P broadcast coverage on host state changes**
 - Look for: a new host-side mutation (DB write, tournament switch, undo/redo, delete, restore, snapshot, round seed) without a corresponding P2P broadcast.
@@ -206,5 +206,10 @@ Note: Biome plugins (`pnpm check`) already catch four mechanically-detectable ru
 - Look for: a `document.addEventListener('pointerdown' | 'mousedown' | 'touchstart', ...)` that closes a menu, popup, or dropdown.
 - Verify: the handler ignores events whose target is inside the popup (`ref.contains(e.target)` or `e.target.closest(...)`). `pointerdown`/`mousedown` fire *before* `click`, so an unconditional close unmounts the item before its `onClick` runs: every item silently does nothing while keyboard shortcuts keep working. Unit tests with bare `fireEvent.click` cannot catch this; use `userEvent.click` or fire `pointerDown` first, and cover the flow in `e2e/smoke.spec.ts`.
 - History: 03a4bee (introduced: result menu dead for five months), a3b88b0 (fixed). `MenuBar.tsx` does it right.
+
+**12. Stale view after a write**
+- Look for: a view that reads tournament data outside a `src/hooks` query hook (`useMemo`/render calling `api/*`, `getDatabaseService`, `build*Input`); a new write path that does not end in `DatabaseService.save()` (on a P2P client: an RPC through `createP2pClientProvider`); a new network-backed query without `meta: { source: 'network' }`; a reintroduced per-site `invalidateQueries({ queryKey })`.
+- Verify: the write shows up in every other open view without a reload (ADR-0007). New write APIs get a row in the WRITE MATRIX (`src/lib/query-invalidation.test.ts`); new views get a case in `e2e/stale-view-after-write.spec.ts`. `src/lib/data-flow-guard.test.ts` and the `no-direct-query-invalidation` Biome plugin catch the mechanical part.
+- History: 91f37cf (per-site fix: clubs from an import), 566af71 (P2P precedent: broadcast on every host write); ADR-0007 replaced ~45 per-site invalidations after seven reproduced stale views (club rename, Namnvisning, Ta bort bord, Editera bord, Schack4an class size, Alfabetisk print view) and the host not refreshing on a P2P referee's result.
 
 </claude-commands-template>
