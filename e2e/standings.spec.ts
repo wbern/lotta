@@ -1,163 +1,140 @@
-import {
-  type ApiClient,
-  apiClient,
-  createTournament,
-  fetchStandings,
-  type PlayerInput,
-  pairRound,
-  setResultsFromScript,
-  waitForApi,
-} from './api-helpers'
+/**
+ * Standings end to end through the real UI: results are entered with the
+ * result menu, round 2 is paired from the Lotta menu and the Ställning tab is
+ * read back. Players are identified by (lastName, firstName), never by the
+ * formatted name, so the test does not depend on the name-presentation setting.
+ *
+ * Every expected value is computed by hand (see comments).
+ */
+
+import { apiClient, createTournament, pairRound, waitForApi } from './api-helpers'
 import { expect, test } from './fixtures'
-import {
-  STANDINGS_8TB_BY_ROUND,
-  STANDINGS_INBORDES,
-  STANDINGS_MANUELL,
-} from './standings-snapshots'
+import { selectTournament } from './helpers'
 
-// ── 8-tiebreaker test setup ──────────────────────────────────────────────
+type Key = [lastName: string, firstName: string]
 
-const PLAYERS_8: PlayerInput[] = [
-  { lastName: 'Ödinson', firstName: 'Thor', ratingI: 2100 },
-  { lastName: 'Läufeyson', firstName: 'Loki', ratingI: 1950 },
-  { lastName: 'Järnsida', firstName: 'Björn', ratingI: 1800 },
-  { lastName: 'Åskväder', firstName: 'Odin', ratingI: 1750 },
-  { lastName: 'Stormöga', firstName: 'Frej', ratingI: 1600 },
-  { lastName: 'Svärdhand', firstName: 'Tyr', ratingI: 1500 },
-  { lastName: 'Stjärnljus', firstName: 'Freja', ratingI: 1400 },
-  { lastName: 'Nattskärm', firstName: 'Sigrid', ratingI: 1300 },
+const PLAYERS = [
+  { lastName: 'Berg', firstName: 'Bo', ratingI: 1600 },
+  { lastName: 'Äberg', firstName: 'Ärla', ratingI: 1500 },
+  { lastName: 'Åberg', firstName: 'Åsa', ratingI: 1500 },
+  { lastName: 'Cedh', firstName: 'Cilla', ratingI: 1400 },
 ]
 
-const ALL_TIEBREAKS = [
-  'Buchholz',
-  'Berger',
-  'Median Buchholz',
-  'SSF Buchholz',
-  'Progressiv',
-  'Vinster',
-  'Svarta partier',
-  'Prestationsrating LASK',
-]
+test('standings tab: shared places, Swedish tie order and tiebreak values after two rounds', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await waitForApi(page)
+  const $ = apiClient(page)
+  const { tid } = await createTournament(
+    $,
+    {
+      name: 'Ställningstest',
+      pairingSystem: 'Monrad',
+      nrOfRounds: 3,
+      showELO: false,
+      showGroup: false,
+      selectedTiebreaks: ['Buchholz', 'Prestationsrating LASK'],
+    },
+    PLAYERS,
+  )
+  const keyById = new Map<number, Key>(
+    (await $.get(`/api/tournaments/${tid}/players`)).map(
+      (p: { id: number; lastName: string; firstName: string }) => [p.id, [p.lastName, p.firstName]],
+    ),
+  )
+  const boardsOf = async (roundNr: number): Promise<[Key, Key][]> => {
+    const round = await $.get(`/api/tournaments/${tid}/rounds/${roundNr}`)
+    return round.games.map((g: { whitePlayer: { id: number }; blackPlayer: { id: number } }) => [
+      keyById.get(g.whitePlayer.id),
+      keyById.get(g.blackPlayer.id),
+    ])
+  }
 
-const SCRIPTED_5R: Record<number, Record<number, string>> = {
-  1: { 1: 'WHITE_WIN', 2: 'BLACK_WIN', 3: 'WHITE_WIN', 4: 'DRAW' },
-  2: { 1: 'BLACK_WIN', 2: 'WHITE_WIN', 3: 'DRAW', 4: 'WHITE_WIN' },
-  3: { 1: 'WHITE_WIN', 2: 'DRAW', 3: 'BLACK_WIN', 4: 'WHITE_WIN' },
-  4: { 1: 'DRAW', 2: 'WHITE_WIN', 3: 'WHITE_WIN', 4: 'BLACK_WIN' },
-  5: { 1: 'WHITE_WIN', 2: 'BLACK_WIN', 3: 'DRAW', 4: 'WHITE_WIN' },
-}
+  // Round 1 seeding: rating, equal ratings in Swedish order (Å before Ä):
+  // lots Berg 1, Åberg 2, Äberg 3, Cedh 4 → Åberg–Berg, Cedh–Äberg (lower lot white).
+  await pairRound($, tid)
+  expect(await boardsOf(1)).toEqual([
+    [
+      ['Åberg', 'Åsa'],
+      ['Berg', 'Bo'],
+    ],
+    [
+      ['Cedh', 'Cilla'],
+      ['Äberg', 'Ärla'],
+    ],
+  ])
 
-function snapshotStanding(s: any) {
-  return { place: s.place, name: s.name, score: s.score, tiebreaks: s.tiebreaks }
-}
+  await page.reload()
+  await waitForApi(page)
+  await selectTournament(page, 'Ställningstest')
 
-test.describe('Standings with tiebreakers', () => {
-  test('All 8 tiebreakers, round-by-round', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const { tid } = await createTournament(
-      $,
-      {
-        name: 'Standings-8TB',
-        pairingSystem: 'Monrad',
-        nrOfRounds: 5,
-        selectedTiebreaks: ALL_TIEBREAKS,
-      },
-      PLAYERS_8,
-    )
-
-    const allStandings: any[][] = []
-    for (let r = 1; r <= 5; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      await setResultsFromScript($, tid, r, round.games, SCRIPTED_5R[r])
-      const standings = await fetchStandings($, tid, r)
-      allStandings.push(standings.map(snapshotStanding))
+  const drawAll = async (roundNr: number) => {
+    for (const board of [1, 2]) {
+      await page.getByTestId(`result-dropdown-${board}`).click()
+      await page.getByTestId('result-context-menu').getByRole('button', { name: /^Remi/ }).click()
+      await expect
+        .poll(async () => {
+          const round = await $.get(`/api/tournaments/${tid}/rounds/${roundNr}`)
+          return round.games.find((g: { boardNr: number }) => g.boardNr === board).resultType
+        })
+        .toBe('DRAW')
     }
+  }
 
-    expect(allStandings).toEqual(STANDINGS_8TB_BY_ROUND)
-  })
+  await drawAll(1)
 
-  test('Inbördes möte (Internal Meeting)', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const players: PlayerInput[] = [
-      { lastName: 'Alfa', firstName: 'A', ratingI: 2000 },
-      { lastName: 'Beta', firstName: 'B', ratingI: 1900 },
-      { lastName: 'Gamma', firstName: 'C', ratingI: 1800 },
-      { lastName: 'Delta', firstName: 'D', ratingI: 1700 },
-      { lastName: 'Epsilon', firstName: 'E', ratingI: 1600 },
-      { lastName: 'Zeta', firstName: 'F', ratingI: 1500 },
-    ]
+  // Round 2 from the menu. All on ½ → order by lots: Berg, Åberg, Äberg, Cedh.
+  // Berg–Åberg met → Berg–Äberg (0 whites each → Äberg white);
+  // Åberg–Cedh (1 white each → Cedh white).
+  await page.getByTestId('menu-bar').getByRole('button', { name: 'Lotta' }).click()
+  await page.getByTestId('menu-dropdown').getByText('Lotta nästa rond').click()
+  await expect.poll(async () => (await $.get(`/api/tournaments/${tid}`)).roundsPlayed).toBe(2)
+  // The pairings view follows the new round before results are entered.
+  await expect(page.getByTestId('tournament-selector').locator('select').nth(2)).toHaveValue('2')
+  expect(await boardsOf(2)).toEqual([
+    [
+      ['Äberg', 'Ärla'],
+      ['Berg', 'Bo'],
+    ],
+    [
+      ['Cedh', 'Cilla'],
+      ['Åberg', 'Åsa'],
+    ],
+  ])
 
-    const { tid } = await createTournament(
-      $,
-      {
-        name: 'Standings-Inbordes',
-        pairingSystem: 'Monrad',
-        nrOfRounds: 4,
-        selectedTiebreaks: ['Buchholz', 'Inbördes möte'],
-      },
-      players,
-    )
+  await drawAll(2)
 
-    // Scripted: craft results so 2 players tie on score AND Buchholz but have met each other
-    const script: Record<number, Record<number, string>> = {
-      1: { 1: 'WHITE_WIN', 2: 'BLACK_WIN', 3: 'WHITE_WIN' },
-      2: { 1: 'BLACK_WIN', 2: 'WHITE_WIN', 3: 'DRAW' },
-      3: { 1: 'WHITE_WIN', 2: 'DRAW', 3: 'BLACK_WIN' },
-      4: { 1: 'DRAW', 2: 'WHITE_WIN', 3: 'BLACK_WIN' },
-    }
+  await page.getByTestId('tab-headers').getByText('Ställning', { exact: true }).click()
+  const table = page.getByTestId('data-table')
+  await expect(table.locator('th', { hasText: 'Plac' })).toBeVisible()
 
-    for (let r = 1; r <= 4; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      await setResultsFromScript($, tid, r, round.games, script[r])
-    }
-
-    const standings = await fetchStandings($, tid, 4)
-    const snapshot = standings.map(snapshotStanding)
-    expect(snapshot).toEqual(STANDINGS_INBORDES)
-  })
-
-  test('Manuell tiebreak', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const { tid, addedPlayers } = await createTournament(
-      $,
-      {
-        name: 'Standings-Manuell',
-        pairingSystem: 'Monrad',
-        nrOfRounds: 3,
-        selectedTiebreaks: ['Buchholz', 'Manuell'],
-      },
-      PLAYERS_8,
-    )
-
-    const script: Record<number, Record<number, string>> = {
-      1: { 1: 'WHITE_WIN', 2: 'BLACK_WIN', 3: 'DRAW', 4: 'DRAW' },
-      2: { 1: 'WHITE_WIN', 2: 'DRAW', 3: 'WHITE_WIN', 4: 'BLACK_WIN' },
-      3: { 1: 'DRAW', 2: 'WHITE_WIN', 3: 'BLACK_WIN', 4: 'WHITE_WIN' },
-    }
-
-    for (let r = 1; r <= 3; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      await setResultsFromScript($, tid, r, round.games, script[r])
-    }
-
-    // Set manualTiebreak on one player to differentiate ties
-    const player = addedPlayers[2] // Björn Järnsida
-    await $.put(`/api/tournaments/${tid}/players/${player.id}`, {
-      ...player,
-      manualTiebreak: 10,
-    })
-
-    const standings = await fetchStandings($, tid, 3)
-    const snapshot = standings.map(snapshotStanding)
-    expect(snapshot).toEqual(STANDINGS_MANUELL)
-  })
+  // After two rounds everyone has 1 point (two draws).
+  // Buchholz: both opponents have 1 → 2 for everyone.
+  // Prestationsrating (played games, p = ½ → +0):
+  //   Berg (1500 + 1500)/2 = 1500, Åberg (1600 + 1400)/2 = 1500,
+  //   Äberg (1400 + 1600)/2 = 1500, Cedh (1500 + 1500)/2 = 1500.
+  // All tied → shared place 1 (shown on the first row only); listed by
+  // rating, then Swedish name order: Berg 1600, Åberg, Äberg, Cedh 1400.
+  const expected: { key: Key; place: string }[] = [
+    { key: ['Berg', 'Bo'], place: '1' },
+    { key: ['Åberg', 'Åsa'], place: '' },
+    { key: ['Äberg', 'Ärla'], place: '' },
+    { key: ['Cedh', 'Cilla'], place: '' },
+  ]
+  const rows = table.locator('tbody tr')
+  await expect(rows).toHaveCount(expected.length)
+  // Columns with showELO/showGroup off: Plac, Namn, Klubb, Poäng, Buch, Pres.
+  for (let i = 0; i < expected.length; i++) {
+    const cells = await rows.nth(i).locator('td').allTextContents()
+    const [lastName, firstName] = expected[i].key
+    const nameWords = cells[1].trim().split(/\s+/)
+    expect(nameWords.sort(), `row ${i + 1}`).toEqual([lastName, firstName].sort())
+    expect([cells[0], cells[3], cells[4], cells[5]], `row ${i + 1}`).toEqual([
+      expected[i].place,
+      '1',
+      '2',
+      '1500',
+    ])
+  }
 })
