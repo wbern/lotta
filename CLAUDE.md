@@ -68,7 +68,7 @@ Playwright, **one project per spec file** (see `playwright.config.ts`). Split in
 - **Tier 1 — default** (21 projects): non-p2p, localhost-only. Runs on every push to `main` via CI.
 - **Tier 2 — p2p** (7 projects): needs MQTT broker + HTTPS + second dev server. Opt-in only. New p2p specs **must** be added inside the `runningP2P` conditional spread in `playwright.config.ts` — otherwise they leak into Tier 1 / CI.
 - **Tier 3 — browserstack**: real devices, paid. Only runs via `pnpm test:e2e:browserstack` (sets `RUN_BROWSERSTACK=1`); having `BROWSERSTACK_USERNAME` in the shell is not enough, so a plain `pnpm test:e2e` never starts paid sessions.
-- **Smoke — release gate** (`e2e/smoke.spec.ts`, `pnpm test:e2e:smoke`): arbiter-critical flows driven with a real mouse (set results incl. W/O from the result menu, Editera poäng, pair next round, tournament-settings save errors, player import). Runs in CI on every push to `main` and blocks the deploy. Add a case here whenever a bug ships that an arbiter cannot work around.
+- **Smoke — release gate** (`e2e/smoke.spec.ts`, `pnpm test:e2e:smoke`): arbiter-critical flows driven with a real mouse (set results incl. W/O from the result menu, Editera poäng, pair next round, tournament-settings save errors, player import) plus `e2e/stale-view-after-write.spec.ts` (every view refreshes after a write, ADR-0007). Runs in CI on every push to `main` and blocks the deploy. Add a case here whenever a bug ships that an arbiter cannot work around.
 
 ```bash
 pnpm test:e2e              # Tier 1 (same as CI)

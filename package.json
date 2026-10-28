@@ -11,7 +11,7 @@
     "lint": "biome lint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:e2e:smoke": "playwright test --project=smoke",
+    "test:e2e:smoke": "playwright test --project=smoke --project=stale-view-after-write",
     "test:e2e:p2p": "RUN_P2P_E2E=1 playwright test",
     "test:e2e:browserstack": "RUN_BROWSERSTACK=1 browserstack-node-sdk playwright test",
     "test:e2e:video": "playwright test && node scripts/concat-videos.mjs",
