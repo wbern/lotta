@@ -168,7 +168,7 @@ beforeEach(async () => {
 
   qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   await seedQueries(qc, fx.tid)
-  uninstall = installDataChangedInvalidation(qc).uninstall
+  uninstall = installDataChangedInvalidation(qc)
 })
 
 afterEach(async () => {
@@ -364,48 +364,6 @@ describe('installDataChangedInvalidation', () => {
     expect(afterFirstData.every((s) => !s.isLoading)).toBe(true)
     expect(states.at(-1)?.data).toBe(2)
     unsubscribe()
-  })
-})
-
-describe('whenRefreshed', () => {
-  it('given no data change is pending, then it resolves immediately', async () => {
-    const { whenRefreshed, uninstall: remove } = installDataChangedInvalidation(new QueryClient())
-    await expect(whenRefreshed()).resolves.toBeUndefined()
-    remove()
-  })
-
-  it('given a data change, then it resolves only after active queries have refetched', async () => {
-    const client = new QueryClient()
-    const { whenRefreshed, uninstall: remove } = installDataChangedInvalidation(client)
-    const { QueryObserver } = await import('@tanstack/react-query')
-    let release: () => void = () => {}
-    let calls = 0
-    const observer = new QueryObserver(client, {
-      queryKey: ['clubs'],
-      queryFn: () => {
-        calls++
-        if (calls === 1) return 'old'
-        return new Promise<string>((r) => {
-          release = () => r('new')
-        })
-      },
-    })
-    const unsubscribe = observer.subscribe(() => {})
-    await vi.waitFor(() => expect(observer.getCurrentResult().data).toBe('old'))
-
-    emitDataChanged()
-    let refreshed = false
-    const done = whenRefreshed().then(() => {
-      refreshed = true
-    })
-    await vi.waitFor(() => expect(calls).toBe(2))
-    expect(refreshed).toBe(false)
-
-    release()
-    await done
-    expect(observer.getCurrentResult().data).toBe('new')
-    unsubscribe()
-    remove()
   })
 })
 

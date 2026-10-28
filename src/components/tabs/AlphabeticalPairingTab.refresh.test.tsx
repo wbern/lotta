@@ -59,7 +59,7 @@ beforeEach(async () => {
   rounds = db.games.listRounds(tid)
 
   qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  uninstall = installDataChangedInvalidation(qc).uninstall
+  uninstall = installDataChangedInvalidation(qc)
 })
 
 afterEach(async () => {

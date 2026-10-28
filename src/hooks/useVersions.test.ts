@@ -51,7 +51,7 @@ describe('useVersions', () => {
       async () => new Response(JSON.stringify({ versions: [] }), { status: 200 }),
     )
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const { uninstall } = installDataChangedInvalidation(qc)
+    const uninstall = installDataChangedInvalidation(qc)
     const { result } = renderHook(() => useVersions(), {
       wrapper: ({ children }: { children: React.ReactNode }) =>
         createElement(QueryClientProvider, { client: qc }, children),

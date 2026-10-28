@@ -92,9 +92,10 @@ every DB-derived query in one place:
 4. P2P clients, whose writes never reach a local `save()`, feed the same bus:
    the host's `data-changed` broadcast emits on it, and the client provider
    emits when the host confirms one of the client's own writes.
-5. The global `MutationCache.onSuccess` waits for that refresh, so a
-   mutation still resolves after the views it changed are up to date
-   (per-call `onSuccess` handlers read fresh data).
+5. Mutations do not wait for that refresh. Views derive their state from
+   the data (ADR-0002) and settle when the refetch lands; awaiting it would
+   let one failing query (retrying with backoff — e.g. a referee grant that
+   may not read the player pool) hold every serialized result entry behind it.
 6. Components read tournament data only through `src/hooks` query hooks —
    never by calling the DB or API layer during render.
 

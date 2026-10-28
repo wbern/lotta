@@ -56,7 +56,7 @@ describe('useUpdateTournamentPlayer', () => {
   // Since ADR-0007 the write itself announces the change; the hook names no keys.
   it('given cached standings and pairings, when a player is updated, then they are marked stale', async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const { uninstall } = installDataChangedInvalidation(qc)
+    const uninstall = installDataChangedInvalidation(qc)
     qc.setQueryData(['tournaments', tid, 'standings', 4], [])
     qc.setQueryData(['tournaments', tid, 'rounds', 4], {})
     qc.setQueryData(['tournaments', tid, 'club-standings', 4], [])
