@@ -231,3 +231,57 @@ test('the Alfabetisk lottning print view shows a renamed player while the tab is
   await expect(table(page)).toContainText('Annika Svensson')
   await expect(print).toContainText('Annika Svensson')
 })
+
+// Refetching every view after every write must not cost the arbiter anything
+// at keyboard speed: background refetches keep the old data (no "Laddar..."
+// flash), and selection/focus/auto-advance survive the refreshes.
+test('rapid keyboard result entry keeps auto-advance and never flashes a loading state', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await waitForApi(page)
+  const $ = apiClient(page)
+  const players: PlayerInput[] = [
+    ...PLAYERS,
+    { lastName: 'Ek', firstName: 'Olle', ratingI: 1600 },
+    { lastName: 'Ask', firstName: 'Pia', ratingI: 1550 },
+    { lastName: 'Lind', firstName: 'Rut', ratingI: 1500 },
+    { lastName: 'Alm', firstName: 'Sven', ratingI: 1450 },
+  ]
+  const { tid } = await createTournament(
+    $,
+    { name: 'Snabbinmatning', pairingSystem: 'Monrad', nrOfRounds: 3 },
+    players,
+  )
+  await pairRound($, tid)
+  await page.reload()
+  await waitForApi(page)
+  await selectTournament(page, 'Snabbinmatning')
+  // Visit Ställning once so its first load (a legitimate "Laddar...") is over.
+  await openTab(page, 'Ställning')
+  await expect(table(page)).toContainText('Svensson')
+  await openTab(page, 'Lottning & resultat')
+  await page.evaluate(() => {
+    const w = window as unknown as { __sawLoading: boolean }
+    w.__sawLoading = false
+    new MutationObserver(() => {
+      if (document.body.textContent?.includes('Laddar')) w.__sawLoading = true
+    }).observe(document.body, { childList: true, subtree: true, characterData: true })
+  })
+
+  await page.locator('tr[data-board-nr="1"]').first().locator('td').first().click()
+  for (let i = 0; i < 4; i++) await page.keyboard.press('v')
+
+  for (const board of [1, 2, 3, 4]) {
+    await expect(page.getByTestId(`result-dropdown-${board}`)).toContainText('1-0')
+  }
+  await expect(page.locator('tr[data-board-nr="4"]')).toHaveClass(/selected/)
+  await expect(page.locator('tr[data-board-nr="4"]')).toBeFocused()
+
+  await openTab(page, 'Ställning')
+  // Four winners on 1 point, four losers on 0 (points are the last column).
+  await expect(table(page).locator('tbody tr td:last-child', { hasText: /^1$/ })).toHaveCount(4)
+  expect(
+    await page.evaluate(() => (window as unknown as { __sawLoading: boolean }).__sawLoading),
+  ).toBe(false)
+})
