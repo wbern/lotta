@@ -295,6 +295,7 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
     }
 
     standings.push({
+      playerId: pd.info.id,
       place,
       name: pd.info.name,
       playerGroup: pd.info.playerGroup,

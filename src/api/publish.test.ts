@@ -17,6 +17,7 @@ import { buildStandingsInput } from './publish-data.ts'
 import { setResult } from './results.ts'
 import { pairNextRound } from './rounds.ts'
 import { setDatabaseService } from './service-provider.ts'
+import { getStandings } from './standings.ts'
 
 describe('publish API (local)', () => {
   let service: DatabaseService
@@ -257,20 +258,108 @@ describe('publish API (local)', () => {
     expect(html).toContain('SK Lund')
   })
 
-  it('publishCrossTableHtml generates cross table', async () => {
-    const round = await pairNextRound(tournamentId)
-    for (const g of round.games) {
-      await setResult(tournamentId, 1, g.boardNr, { resultType: 'WHITE_WIN' })
+  describe('publishCrossTableHtml', () => {
+    interface CrossRow {
+      name: string
+      rounds: string[]
+      score: string
     }
 
-    const blob = await publishCrossTableHtml(tournamentId)
-    const html = await blob.text()
+    function crossRows(html: string): CrossRow[] {
+      const rows = html.match(/<tr class="CP_Row">.*?<\/tr>/g) ?? []
+      return rows.map((row) => ({
+        name: /<td class="CP_Player">(.*?)<\/td>/.exec(row)?.[1] ?? '',
+        rounds: [...row.matchAll(/<td class="CP_Round">(.*?)<\/td>/g)].map((m) => m[1]),
+        score: /<td class="CP_Score">(.*?)<\/td>/.exec(row)?.[1] ?? '',
+      }))
+    }
 
-    expect(html).toContain('Korstabell')
-    expect(html).toContain('R1')
-    expect(html).toContain('Poäng')
-    // Should contain opponent references with color
-    expect(html).toMatch(/\d[vs]/)
+    async function playRoundOneWhiteWins() {
+      const round = await pairNextRound(tournamentId)
+      for (const g of round.games) {
+        await setResult(tournamentId, 1, g.boardNr, { resultType: 'WHITE_WIN' })
+      }
+      return round
+    }
+
+    it('given round 1 is played, when published, then the header lists every planned round as a bare number', async () => {
+      await playRoundOneWhiteWins()
+
+      const html = await (await publishCrossTableHtml(tournamentId)).text()
+
+      expect(html).toContain(
+        '<tr class="CP_TableHeader"><td>Plac</td><td>Namn</td><td>Grp</td><td>Rating</td>' +
+          '<td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>Poäng</td></tr>',
+      )
+    })
+
+    it('given round 1 is played, when published, then rows follow the standings with unique places', async () => {
+      await playRoundOneWhiteWins()
+      const standings = await getStandings(tournamentId, 1)
+
+      const html = await (await publishCrossTableHtml(tournamentId)).text()
+
+      const rows = crossRows(html)
+      expect(rows.map((r) => r.name)).toEqual(standings.map((s) => s.name))
+      expect(rows.map((r) => r.score)).toEqual(standings.map((s) => s.scoreDisplay))
+      const places = [...html.matchAll(/<td class="CP_Place">(\d+)<\/td>/g)].map((m) => m[1])
+      expect(places).toEqual(['1', '2', '3', '4'])
+      // Unplayed rounds 2..7 are empty cells.
+      for (const r of rows) {
+        expect(r.rounds).toHaveLength(7)
+        expect(r.rounds.slice(1)).toEqual(['', '', '', '', '', ''])
+      }
+    })
+
+    it('given white won every game, when published, then each cell points at the opponent row with colour and 1/0', async () => {
+      const round = await playRoundOneWhiteWins()
+
+      const html = await (await publishCrossTableHtml(tournamentId)).text()
+
+      const rows = crossRows(html)
+      const rowOf = (name: string) => rows.findIndex((r) => r.name === name) + 1
+      for (const g of round.games) {
+        const white = g.whitePlayer?.name ?? ''
+        const black = g.blackPlayer?.name ?? ''
+        expect(rows[rowOf(white) - 1].rounds[0]).toBe(
+          `<div class="CP_White">${rowOf(black)}v</div>1`,
+        )
+        expect(rows[rowOf(black) - 1].rounds[0]).toBe(
+          `<div class="CP_Black">${rowOf(white)}s</div>0`,
+        )
+      }
+    })
+
+    it('given a fifth player joins before round 2, when published, then the bye cell has no opponent and the bye score', async () => {
+      await playRoundOneWhiteWins()
+      service.tournamentPlayers.add(tournamentId, {
+        lastName: 'Ek',
+        firstName: 'Eva',
+        ratingI: 1400,
+      })
+      const round2 = await pairNextRound(tournamentId)
+      const byeGame = round2.games.find((g) => g.blackPlayer == null)
+      expect(byeGame).toBeDefined()
+
+      const html = await (await publishCrossTableHtml(tournamentId)).text()
+
+      const byeRow = crossRows(html).find((r) => r.name === byeGame?.whitePlayer?.name)
+      // ppg 1: a bye is worth the winner's 1 point.
+      expect(byeRow?.rounds[1]).toBe('<div class="CP_White">v</div>1')
+    })
+
+    it('given two rounds, when published via publishHtml with round 1, then the round is ignored and all rounds show', async () => {
+      await playRoundOneWhiteWins()
+      await pairNextRound(tournamentId)
+
+      const viaDispatch = await (await publishHtml(tournamentId, 'cross-table', 1)).text()
+      const direct = await (await publishCrossTableHtml(tournamentId)).text()
+
+      expect(viaDispatch).toBe(direct)
+      for (const r of crossRows(direct)) {
+        expect(r.rounds[1]).toMatch(/^<div class="CP_(White|Black)">\d[vs]<\/div>$/)
+      }
+    })
   })
 
   it('publishHtml dispatches correctly', async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   calculateScores,
+  crossTableResultText,
   formatResultLabel,
   formatScore,
   getActualScores,
@@ -313,5 +314,38 @@ describe('formatScore', () => {
   it('formats mixed numbers with halves', () => {
     expect(formatScore(1.5)).toBe('1½')
     expect(formatScore(2.5)).toBe('2½')
+  })
+})
+
+describe('crossTableResultText', () => {
+  it.each([
+    ['WHITE_WIN', 'white', 1, '1'],
+    ['WHITE_WIN', 'black', 0, '0'],
+    ['DRAW', 'white', 0.5, '½'],
+    ['DRAW', 'black', 2, '2'],
+    ['BLACK_WIN', 'black', 3, '3'],
+    ['BLACK_WIN', 'white', 1, '1'],
+    ['WHITE_WIN_WO', 'white', 1, 'i'],
+    ['WHITE_WIN_WO', 'black', 0, 'o'],
+    ['BLACK_WIN_WO', 'white', 0, 'o'],
+    ['BLACK_WIN_WO', 'black', 1, 'i'],
+    ['DOUBLE_WO', 'white', 0, 'o'],
+    ['DOUBLE_WO', 'black', 0, 'o'],
+    ['POSTPONED', 'white', 1, 'u'],
+    ['POSTPONED', 'black', 1, 'u'],
+    ['CANCELLED', 'white', 0, '-'],
+    ['CANCELLED', 'black', 0, '-'],
+    ['NO_RESULT', 'white', 0, ''],
+    ['NO_RESULT', 'black', 0, ''],
+  ] as const)('given a %s game, when the %s player (own score %s) is shown, then the cell reads %j', (resultType, side, ownScore, expected) => {
+    expect(crossTableResultText(resultType, side, false, ownScore)).toBe(expected)
+  })
+
+  it('given a bye stored as a walkover win, when shown, then the cell reads the own score', () => {
+    expect(crossTableResultText('WHITE_WIN_WO', 'white', true, 3)).toBe('3')
+  })
+
+  it('given a bye worth half a point, when shown, then the cell reads ½', () => {
+    expect(crossTableResultText('WHITE_WIN_WO', 'white', true, 0.5)).toBe('½')
   })
 })

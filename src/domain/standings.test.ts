@@ -208,6 +208,47 @@ describe('calculateStandings', () => {
   })
 })
 
+describe('calculateStandings player identity', () => {
+  it('given two players, when standings are calculated, then each row carries its playerId', () => {
+    const player = (id: number, name: string, rating: number) => ({
+      id,
+      name,
+      playerGroup: '',
+      club: null,
+      clubId: 0,
+      rating,
+      manualTiebreak: 0,
+      lotNr: id,
+    })
+    const input: StandingsInput = {
+      roundNr: 1,
+      pointsPerGame: 1,
+      chess4: false,
+      compensateWeakPlayerPP: false,
+      selectedTiebreaks: [],
+      players: [player(7, 'Anna', 1500), player(9, 'Bo', 1600)],
+      games: [
+        {
+          roundNr: 1,
+          boardNr: 1,
+          whitePlayerId: 7,
+          blackPlayerId: 9,
+          resultType: 'WHITE_WIN',
+          whiteScore: 1,
+          blackScore: 0,
+        },
+      ],
+    }
+
+    const standings = calculateStandings(input)
+
+    expect(standings.map((s) => [s.name, s.playerId])).toEqual([
+      ['Anna', 7],
+      ['Bo', 9],
+    ])
+  })
+})
+
 describe('calculateClubStandings', () => {
   it('aggregates player scores by club and sorts', () => {
     const input: StandingsInput = {

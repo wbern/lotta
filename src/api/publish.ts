@@ -3,6 +3,7 @@ import type {
   Chess4StandingsPublishInput,
   ClubStandingsPublishInput,
   CrossTablePublishInput,
+  CrossTableRoundCell,
   PlayerListPublishInput,
 } from '../domain/html-publisher'
 import {
@@ -15,7 +16,7 @@ import {
   publishStandings,
 } from '../domain/html-publisher'
 import { getPlayerRating } from '../domain/ratings'
-import { formatScore } from '../domain/scoring'
+import { crossTableResultText, formatScore } from '../domain/scoring'
 import { publishFilename } from '../lib/filenames'
 import {
   buildAlphabeticalPairingsInput,
@@ -23,7 +24,7 @@ import {
   buildStandingsInput,
 } from './publish-data'
 import { getDatabaseService } from './service-provider'
-import { getChess4Standings, getClubStandings } from './standings'
+import { getChess4Standings, getClubStandings, getStandings } from './standings'
 
 function htmlBlob(html: string): Blob {
   return new Blob([html], { type: 'text/html; charset=UTF-8' })
@@ -173,61 +174,56 @@ export async function publishCrossTableHtml(tournamentId: number): Promise<Blob>
   const tournament = db.tournaments.get(tournamentId)
   if (!tournament) throw new Error(`Tournament ${tournamentId} not found`)
 
-  const settings = db.settings.get()
-  const presentation: NamePresentation =
-    settings.playerPresentation === 'LAST_FIRST' ? 'LAST_FIRST' : 'FIRST_LAST'
-
   const rounds = db.games.listRounds(tournamentId)
   if (rounds.length === 0) throw new Error('No rounds available')
 
-  const players = db.tournamentPlayers.list(tournamentId)
+  // Java HTMLRounds: rows in standings order after the last paired round,
+  // numbered by row (unique), and opponents referenced by that row number.
+  const standings = await getStandings(tournamentId, rounds.length)
+  const rowByPlayerId = new Map<number, number>()
+  standings.forEach((s, i) => rowByPlayerId.set(s.playerId, i + 1))
 
-  const crossTablePlayers: CrossTablePublishInput['players'] = players.map((p, i) => {
-    const roundEntries: { opponentNr: number | null; color: string }[] = []
+  const roundCount = Math.max(tournament.nrOfRounds, rounds.length)
 
-    for (const round of rounds) {
-      const game = round.games.find((g) => g.whitePlayer?.id === p.id || g.blackPlayer?.id === p.id)
-
-      if (game) {
-        if (game.whitePlayer?.id === p.id) {
-          const oppIdx = players.findIndex((pl) => pl.id === game.blackPlayer?.id)
-          roundEntries.push({
-            opponentNr: oppIdx >= 0 ? oppIdx + 1 : null,
-            color: 'v',
-          })
-        } else {
-          const oppIdx = players.findIndex((pl) => pl.id === game.whitePlayer?.id)
-          roundEntries.push({
-            opponentNr: oppIdx >= 0 ? oppIdx + 1 : null,
-            color: 's',
-          })
-        }
-      } else {
-        roundEntries.push({ opponentNr: null, color: '' })
+  const players: CrossTablePublishInput['players'] = standings.map((s, i) => {
+    const cells: (CrossTableRoundCell | null)[] = []
+    for (let roundNr = 1; roundNr <= roundCount; roundNr++) {
+      const round = rounds.find((r) => r.roundNr === roundNr)
+      const game = round?.games.find(
+        (g) => g.whitePlayer?.id === s.playerId || g.blackPlayer?.id === s.playerId,
+      )
+      if (!game) {
+        cells.push(null)
+        continue
       }
+      const isWhite = game.whitePlayer?.id === s.playerId
+      const opponentId = isWhite ? game.blackPlayer?.id : game.whitePlayer?.id
+      const isBye = opponentId == null
+      const ownScore = isWhite ? game.whiteScore : game.blackScore
+      cells.push({
+        opponentPlace: isBye ? null : (rowByPlayerId.get(opponentId) ?? null),
+        color: isWhite ? 'v' : 's',
+        result: crossTableResultText(game.resultType, isWhite ? 'white' : 'black', isBye, ownScore),
+      })
     }
-
-    // Calculate total score from all rounds
-    let totalScore = 0
-    for (const round of rounds) {
-      for (const g of round.games) {
-        if (g.whitePlayer?.id === p.id) totalScore += g.whiteScore
-        if (g.blackPlayer?.id === p.id) totalScore += g.blackScore
-      }
-    }
-
     return {
-      nr: i + 1,
-      name: formatPlayerName(p.firstName, p.lastName, presentation),
-      rounds: roundEntries,
-      totalScore: formatScore(totalScore),
+      place: i + 1,
+      name: s.name,
+      playerGroup: s.playerGroup,
+      rating: s.rating,
+      rounds: cells,
+      scoreDisplay: s.scoreDisplay,
+      tiebreaks: s.tiebreaks,
     }
   })
 
   const input: CrossTablePublishInput = {
     tournamentName: tournament.name,
-    roundCount: rounds.length,
-    players: crossTablePlayers,
+    roundCount,
+    showGroup: tournament.showGroup,
+    showELO: tournament.showELO,
+    tiebreakNames: tournament.selectedTiebreaks,
+    players,
   }
 
   return htmlBlob(publishCrossTable(input))

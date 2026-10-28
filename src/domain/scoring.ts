@@ -149,6 +149,34 @@ export function formatResultLabel(
   return isWalkover ? `${base} WO` : base
 }
 
+/**
+ * Result text in a Korstabell cell, as Java Lotta's HTMLRounds prints it:
+ * played games (and byes) show the player's own score, walkovers 'i'/'o'
+ * (in/out), postponed 'u', cancelled '-', no result ''.
+ */
+export function crossTableResultText(
+  resultType: ResultType,
+  side: 'white' | 'black',
+  isBye: boolean,
+  ownScore: number,
+): string {
+  if (isBye || isPlayed(resultType)) return formatScore(ownScore)
+  switch (resultType) {
+    case 'WHITE_WIN_WO':
+      return side === 'white' ? 'i' : 'o'
+    case 'BLACK_WIN_WO':
+      return side === 'white' ? 'o' : 'i'
+    case 'DOUBLE_WO':
+      return 'o'
+    case 'POSTPONED':
+      return 'u'
+    case 'CANCELLED':
+      return '-'
+    default:
+      return ''
+  }
+}
+
 export function formatScore(score: number): string {
   const intPart = Math.floor(score)
   const hasHalf = score % 1 === 0.5

@@ -1,8 +1,10 @@
 /* eslint local/no-class-locators: "off" -- structural traversal (.context-menu, .context-submenu, .result-cell) */
 
+import { readFileSync } from 'node:fs'
 import {
   apiClient,
   createTournament,
+  fetchStandings,
   pairRound,
   seedHeroTournament,
   waitForApi,
@@ -130,6 +132,40 @@ test.describe('Menu structure', () => {
     await expect(dialog).toHaveText('Skriv ut')
     await expect(page.getByTestId('print-standings')).toBeVisible()
     await expect(page.getByTestId('print-club-standings')).toBeVisible()
+  })
+
+  test('Ställning > Publicera... > Korstabell downloads a Java-style cross table led by the standings leader', async ({
+    page,
+  }) => {
+    await waitForApi(page)
+    const $ = apiClient(page)
+    const tournaments: { id: number; name: string }[] = await $.get('/api/tournaments')
+    const hero = tournaments.find((t) => t.name === 'Hjälteturneringen 2025')
+    expect(hero).toBeDefined()
+    const standings: { name: string }[] = await fetchStandings($, hero?.id ?? 0, 7)
+    expect(standings.length).toBeGreaterThan(0)
+
+    const tournamentSelect = page.getByTestId('tournament-selector').locator('select').first()
+    await tournamentSelect.selectOption('Hjälteturneringen 2025')
+    await expect(page.getByTestId('data-table')).toBeVisible()
+
+    await page
+      .getByTestId('menu-bar')
+      .getByRole('button', { name: 'Ställning', exact: true })
+      .click()
+    await page.getByTestId('menu-dropdown').getByText('Publicera...').click()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByTestId('publish-cross-table').click(),
+    ])
+    const html = readFileSync(await download.path(), 'utf-8')
+
+    expect(html).toContain('<td>Plac</td>')
+    await page.setContent(html)
+    const firstRow = page.locator('tr.CP_Row').first()
+    await expect(firstRow.locator('td.CP_Place')).toHaveText('1')
+    await expect(firstRow.locator('td.CP_Player')).toHaveText(standings[0].name)
   })
 
   test('Hjälp dropdown contains expected items', async ({ page }) => {

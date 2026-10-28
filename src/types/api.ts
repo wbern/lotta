@@ -110,6 +110,7 @@ export interface RoundDto {
 }
 
 export interface StandingDto {
+  playerId: number
   place: number
   name: string
   playerGroup: string
