@@ -1,3 +1,19 @@
+# [1.24.0](https://github.com/wbern/lotta/compare/v1.23.2...v1.24.0) (2026-10-28)
+
+
+### Bug Fixes
+
+* clubs created by a player import show up without a reload ([91f37cf](https://github.com/wbern/lotta/commit/91f37cff63cf86b7f7687e284573aea2430a2aba))
+* default "Utgå från rond" in Berger to the current round ([b030034](https://github.com/wbern/lotta/commit/b030034fe111c10fd0d615b579c78134ce393486))
+* quick result keys no longer change a bye ([879a663](https://github.com/wbern/lotta/commit/879a6630d50c1b423b31d0d2856edb38c30b8efd))
+* warn before restoring a backup and make the restore undoable ([5b6e920](https://github.com/wbern/lotta/commit/5b6e9200749b9bdc72385aa54a734db423d34ede))
+
+
+### Features
+
+* give downloaded files descriptive names and confirm each save ([07e2a25](https://github.com/wbern/lotta/commit/07e2a25178136b661e789ba38662fbfbf6f9241e))
+* publish the Korstabell like Java Lotta (standings order, results, tiebreaks) ([d599568](https://github.com/wbern/lotta/commit/d599568e5591a901c7cb5cf63a43fdadb7924727))
+
 ## [1.23.2](https://github.com/wbern/lotta/compare/v1.23.1...v1.23.2) (2026-10-28)
 
 
