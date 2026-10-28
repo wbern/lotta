@@ -79,4 +79,67 @@ describe.each(PROVIDERS)('pairing scenarios (%s)', (_name, factory) => {
       expect(lot).toEqual({ 'Åke Berg': 1, 'Örjan Berg': 2 })
     })
   })
+
+  describe('pairing failure message (MAJ)', () => {
+    const BARRED_TEXT =
+      'Lottning är inte möjlig!\nFör att lösa detta, avmarkera "Låt ej spelare från samma klubb mötas" i turneringsinställningarna, eller ändra vilka spelare som deltar.'
+    const GENERIC_TEXT =
+      'Lottning är inte möjlig!\nFör att lösa detta, ändra vilka spelare som deltar (utgå/lägg till) eller avsluta turneringen genom att sätta antal ronder till antalet lottade ronder.'
+
+    async function addPlayers(tid: number, specs: [string, number][]) {
+      for (const [lastName, clubIndex] of specs) {
+        await provider.tournamentPlayers.add(tid, {
+          lastName,
+          firstName: 'Anna',
+          ratingI: 1500,
+          clubIndex,
+        })
+      }
+    }
+
+    it('given four players from one club with "Låt ej spelare från samma klubb mötas", when round 1 is paired, then the message points at the club setting', async () => {
+      const club = await provider.clubs.add({ name: 'SK Alfa' })
+      const t = await createTournament({ barredPairing: true })
+      await addPlayers(t.id, [
+        ['Ahl', club.id],
+        ['Berg', club.id],
+        ['Cedh', club.id],
+        ['Dahl', club.id],
+      ])
+      await expect(provider.rounds.pairNext(t.id)).rejects.toThrow(BARRED_TEXT)
+    })
+
+    it('given two clubs of two players each, barred, when round 3 cannot avoid rematches, then the generic message is shown (barred is locked after round 1)', async () => {
+      // Barred: only cross-club games are allowed. With A1, A2 (Alfa) and
+      // B1, B2 (Beta) there are exactly two cross-club rounds; round 3 must
+      // repeat a meeting, so no valid pairing exists.
+      const alfa = await provider.clubs.add({ name: 'SK Alfa' })
+      const beta = await provider.clubs.add({ name: 'SK Beta' })
+      const t = await createTournament({ barredPairing: true })
+      await addPlayers(t.id, [
+        ['Ahl', alfa.id],
+        ['Alm', alfa.id],
+        ['Berg', beta.id],
+        ['Bok', beta.id],
+      ])
+      for (const roundNr of [1, 2]) {
+        const round = await provider.rounds.pairNext(t.id)
+        for (const g of round.games) {
+          await provider.results.set(t.id, roundNr, g.boardNr, { resultType: 'DRAW' })
+        }
+      }
+      await expect(provider.rounds.pairNext(t.id)).rejects.toThrow(GENERIC_TEXT)
+    })
+
+    it('given two players in Monrad who met in round 1, when round 2 is paired, then the generic message is shown', async () => {
+      const t = await createTournament()
+      await addPlayers(t.id, [
+        ['Ahl', 0],
+        ['Berg', 0],
+      ])
+      const r1 = await provider.rounds.pairNext(t.id)
+      await provider.results.set(t.id, 1, r1.games[0].boardNr, { resultType: 'DRAW' })
+      await expect(provider.rounds.pairNext(t.id)).rejects.toThrow(GENERIC_TEXT)
+    })
+  })
 })

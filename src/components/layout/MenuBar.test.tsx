@@ -234,6 +234,20 @@ describe('MenuBar pairing error', () => {
     expect(screen.getByTestId('pair-error').textContent).toContain('Inga spelare registrerade')
   })
 
+  it('given a multi-line pairing error, when shown, then line breaks are preserved (white-space: pre-line)', () => {
+    setupPairError('Lottning är inte möjlig!\nFör att lösa detta, ändra vilka spelare som deltar.')
+    renderMenuBar({ tournamentId: 1 })
+
+    openMenu('Lotta')
+    fireEvent.click(screen.getByText('Lotta nästa rond'))
+
+    const p = screen.getByTestId('pair-error')
+    expect(p.style.whiteSpace).toBe('pre-line')
+    expect(p.textContent).toBe(
+      'Lottning är inte möjlig!\nFör att lösa detta, ändra vilka spelare som deltar.',
+    )
+  })
+
   it('closes error dialog when clicking OK', () => {
     setupPairError('Inga spelare registrerade')
     renderMenuBar({ tournamentId: 1 })
