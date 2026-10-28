@@ -116,4 +116,43 @@ describe.each(PROVIDERS)('tournament-players API (%s)', (_name, factory) => {
     expect(list).toHaveLength(1)
     expect(list[0].lastName).toBe('C')
   })
+
+  it('given a withdrawn player, when the arbiter clears "utgår från rond" (saved as 0), then the player is paired in the next round', async () => {
+    const players = []
+    for (const [lastName, firstName, ratingI] of [
+      ['Åberg', 'Siv', 1500],
+      ['Berg', 'Bo', 1400],
+      ['Carlsson', 'Cilla', 1300],
+      ['Dahl', 'Dan', 1200],
+    ] as [string, string, number][]) {
+      players.push(
+        await provider.tournamentPlayers.add(tournamentId, { lastName, firstName, ratingI }),
+      )
+    }
+    const siv = players[0]
+    const r1 = await provider.rounds.pairNext(tournamentId)
+    for (const g of r1.games) {
+      await provider.results.set(tournamentId, 1, g.boardNr, { resultType: 'DRAW' })
+    }
+    await provider.tournamentPlayers.update(tournamentId, siv.id, { withdrawnFromRound: 2 })
+
+    const cleared = await provider.tournamentPlayers.update(tournamentId, siv.id, {
+      withdrawnFromRound: 0,
+    })
+    expect(cleared.withdrawnFromRound).toBe(-1)
+
+    const r2 = await provider.rounds.pairNext(tournamentId)
+    const pairedIds = r2.games.flatMap((g) => [g.whitePlayer?.id, g.blackPlayer?.id])
+    expect(pairedIds).toContain(siv.id)
+  })
+
+  it('given a player, when withdrawnFromRound is updated to 1.5, then the update is rejected with a Swedish message', async () => {
+    const p = await provider.tournamentPlayers.add(tournamentId, {
+      lastName: 'Åberg',
+      firstName: 'Siv',
+    })
+    await expect(
+      provider.tournamentPlayers.update(tournamentId, p.id, { withdrawnFromRound: 1.5 }),
+    ).rejects.toThrow('Utgå från rond måste vara ett heltal.')
+  })
 })

@@ -1,4 +1,5 @@
 import { formatPlayerName, type NamePresentation } from '../db/format-name'
+import { withdrawnSuffix } from '../domain/player-names'
 import { getPlayerRating } from '../domain/ratings'
 import type { StandingsGameInfo, StandingsInput } from '../domain/standings'
 import {
@@ -66,7 +67,11 @@ function buildStandingsInput(tournamentId: number, round?: number): StandingsInp
     selectedTiebreaks: tournament.selectedTiebreaks,
     players: players.map((p) => ({
       id: p.id,
-      name: formatPlayerName(p.firstName, p.lastName, presentation),
+      name:
+        formatPlayerName(p.firstName, p.lastName, presentation) +
+        withdrawnSuffix(p.withdrawnFromRound),
+      lastName: p.lastName,
+      firstName: p.firstName,
       playerGroup: p.playerGroup,
       club: p.club,
       clubId: p.clubIndex,

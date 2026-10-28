@@ -561,3 +561,25 @@ describe('TournamentDialog save errors', () => {
     expect((screen.getByText('Spara') as HTMLButtonElement).disabled).toBe(true)
   })
 })
+
+describe('TournamentDialog tiebreak labels', () => {
+  it('given the tiebreak lists, when Prestationsrating is offered and chosen, then the option reads "Prestationsrating" but the saved id stays "Prestationsrating LASK"', () => {
+    render(<TournamentDialog open tournamentId={undefined} onClose={vi.fn()} />)
+    fireEvent.change(screen.getByTestId('tournament-name-input'), { target: { value: 'T' } })
+    fireEvent.change(screen.getByTestId('tournament-group-input'), { target: { value: 'A' } })
+
+    const available = screen.getByTestId('tournament-tiebreak-available-list') as HTMLSelectElement
+    const option = [...available.options].find((o) => o.value === 'Prestationsrating LASK')
+    expect(option?.textContent).toBe('Prestationsrating')
+
+    fireEvent.change(available, { target: { value: 'Prestationsrating LASK' } })
+    fireEvent.doubleClick(available)
+    const selected = screen.getByTestId('tournament-tiebreak-selected-list') as HTMLSelectElement
+    expect([...selected.options].map((o) => [o.value, o.textContent])).toEqual([
+      ['Prestationsrating LASK', 'Prestationsrating'],
+    ])
+
+    fireEvent.click(screen.getByText('Spara'))
+    expect(mockMutate.mock.calls[0][0].selectedTiebreaks).toEqual(['Prestationsrating LASK'])
+  })
+})

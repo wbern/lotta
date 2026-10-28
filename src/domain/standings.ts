@@ -1,4 +1,5 @@
 import type { Chess4StandingDto, ClubStandingDto, ResultType, StandingDto } from '../types/api.ts'
+import { compareSwedish, compareSwedishNames } from './player-names.ts'
 import { formatScore, getActualScores } from './scoring.ts'
 import type { TiebreakContext, TiebreakGameInfo } from './tiebreaks.ts'
 import {
@@ -17,6 +18,9 @@ import {
 export interface StandingsPlayerInfo {
   id: number
   name: string
+  /** Used only to order players who share a place (never affects place). */
+  lastName?: string
+  firstName?: string
   playerGroup: string
   club: string | null
   clubId: number
@@ -64,6 +68,28 @@ const TIEBREAK_SHORT_NAMES: Record<string, string> = {
   'Prestationsrating LASK': 'Pres',
   'Svarta partier': 'Svart',
   Manuell: 'Man',
+}
+
+/**
+ * Key under which calculateStandings stores a tiebreak value in
+ * StandingDto.tiebreaks (e.g. 'Buchholz' → 'Buch'). Unknown names map to
+ * themselves.
+ */
+export function tiebreakShortName(name: string): string {
+  return TIEBREAK_SHORT_NAMES[name] ?? name
+}
+
+/**
+ * Display labels for persisted tiebreak ids whose id is not what the user
+ * should read. The id 'Prestationsrating LASK' is stored in existing
+ * tournaments and must stay; only the visible text changes.
+ */
+const TIEBREAK_LABELS: Record<string, string> = {
+  'Prestationsrating LASK': 'Prestationsrating',
+}
+
+export function tiebreakLabel(id: string): string {
+  return TIEBREAK_LABELS[id] ?? id
 }
 
 const INT_FORMAT_TIEBREAKS = new Set([
@@ -152,7 +178,7 @@ function calculateTiebreakValue(
     case 'Manuell':
       return tiebreakManual(info.manualTiebreak)
     case 'Prestationsrating LASK':
-      return tiebreakRatingPerformance(games, roundNr, playerData.score)
+      return tiebreakRatingPerformance(games, roundNr)
     case 'Inbördes möte': {
       const playerScores: Record<number, number> = {}
       const previousTiebreaks: Record<number, number[]> = {}
@@ -175,6 +201,20 @@ function comparePlayerData(a: PlayerData, b: PlayerData): number {
     if (av !== bv) return bv - av
   }
   return 0
+}
+
+/**
+ * Listing order within a shared place: higher rating first, then Swedish name
+ * order (last name, first name; formatted name when those are absent).
+ * Only used after comparePlayerData — places are assigned from
+ * comparePlayerData alone, so this never changes a place.
+ */
+function compareTiedListing(a: StandingsPlayerInfo, b: StandingsPlayerInfo): number {
+  if (a.rating !== b.rating) return b.rating - a.rating
+  if (a.lastName != null && b.lastName != null) {
+    return compareSwedishNames(a.lastName, a.firstName ?? '', b.lastName, b.firstName ?? '')
+  }
+  return compareSwedish(a.name, b.name)
 }
 
 export function calculateStandings(input: StandingsInput): StandingDto[] {
@@ -215,16 +255,23 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
     getPlayerGames: (playerId: number) => allPlayerData.get(playerId)?.games ?? [],
   }
 
-  // Calculate tiebreaks in order (important for internal meeting)
+  // Calculate tiebreaks column by column (Inbördes möte compares the earlier
+  // columns). Compute every player's value for a column before appending any,
+  // so each player sees the same previous columns regardless of input order.
   for (const tbName of selectedTiebreaks) {
-    for (const [, pd] of allPlayerData) {
-      const value = calculateTiebreakValue(tbName, pd, roundNr, ctx, allPlayerData)
-      pd.tiebreakValues.push(value)
+    const column = new Map<number, number>()
+    for (const [id, pd] of allPlayerData) {
+      column.set(id, calculateTiebreakValue(tbName, pd, roundNr, ctx, allPlayerData))
+    }
+    for (const [id, pd] of allPlayerData) {
+      pd.tiebreakValues.push(column.get(id) ?? 0)
     }
   }
 
   // Sort
-  const sorted = [...allPlayerData.values()].sort(comparePlayerData)
+  const sorted = [...allPlayerData.values()].sort(
+    (a, b) => comparePlayerData(a, b) || compareTiedListing(a.info, b.info),
+  )
 
   // Assign places and build DTOs
   const standings: StandingDto[] = []
@@ -240,7 +287,7 @@ export function calculateStandings(input: StandingsInput): StandingDto[] {
     const tiebreaks: Record<string, string> = {}
     for (let j = 0; j < selectedTiebreaks.length; j++) {
       const tbName = selectedTiebreaks[j]
-      const shortName = TIEBREAK_SHORT_NAMES[tbName] ?? tbName
+      const shortName = tiebreakShortName(tbName)
       const value = pd.tiebreakValues[j]
       tiebreaks[shortName] = INT_FORMAT_TIEBREAKS.has(tbName)
         ? Math.floor(value).toString()

@@ -342,12 +342,12 @@ export const NS_7P_ODD: Snapshot = {
     },
     {
       place: 4,
-      name: 'Frej Stormöga',
+      name: 'Odin Åskväder',
       score: 3,
     },
     {
       place: 4,
-      name: 'Odin Åskväder',
+      name: 'Frej Stormöga',
       score: 3,
     },
     {
@@ -420,12 +420,12 @@ export const MONRAD_7P_ODD: Snapshot = {
     },
     {
       place: 4,
-      name: 'Frej Stormöga',
+      name: 'Odin Åskväder',
       score: 3,
     },
     {
       place: 4,
-      name: 'Odin Åskväder',
+      name: 'Frej Stormöga',
       score: 3,
     },
     {
@@ -553,7 +553,7 @@ export const NS_8P_DRAWS: Snapshot = {
   standings: [
     {
       place: 1,
-      name: 'Björn Järnsida',
+      name: 'Thor Ödinson',
       score: 1.5,
     },
     {
@@ -563,12 +563,12 @@ export const NS_8P_DRAWS: Snapshot = {
     },
     {
       place: 1,
-      name: 'Sigrid Nattskärm',
+      name: 'Björn Järnsida',
       score: 1.5,
     },
     {
       place: 1,
-      name: 'Freja Stjärnljus',
+      name: 'Odin Åskväder',
       score: 1.5,
     },
     {
@@ -583,12 +583,12 @@ export const NS_8P_DRAWS: Snapshot = {
     },
     {
       place: 1,
-      name: 'Odin Åskväder',
+      name: 'Freja Stjärnljus',
       score: 1.5,
     },
     {
       place: 1,
-      name: 'Thor Ödinson',
+      name: 'Sigrid Nattskärm',
       score: 1.5,
     },
   ],
@@ -642,7 +642,7 @@ export const MONRAD_8P_DRAWS: Snapshot = {
   standings: [
     {
       place: 1,
-      name: 'Björn Järnsida',
+      name: 'Thor Ödinson',
       score: 3.5,
     },
     {
@@ -652,12 +652,12 @@ export const MONRAD_8P_DRAWS: Snapshot = {
     },
     {
       place: 1,
-      name: 'Sigrid Nattskärm',
+      name: 'Björn Järnsida',
       score: 3.5,
     },
     {
       place: 1,
-      name: 'Freja Stjärnljus',
+      name: 'Odin Åskväder',
       score: 3.5,
     },
     {
@@ -672,12 +672,12 @@ export const MONRAD_8P_DRAWS: Snapshot = {
     },
     {
       place: 1,
-      name: 'Odin Åskväder',
+      name: 'Freja Stjärnljus',
       score: 3.5,
     },
     {
       place: 1,
-      name: 'Thor Ödinson',
+      name: 'Sigrid Nattskärm',
       score: 3.5,
     },
   ],
@@ -717,23 +717,18 @@ export const NS_8P_WITHDRAW: Snapshot = {
     },
     {
       place: 2,
-      name: 'Björn Järnsida',
+      name: 'Loki Läufeyson',
       score: 2,
     },
     {
       place: 2,
-      name: 'Loki Läufeyson',
+      name: 'Björn Järnsida',
       score: 2,
     },
     {
       place: 2,
       name: 'Odin Åskväder',
       score: 2,
-    },
-    {
-      place: 5,
-      name: 'Freja Stjärnljus',
-      score: 1,
     },
     {
       place: 5,
@@ -746,8 +741,13 @@ export const NS_8P_WITHDRAW: Snapshot = {
       score: 1,
     },
     {
+      place: 5,
+      name: 'Freja Stjärnljus',
+      score: 1,
+    },
+    {
       place: 8,
-      name: 'Sigrid Nattskärm',
+      name: 'Sigrid Nattskärm (utgått r3)',
       score: 0,
     },
   ],
@@ -798,6 +798,11 @@ export const MONRAD_8P_WITHDRAW: Snapshot = {
     },
     {
       place: 3,
+      name: 'Odin Åskväder',
+      score: 2,
+    },
+    {
+      place: 3,
       name: 'Frej Stormöga',
       score: 2,
     },
@@ -807,18 +812,13 @@ export const MONRAD_8P_WITHDRAW: Snapshot = {
       score: 2,
     },
     {
-      place: 3,
-      name: 'Odin Åskväder',
-      score: 2,
-    },
-    {
       place: 7,
       name: 'Freja Stjärnljus',
       score: 1,
     },
     {
       place: 8,
-      name: 'Sigrid Nattskärm',
+      name: 'Sigrid Nattskärm (utgått r3)',
       score: 0,
     },
   ],

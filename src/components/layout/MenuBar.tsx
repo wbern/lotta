@@ -332,7 +332,9 @@ export function MenuBar({
           </button>
         }
       >
-        <p data-testid="pair-error">{pairError}</p>
+        <p data-testid="pair-error" style={{ whiteSpace: 'pre-line' }}>
+          {pairError}
+        </p>
       </Dialog>
 
       <Dialog

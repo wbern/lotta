@@ -2,7 +2,11 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { initDatabase } from '../../db/db'
+import { TournamentPlayerRepository } from '../../db/repositories/tournament-players'
+import { createSchema } from '../../db/schema'
 import { mockPlayer } from '../../test/mock-player'
+import type { PlayerDto } from '../../types/api'
 import { ToastProvider } from '../toast/ToastProvider'
 import { TournamentPlayersDialog } from './TournamentPlayersDialog'
 
@@ -400,6 +404,30 @@ describe('TournamentPlayersDialog withdrawn players', () => {
     renderDialog()
 
     expect(screen.getByText('Siv Åberg (utgått r2)')).toBeTruthy()
+  })
+})
+
+describe('TournamentPlayersDialog clearing "utgår från rond"', () => {
+  it('given a withdrawn player, when the arbiter clears the round field and saves, then the stored player is not withdrawn', async () => {
+    renderDialog()
+    fireEvent.doubleClick(screen.getByText('Siv Åberg (utgått r2)'))
+    fireEvent.change(screen.getByTestId('withdrawn-round-input'), { target: { value: '' } })
+    fireEvent.click(screen.getByTestId('update-player'))
+
+    const args = mockUpdateMutate.mock.calls.at(-1)?.[0] as { dto: Partial<PlayerDto> }
+    // Persist what the dialog sent (Number('') === 0) through the real repository.
+    const db = await initDatabase()
+    createSchema(db)
+    db.run(
+      `INSERT INTO tournaments (tournament, tournamentgroup, pairingsystem, initialpairing, rounds, barredpairing, compensateweakplayerpp, chess4, pointspergame, ratingchoice, showelo, showgroup)
+       VALUES ('Test', 'A', 'Monrad', 'Slumpad', 7, 'false', 'false', 'false', 1, 'ELO', 'true', 'true')`,
+    )
+    const repo = new TournamentPlayerRepository(db)
+    const stored = repo.add(1, { lastName: 'Åberg', firstName: 'Siv', withdrawnFromRound: 2 })
+    // Only the withdrawn field is relevant here (the mock's club does not exist in this DB).
+    const saved = repo.update(stored.id, { withdrawnFromRound: args.dto.withdrawnFromRound })
+    expect(saved.withdrawnFromRound).toBe(-1)
+    db.close()
   })
 })
 

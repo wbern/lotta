@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { withdrawnSuffix } from '../../domain/player-names'
 import { tournamentLockState } from '../../domain/tournament-lock'
 import { hasPlayerName } from '../../domain/validation'
 import { useAddClub, useClubs, useDeleteClub, useRenameClub } from '../../hooks/useClubs'
@@ -445,7 +446,7 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                     <td className="number-cell">{i + 1}</td>
                     <td>
                       {p.firstName} {p.lastName}
-                      {p.withdrawnFromRound >= 0 ? ` (utgått r${p.withdrawnFromRound})` : ''}
+                      {withdrawnSuffix(p.withdrawnFromRound)}
                     </td>
                     <td>{p.playerGroup || ''}</td>
                     <td>{p.club || ''}</td>

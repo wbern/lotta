@@ -1,4 +1,5 @@
 import { formatResultLabel } from './scoring.ts'
+import { tiebreakLabel, tiebreakShortName } from './standings.ts'
 
 const CSS = `
 @page {
@@ -283,7 +284,7 @@ export function publishStandings(input: StandingsPublishInput): string {
   if (input.showELO) body += '<td>Rating</td>'
   body += '<td>Poäng</td>'
   for (const tb of input.tiebreakNames) {
-    body += `<td>${esc(tb)}</td>`
+    body += `<td>${esc(tiebreakLabel(tb))}</td>`
   }
   body += '</tr>\n'
 
@@ -297,7 +298,10 @@ export function publishStandings(input: StandingsPublishInput): string {
     }
     body += `<td class="CP_Score">${esc(s.scoreDisplay)}</td>`
     for (const tb of input.tiebreakNames) {
-      body += `<td class="CP_Tiebreak">${esc(s.tiebreaks[tb] ?? '')}</td>`
+      // calculateStandings keys values by short name ('Buch'); accept the full
+      // name too for callers that build the map themselves.
+      const value = s.tiebreaks[tiebreakShortName(tb)] ?? s.tiebreaks[tb] ?? ''
+      body += `<td class="CP_Tiebreak">${esc(value)}</td>`
     }
     body += '</tr>\n'
   }

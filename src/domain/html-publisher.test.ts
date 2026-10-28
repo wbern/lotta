@@ -420,6 +420,40 @@ describe('publishStandings', () => {
     expect(html).toContain('3.5')
   })
 
+  it('given tiebreaks keyed by short name (as calculateStandings returns them), when published, then each tiebreak cell is filled', () => {
+    const input: StandingsPublishInput = {
+      tournamentName: 'Test',
+      roundNr: 3,
+      showELO: false,
+      tiebreakNames: ['Buchholz', 'Prestationsrating LASK'],
+      standings: [
+        {
+          place: 1,
+          name: 'Siv Åberg',
+          club: null,
+          rating: 0,
+          scoreDisplay: '2',
+          tiebreaks: { Buch: '3.5', Pres: '1725' },
+        },
+      ],
+    }
+
+    const html = publishStandings(input)
+    expect(html).toContain('<td class="CP_Tiebreak">3.5</td><td class="CP_Tiebreak">1725</td>')
+  })
+
+  it('given the persisted id "Prestationsrating LASK", when published, then the column header reads "Prestationsrating"', () => {
+    const html = publishStandings({
+      tournamentName: 'Test',
+      roundNr: 1,
+      showELO: false,
+      tiebreakNames: ['Buchholz', 'Prestationsrating LASK'],
+      standings: [],
+    })
+    expect(html).toContain('<td>Buchholz</td><td>Prestationsrating</td>')
+    expect(html).not.toContain('LASK')
+  })
+
   it('hides rating column when showELO is false', () => {
     const input: StandingsPublishInput = {
       tournamentName: 'Test',

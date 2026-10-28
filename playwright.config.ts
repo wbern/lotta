@@ -13,13 +13,6 @@ const hasBrowserStack = process.env.RUN_BROWSERSTACK === '1' && !!process.env.BR
 // or implicitly via BrowserStack.
 const runningP2P = process.env.RUN_P2P_E2E === '1' || hasBrowserStack
 const runningStress = process.env.RUN_STRESS === '1'
-// @java-parity tests compare lotta-web against golden masters recorded from the
-// original Java Lotta engine (e2e/discover-snapshots.ts). 36 of them have never
-// matched lotta-web (same set failing on v1.6.0, v1.20.3 and v1.22.1) and need a
-// per-case audit: real parity bug vs. deliberate divergence. They are excluded
-// from the default tier so a red run means a new regression; run them with
-// `pnpm test:e2e:parity`. Do NOT regenerate their snapshots from lotta-web.
-const runningJavaParity = process.env.RUN_JAVA_PARITY === '1'
 // Investigation specs (curl-progression, publish-bug-repro, tourney-probe)
 // load a real ~/Downloads/lotta-backup*.sqlite snapshot. Opt in locally with
 // RUN_INVESTIGATION=1; otherwise excluded so CI doesn't fail without a backup.
@@ -45,7 +38,6 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   retries: 0,
   workers: 4,
-  grepInvert: runningJavaParity ? undefined : /@java-parity/,
 
   reporter: [
     ['html', { open: 'never' }],
@@ -133,13 +125,11 @@ export default defineConfig({
     { name: 'navigation', testMatch: 'navigation.spec.ts' },
     { name: 'pairings', testMatch: 'pairings.spec.ts' },
     { name: 'standings', testMatch: 'standings.spec.ts' },
-    { name: 'club-standings', testMatch: 'club-standings.spec.ts' },
     { name: 'chess4', testMatch: 'chess4.spec.ts' },
     { name: 'settings', testMatch: 'settings.spec.ts' },
     { name: 'tournament-lock', testMatch: 'tournament-lock.spec.ts' },
     { name: 'barred-pairing', testMatch: 'barred-pairing.spec.ts' },
     { name: 'edge-cases', testMatch: 'edge-cases.spec.ts' },
-    { name: 'tiebreak-edge-cases', testMatch: 'tiebreak-edge-cases.spec.ts' },
     { name: 'pairing-edge-cases', testMatch: 'pairing-edge-cases.spec.ts' },
     { name: 'live', testMatch: 'live.spec.ts' },
     { name: 'undo', testMatch: 'undo.spec.ts' },

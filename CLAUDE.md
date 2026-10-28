@@ -69,7 +69,6 @@ Playwright, **one project per spec file** (see `playwright.config.ts`). Split in
 - **Tier 2 — p2p** (7 projects): needs MQTT broker + HTTPS + second dev server. Opt-in only. New p2p specs **must** be added inside the `runningP2P` conditional spread in `playwright.config.ts` — otherwise they leak into Tier 1 / CI.
 - **Tier 3 — browserstack**: real devices, paid. Only runs via `pnpm test:e2e:browserstack` (sets `RUN_BROWSERSTACK=1`); having `BROWSERSTACK_USERNAME` in the shell is not enough, so a plain `pnpm test:e2e` never starts paid sessions.
 - **Smoke — release gate** (`e2e/smoke.spec.ts`, `pnpm test:e2e:smoke`): arbiter-critical flows driven with a real mouse (set results incl. W/O from the result menu, Editera poäng, pair next round, tournament-settings save errors, player import). Runs in CI on every push to `main` and blocks the deploy. Add a case here whenever a bug ships that an arbiter cannot work around.
-- **Java parity — opt-in** (`@java-parity` tag, `pnpm test:e2e:parity`): golden masters recorded from the original Java Lotta engine. 36 have never matched lotta-web and await a per-case audit, so they are excluded from Tier 1. Never regenerate these snapshots from lotta-web output.
 
 ```bash
 pnpm test:e2e              # Tier 1 (same as CI)

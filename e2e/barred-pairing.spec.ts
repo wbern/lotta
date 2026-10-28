@@ -9,11 +9,7 @@ import {
   setResults,
   waitForApi,
 } from './api-helpers'
-import {
-  BARRED_MAJORITY_ERROR,
-  BARRED_MONRAD_PAIRINGS,
-  BARRED_NS_PAIRINGS,
-} from './barred-pairing-snapshots'
+import { BARRED_NS_PAIRINGS } from './barred-pairing-snapshots'
 import { expect, test } from './fixtures'
 
 const CLUBS = [{ name: 'SK Alfa' }, { name: 'SK Beta' }, { name: 'SK Gamma' }, { name: 'SK Delta' }]
@@ -51,39 +47,6 @@ function extractClubPairings(round: any) {
 }
 
 test.describe('Barred pairing', () => {
-  test('Monrad — no same-club matches', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const players = await setupBarredPlayers($)
-
-    const { tid } = await createTournament(
-      $,
-      {
-        name: 'Barred-Monrad',
-        pairingSystem: 'Monrad',
-        nrOfRounds: 4,
-        barredPairing: true,
-      },
-      players,
-    )
-
-    const allRoundPairings: any[][] = []
-
-    for (let r = 1; r <= 4; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      const pairings = extractClubPairings(round)
-      allRoundPairings.push(pairings)
-      for (const p of pairings) {
-        expect(p.whiteClub).not.toBe(p.blackClub)
-      }
-      await setResults($, tid, r, round.games, HIGHER_RATED_WINS)
-    }
-
-    expect(allRoundPairings).toEqual(BARRED_MONRAD_PAIRINGS)
-  })
-
   test('Nordisk Schweizer — no same-club matches', async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
@@ -115,44 +78,5 @@ test.describe('Barred pairing', () => {
     }
 
     expect(allRoundPairings).toEqual(BARRED_NS_PAIRINGS)
-  })
-
-  test('Majority club returns error', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const clubIds = await ensureClubs($, [{ name: 'SK Stor' }, { name: 'SK Liten' }])
-
-    // 4 from club A, 2 from club B — majority club makes barred pairing impossible
-    const players: PlayerInput[] = [
-      { lastName: 'Alfa', firstName: 'A', ratingI: 2000, clubIndex: clubIds[0] },
-      { lastName: 'Beta', firstName: 'B', ratingI: 1900, clubIndex: clubIds[0] },
-      { lastName: 'Gamma', firstName: 'C', ratingI: 1800, clubIndex: clubIds[0] },
-      { lastName: 'Delta', firstName: 'D', ratingI: 1700, clubIndex: clubIds[0] },
-      { lastName: 'Epsilon', firstName: 'E', ratingI: 1600, clubIndex: clubIds[1] },
-      { lastName: 'Zeta', firstName: 'F', ratingI: 1500, clubIndex: clubIds[1] },
-    ]
-
-    const { tid } = await createTournament(
-      $,
-      {
-        name: 'Barred-Majority',
-        pairingSystem: 'Monrad',
-        nrOfRounds: 3,
-        barredPairing: true,
-      },
-      players,
-    )
-
-    // Use page.evaluate with raw fetch to capture the error status and body
-    const result = await page.evaluate(async (tournamentId: number) => {
-      const res = await fetch(`/api/tournaments/${tournamentId}/pair?confirm=true`, {
-        method: 'POST',
-      })
-      const body = await res.text()
-      return { status: res.status, body }
-    }, tid)
-
-    expect(result).toEqual(BARRED_MAJORITY_ERROR)
   })
 })

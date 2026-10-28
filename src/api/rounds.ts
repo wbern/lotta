@@ -8,7 +8,9 @@ import {
   PairingTimeoutError,
   runPairingWithDeadline,
 } from '../domain/pairing-runner'
+import { compareSwedishNames } from '../domain/player-names'
 import { getPlayerRating } from '../domain/ratings'
+import { sv } from '../lib/swedish-text'
 import type { RoundDto } from '../types/api'
 import { getDataProvider } from './active-provider'
 import { getPairingExecutor } from './pairing-executor-provider'
@@ -48,8 +50,13 @@ function insertGames(
 }
 
 function assignLotNumbers(players: PairingPlayerInfo[], initialPairing: string): void {
-  // Sort by rating descending
-  players.sort((a, b) => b.rating - a.rating)
+  // Sort by rating descending; equal ratings in Swedish name order so the
+  // seeding does not depend on database order.
+  players.sort(
+    (a, b) =>
+      b.rating - a.rating ||
+      compareSwedishNames(a.lastName ?? '', a.firstName ?? '', b.lastName ?? '', b.firstName ?? ''),
+  )
 
   if (initialPairing === 'Slumpad' || initialPairing === 'Random') {
     for (const p of players) {
@@ -93,6 +100,8 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
     rating: getPlayerRating(p, tournament.ratingChoice),
     withdrawnFromRound: p.withdrawnFromRound,
     lotNr: p.lotNr,
+    lastName: p.lastName,
+    firstName: p.firstName,
     addedAtRound: p.addedAtRound,
     protectFromByeInDebut: p.protectFromByeInDebut,
   }))
@@ -208,7 +217,7 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
   }
 
   if (!games) {
-    throw new Error('Kan inte lotta. Inga giltiga lottningar finns.')
+    throw new Error(pairingImpossibleMessage(tournament.barredPairing, roundsPlayed))
   }
 
   const allGames = [...games]
@@ -229,6 +238,26 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
     'Lotta rond',
     (r) => `Rond ${r.roundNr}`,
     (r) => ({ kind: 'pairing', tournamentId, roundNr: r.roundNr }),
+  )
+}
+
+/**
+ * Shown in the "Kan inte lotta" dialog (rendered with white-space: pre-line).
+ * Barred pairing can only be switched off before round 1 is paired, so the
+ * club hint is only offered then.
+ */
+function pairingImpossibleMessage(barredPairing: boolean, roundsPlayed: number): string {
+  if (barredPairing && roundsPlayed === 0) {
+    return (
+      'Lottning är inte möjlig!\nFör att lösa detta, avmarkera ' +
+      `"${sv.tournament.barredPairing}" i turneringsinställningarna, ` +
+      'eller ändra vilka spelare som deltar.'
+    )
+  }
+  return (
+    'Lottning är inte möjlig!\nFör att lösa detta, ändra vilka spelare som deltar ' +
+    '(utgå/lägg till) eller avsluta turneringen genom att sätta antal ronder till ' +
+    'antalet lottade ronder.'
   )
 }
 

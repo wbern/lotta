@@ -122,7 +122,8 @@ export function tiebreakMedianBuchholz(
   const scores: number[] = []
   for (const game of gamesUpToRound(games, roundNr)) {
     if (game.isBye) {
-      scores.push(ctx.pointsPerGame * roundNr)
+      // Own bye: (ppg/2)·roundNr, same as Buchholz (Java comment: rounds/2).
+      scores.push((ctx.pointsPerGame / 2) * roundNr)
     } else if (game.opponentId != null) {
       const opponentGames = ctx.getPlayerGames(game.opponentId)
       scores.push(opponentTiebreakScore(opponentGames, roundNr, ctx.pointsPerGame))
@@ -217,8 +218,8 @@ export function tiebreakBerger(
   return tiebreak
 }
 
-// LASK performance rating lookup table
-const LASK_TABLE: [number, number][] = [
+// Performance rating dp lookup table (score fraction → rating difference)
+const DP_TABLE: [number, number][] = [
   [0.99, 800],
   [0.98, 677],
   [0.97, 589],
@@ -271,30 +272,40 @@ const LASK_TABLE: [number, number][] = [
   [0.5, 7],
 ]
 
-export function tiebreakRatingPerformance(
-  games: TiebreakGameInfo[],
-  roundNr: number,
-  playerScore: number,
-): number {
-  const relevantGames = gamesUpToRound(games, roundNr)
-  if (relevantGames.length === 0) return 0
+/**
+ * Performance rating over played games only (FIDE B.02 art 5.1: unplayed
+ * games — byes, walkovers, double WO, cancelled, postponed, no result — are
+ * not counted). p is the game result fraction (win 1, draw ½) taken from the
+ * result type, so custom scoring (chess4 3-1, ppg 2) does not distort it.
+ * The dp table lookup uses a strict ">" on purpose (p = .5 → +0).
+ */
+export function tiebreakRatingPerformance(games: TiebreakGameInfo[], roundNr: number): number {
+  const played = gamesUpToRound(games, roundNr).filter((g) => !g.isBye && isPlayed(g.resultType))
+  if (played.length === 0) return 0
 
   let opponentRatingSum = 0
-  for (const game of relevantGames) {
+  let points = 0
+  for (const game of played) {
     opponentRatingSum += game.opponentRating
+    if (game.resultType === 'DRAW') points += 0.5
+    else if (
+      (game.side === 'white' && game.resultType === 'WHITE_WIN') ||
+      (game.side === 'black' && game.resultType === 'BLACK_WIN')
+    ) {
+      points += 1
+    }
   }
-  const average = Math.floor(opponentRatingSum / relevantGames.length)
+  const average = Math.floor(opponentRatingSum / played.length)
 
-  let fracScore = playerScore / roundNr
+  let fracScore = points / played.length
   let minusFrac = false
   if (fracScore < 0.5) {
     minusFrac = true
     fracScore = 1 - fracScore
   }
-  fracScore = Math.abs(fracScore)
 
   let addon = 0
-  for (const [threshold, value] of LASK_TABLE) {
+  for (const [threshold, value] of DP_TABLE) {
     if (fracScore > threshold) {
       addon = value
       break

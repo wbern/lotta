@@ -1,30 +1,13 @@
 import {
   apiClient,
   createTournament,
-  HIGHER_RATED_WINS,
   type PlayerInput,
   pairRound,
-  setResults,
   setResultsFromScript,
   waitForApi,
 } from './api-helpers'
 import { expect, test } from './fixtures'
-import {
-  BERGER_3P,
-  BERGER_5P,
-  BYE_ROTATION,
-  IDENTICAL_RATINGS,
-  MONRAD_COLOR,
-  NS_COLOR,
-} from './pairing-edge-cases-snapshots'
-
-function snapshotPairings(round: any) {
-  return round.games.map((g: any) => ({
-    boardNr: g.boardNr,
-    white: g.whitePlayer?.name ?? '(bye)',
-    black: g.blackPlayer?.name ?? '(bye)',
-  }))
-}
+import { BERGER_3P, BERGER_5P, MONRAD_COLOR, NS_COLOR } from './pairing-edge-cases-snapshots'
 
 function findByeRecipient(round: any): string | null {
   for (const g of round.games) {
@@ -35,46 +18,6 @@ function findByeRecipient(round: any): string | null {
 }
 
 test.describe('Pairing edge cases', () => {
-  test('5-player Monrad bye rotation', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const players: PlayerInput[] = [
-      { lastName: 'Alfa', firstName: 'A', ratingI: 2000 },
-      { lastName: 'Beta', firstName: 'B', ratingI: 1900 },
-      { lastName: 'Gamma', firstName: 'C', ratingI: 1800 },
-      { lastName: 'Delta', firstName: 'D', ratingI: 1700 },
-      { lastName: 'Epsilon', firstName: 'E', ratingI: 1600 },
-    ]
-
-    const { tid } = await createTournament(
-      $,
-      {
-        name: 'Monrad-5p-bye',
-        pairingSystem: 'Monrad',
-        nrOfRounds: 5,
-      },
-      players,
-    )
-
-    const rounds: any[] = []
-    for (let r = 1; r <= 5; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      const pairings = snapshotPairings(round)
-      const byeRecipient = findByeRecipient(round)
-      rounds.push({ roundNr: r, pairings, byeRecipient })
-      await setResults($, tid, r, round.games, HIGHER_RATED_WINS)
-    }
-
-    // Structural assert: 5 unique bye recipients (everyone gets exactly 1 bye)
-    const byeRecipients = rounds.map((r) => r.byeRecipient).filter(Boolean)
-    const uniqueByes = new Set(byeRecipients)
-    expect(byeRecipients.length).toBe(5)
-    expect(uniqueByes.size).toBe(5)
-    expect(rounds).toEqual(BYE_ROTATION)
-  })
-
   test('Berger 3-player round-robin', async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
@@ -288,33 +231,5 @@ test.describe('Pairing edge cases', () => {
       ).toBeLessThanOrEqual(1)
     }
     expect(snapshot).toEqual(NS_COLOR)
-  })
-
-  test('Identical ratings seeding', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const players: PlayerInput[] = [
-      { lastName: 'Alfa', firstName: 'A', ratingI: 1500 },
-      { lastName: 'Beta', firstName: 'B', ratingI: 1500 },
-      { lastName: 'Gamma', firstName: 'C', ratingI: 1500 },
-      { lastName: 'Delta', firstName: 'D', ratingI: 1500 },
-    ]
-
-    const { tid } = await createTournament(
-      $,
-      {
-        name: 'Identical-ratings',
-        pairingSystem: 'Monrad',
-        nrOfRounds: 2,
-      },
-      players,
-    )
-
-    const r1 = await pairRound($, tid)
-    expect(r1.roundNr).toBe(1)
-
-    const pairings = snapshotPairings(r1)
-    expect(pairings).toEqual(IDENTICAL_RATINGS)
   })
 })

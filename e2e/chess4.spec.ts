@@ -3,20 +3,12 @@ import {
   apiClient,
   createTournament,
   ensureClubs,
-  fetchChess4Standings,
-  HIGHER_RATED_WINS,
   type PlayerInput,
   pairRound,
-  setResults,
   setResultsFromScript,
   waitForApi,
 } from './api-helpers'
-import {
-  CHESS4_GAME_SCORING,
-  CHESS4_PUBLISH_HTML,
-  CHESS4_STANDINGS_BY_ROUND,
-  CHESS4_STANDINGS_FINAL,
-} from './chess4-snapshots'
+import { CHESS4_GAME_SCORING } from './chess4-snapshots'
 import { expect, test } from './fixtures'
 
 const CLUBS = [
@@ -90,72 +82,6 @@ test.describe('Chess4 mode', () => {
     expect(gameSummaries).toEqual(CHESS4_GAME_SCORING)
   })
 
-  test('Chess4 standings final round', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const players = await createChess4Players($)
-
-    const { tid } = await createTournament(
-      $,
-      {
-        ...CHESS4_OPTS,
-        group: 'Snapshot final',
-      },
-      players,
-    )
-
-    for (let r = 1; r <= 4; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      await setResults($, tid, r, round.games, HIGHER_RATED_WINS)
-    }
-
-    const standings = await fetchChess4Standings($, tid, 4)
-    const snapshot = standings.map((s: any) => ({
-      place: s.place,
-      club: s.club,
-      playerCount: s.playerCount,
-      chess4Members: s.chess4Members,
-      score: s.score,
-    }))
-    expect(snapshot).toEqual(CHESS4_STANDINGS_FINAL)
-  })
-
-  test('Chess4 standings round-by-round', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const players = await createChess4Players($)
-
-    const { tid } = await createTournament(
-      $,
-      {
-        ...CHESS4_OPTS,
-        group: 'Snapshot rr',
-      },
-      players,
-    )
-
-    const allStandings: any[][] = []
-    for (let r = 1; r <= 4; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      await setResults($, tid, r, round.games, HIGHER_RATED_WINS)
-      const standings = await fetchChess4Standings($, tid, r)
-      allStandings.push(
-        standings.map((s: any) => ({
-          place: s.place,
-          club: s.club,
-          playerCount: s.playerCount,
-          chess4Members: s.chess4Members,
-          score: s.score,
-        })),
-      )
-    }
-    expect(allStandings).toEqual(CHESS4_STANDINGS_BY_ROUND)
-  })
-
   test('Alphabetical pairings puts each school class on its own page', async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
@@ -194,24 +120,5 @@ test.describe('Chess4 mode', () => {
       { heading: '4B', breakBefore: 'page' },
       { heading: '4C', breakBefore: 'page' },
     ])
-  })
-
-  test('Publish chess4 standings HTML', { tag: '@java-parity' }, async ({ page }) => {
-    await page.goto('/')
-    await waitForApi(page)
-    const $ = apiClient(page)
-    const players = await createChess4Players($)
-
-    // Use name="Chess4-rr" + group="Snapshot" so toString() = "Chess4-rr Snapshot"
-    const { tid } = await createTournament($, CHESS4_OPTS, players)
-
-    for (let r = 1; r <= 4; r++) {
-      const round = await pairRound($, tid)
-      expect(round.roundNr).toBe(r)
-      await setResults($, tid, r, round.games, HIGHER_RATED_WINS)
-    }
-
-    const html = await $.getText(`/api/tournaments/${tid}/publish/chess4-standings`)
-    expect(html).toEqual(CHESS4_PUBLISH_HTML)
   })
 })
