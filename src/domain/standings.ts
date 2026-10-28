@@ -161,7 +161,7 @@ function calculateTiebreakValue(
     case 'Manuell':
       return tiebreakManual(info.manualTiebreak)
     case 'Prestationsrating LASK':
-      return tiebreakRatingPerformance(games, roundNr, playerData.score)
+      return tiebreakRatingPerformance(games, roundNr)
     case 'Inbördes möte': {
       const playerScores: Record<number, number> = {}
       const previousTiebreaks: Record<number, number[]> = {}

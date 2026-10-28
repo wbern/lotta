@@ -1066,7 +1066,7 @@ describe('tiebreakRatingPerformance', () => {
     // fracScore = 2.5/3 = 0.833...
     // 0.833 > 0.83, addon = 284
     // Performance = 1500 + 284 = 1784
-    expect(tiebreakRatingPerformance(games, 3, 2.5)).toBe(1784)
+    expect(tiebreakRatingPerformance(games, 3)).toBe(1784)
   })
 
   it('handles score below 50% (subtracts addon)', () => {
@@ -1108,7 +1108,91 @@ describe('tiebreakRatingPerformance', () => {
         isBye: false,
       },
     ]
-    expect(tiebreakRatingPerformance(games, 3, 0.5)).toBe(1216)
+    expect(tiebreakRatingPerformance(games, 3)).toBe(1216)
+  })
+})
+
+describe('tiebreakRatingPerformance — played games only (FIDE B.02 art 5.1)', () => {
+  function g(
+    roundNr: number,
+    resultType: TiebreakGameInfo['resultType'],
+    opponentRating: number,
+    side: 'white' | 'black' = 'white',
+  ): TiebreakGameInfo {
+    return {
+      roundNr,
+      side,
+      resultType,
+      whiteScore: 0,
+      blackScore: 0,
+      opponentId: 100 + roundNr,
+      opponentRating,
+      isBye: false,
+    }
+  }
+  const byeGame = (roundNr: number): TiebreakGameInfo => ({
+    ...g(roundNr, 'WHITE_WIN_WO', 0),
+    opponentId: null,
+    isBye: true,
+  })
+
+  it('given W 1600, W 1400 and a bye, when computed after round 3, then the bye is ignored: avg 1500, p 1.0 → +800 = 2300', () => {
+    expect(
+      tiebreakRatingPerformance([g(1, 'WHITE_WIN', 1600), g(2, 'WHITE_WIN', 1400), byeGame(3)], 3),
+    ).toBe(2300)
+  })
+
+  it('given W 1500, W 1600, L 1700, when computed, then avg 4800/3 = 1600, p 2/3 = .667 > .66 → +125 = 1725', () => {
+    expect(
+      tiebreakRatingPerformance(
+        [g(1, 'WHITE_WIN', 1500), g(2, 'BLACK_WIN', 1600, 'black'), g(3, 'BLACK_WIN', 1700)],
+        3,
+      ),
+    ).toBe(1725)
+  })
+
+  it('given a WO win vs 1800 and a win vs 1500, when computed, then the WO is not counted: avg 1500, p 1.0 → 2300', () => {
+    expect(
+      tiebreakRatingPerformance([g(1, 'WHITE_WIN_WO', 1800), g(2, 'WHITE_WIN', 1500)], 2),
+    ).toBe(2300)
+  })
+
+  it('given a late-added player with one win vs 1500 in round 3, when computed after round 3, then p is over played games: 1500 + 800 = 2300', () => {
+    expect(tiebreakRatingPerformance([g(3, 'WHITE_WIN', 1500)], 3)).toBe(2300)
+  })
+
+  it('given L 1500 and D 1700, when computed, then avg 1600, p .25 → mirrored .75 > .74 → −193 = 1407', () => {
+    expect(tiebreakRatingPerformance([g(1, 'BLACK_WIN', 1500), g(2, 'DRAW', 1700)], 2)).toBe(1407)
+  })
+
+  it('given only a bye and a postponed game, when computed, then there are no played games → 0', () => {
+    expect(tiebreakRatingPerformance([byeGame(1), g(2, 'POSTPONED', 1500)], 2)).toBe(0)
+  })
+
+  it('given double WO, cancelled and no-result games, when computed, then none of them count', () => {
+    expect(
+      tiebreakRatingPerformance(
+        [
+          g(1, 'DOUBLE_WO', 2000),
+          g(2, 'CANCELLED', 2000),
+          g(3, 'NO_RESULT', 2000),
+          g(4, 'WHITE_WIN', 1500),
+        ],
+        4,
+      ),
+    ).toBe(2300)
+  })
+
+  it('given W 1400 and L 1600, when computed, then p is exactly .5 which is not > .5 → +0 = 1500 (strict ">" lookup kept on purpose)', () => {
+    expect(tiebreakRatingPerformance([g(1, 'WHITE_WIN', 1400), g(2, 'BLACK_WIN', 1600)], 2)).toBe(
+      1500,
+    )
+  })
+
+  it('given a game after the requested round, when computed for an earlier round, then it is ignored', () => {
+    expect(tiebreakRatingPerformance([g(1, 'WHITE_WIN', 1500), g(2, 'BLACK_WIN', 2000)], 1)).toBe(
+      2300,
+    )
   })
 })
 

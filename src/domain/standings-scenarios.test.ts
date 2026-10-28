@@ -244,3 +244,123 @@ describe('Median Buchholz (MEDIAN)', () => {
     }
   })
 })
+
+describe('Prestationsrating (L)', () => {
+  // Played games only: bye, WO win/loss, double WO, cancelled, postponed and
+  // no-result games are skipped. avg = floor(Σ opponent rating / played),
+  // p = (wins + ½·draws) / played from the result type (not points), then the
+  // dp table with a strict ">" lookup; below .5 the table is mirrored.
+  const pres = ['Prestationsrating LASK']
+
+  it('given W 1600, W 1400 and a bye, when standings after round 3 are calculated, then Pres = 1500 + 800 = 2300', () => {
+    const players = [
+      player(1, 'Anna', 'A', 1500),
+      player(2, 'Bo', 'B', 1600),
+      player(3, 'Cilla', 'C', 1400),
+    ]
+    const games = [
+      game(1, 1, 1, 2, 'WHITE_WIN'),
+      bye(1, 2, 3),
+      game(2, 1, 3, 1, 'BLACK_WIN'),
+      bye(2, 2, 2),
+      bye(3, 1, 1),
+      game(3, 2, 2, 3, 'DRAW'),
+    ]
+    // A: played vs B 1600 (W) and C 1400 (W); bye r3 ignored.
+    // avg (1600 + 1400) / 2 = 1500, p = 2/2 = 1 > .99 → +800 → 2300.
+    expect(byName(standings(players, games, pres, 3))['Anna A'].tiebreaks.Pres).toBe('2300')
+  })
+
+  it('given ppg 2 and W 1500, W 1600, L 1700, when standings are calculated, then Pres = 1600 + 125 = 1725', () => {
+    const scoring = { pointsPerGame: 2 }
+    const players = [
+      player(1, 'Anna', 'A', 1650),
+      player(2, 'Bo', 'B', 1500),
+      player(3, 'Cilla', 'C', 1600),
+      player(4, 'Dan', 'D', 1700),
+    ]
+    const games = [
+      game(1, 1, 1, 2, 'WHITE_WIN', scoring),
+      game(1, 2, 3, 4, 'DRAW', scoring),
+      game(2, 1, 3, 1, 'BLACK_WIN', scoring),
+      game(2, 2, 2, 4, 'DRAW', scoring),
+      game(3, 1, 1, 4, 'BLACK_WIN', scoring),
+      game(3, 2, 2, 3, 'DRAW', scoring),
+    ]
+    // A (score 2+2+0 = 4 of 6): avg (1500 + 1600 + 1700) / 3 = 1600,
+    // p = 2 wins / 3 = .667 > .66 → +125 → 1725.
+    const rows = byName(standings(players, games, pres, 3, { pointsPerGame: 2 }))
+    expect(rows['Anna A'].score).toBe(4)
+    expect(rows['Anna A'].tiebreaks.Pres).toBe('1725')
+  })
+
+  it('given a WO win vs 1800 then a win vs 1500, when standings are calculated, then the WO is ignored: Pres = 1500 + 800 = 2300', () => {
+    const players = [
+      player(1, 'Anna', 'A', 1500),
+      player(2, 'Bo', 'B', 1800),
+      player(3, 'Cilla', 'C', 1500),
+    ]
+    const games = [
+      game(1, 1, 1, 2, 'WHITE_WIN_WO'),
+      bye(1, 2, 3),
+      game(2, 1, 1, 3, 'WHITE_WIN'),
+      bye(2, 2, 2),
+    ]
+    expect(byName(standings(players, games, pres, 2))['Anna A'].tiebreaks.Pres).toBe('2300')
+  })
+
+  it('given a player added before round 3 who won vs 1500, when standings after round 3 are calculated, then Pres = 1500 + 800 = 2300 (old code divided by all 3 rounds)', () => {
+    const players = [
+      player(1, 'Anna', 'A', 1500),
+      player(2, 'Bo', 'B', 1500),
+      player(3, 'Sen', 'Ankomling', 1500),
+      player(4, 'Dan', 'D', 1500),
+    ]
+    const games = [
+      game(1, 1, 1, 2, 'DRAW'),
+      game(2, 1, 2, 1, 'DRAW'),
+      game(3, 1, 3, 4, 'WHITE_WIN'),
+      game(3, 2, 1, 2, 'DRAW'),
+    ]
+    expect(byName(standings(players, games, pres, 3))['Sen Ankomling'].tiebreaks.Pres).toBe('2300')
+  })
+
+  it('given L 1500 and D 1700, when standings are calculated, then avg 1600, p .25 mirrored to .75 > .74 → 1600 − 193 = 1407', () => {
+    const players = [
+      player(1, 'Anna', 'A', 1600),
+      player(2, 'Bo', 'B', 1500),
+      player(3, 'Cilla', 'C', 1700),
+    ]
+    const games = [game(1, 1, 1, 2, 'BLACK_WIN'), game(2, 1, 3, 1, 'DRAW')]
+    expect(byName(standings(players, games, pres, 2))['Anna A'].tiebreaks.Pres).toBe('1407')
+  })
+
+  it('given only a bye and a postponed game, when standings are calculated, then Pres = 0', () => {
+    const players = [player(1, 'Anna', 'A'), player(2, 'Bo', 'B'), player(3, 'Cilla', 'C')]
+    const games = [bye(1, 1, 1), game(1, 2, 2, 3, 'DRAW'), game(2, 1, 1, 2, 'POSTPONED')]
+    expect(byName(standings(players, games, pres, 2))['Anna A'].tiebreaks.Pres).toBe('0')
+  })
+
+  it('given chess4 (ppg 4, win 3-1) and a win vs 1500, when standings are calculated, then the win counts as 1 (not 3/4): Pres = 2300', () => {
+    const scoring = { pointsPerGame: 4, maxPointsForWin: 3 }
+    const players = [player(1, 'Anna', 'A', 1500), player(2, 'Bo', 'B', 1500)]
+    const games = [game(1, 1, 1, 2, 'WHITE_WIN', scoring)]
+    const rows = byName(
+      standings(players, games, pres, 1, { pointsPerGame: 4, maxPointsForWin: 3, chess4: true }),
+    )
+    expect(rows['Anna A'].score).toBe(3)
+    expect(rows['Anna A'].tiebreaks.Pres).toBe('2300')
+    // Loser: p 0 → mirrored 1 > .99 → 1500 − 800 = 700.
+    expect(rows['Bo B'].tiebreaks.Pres).toBe('700')
+  })
+
+  it('given W 1400 and L 1600, when standings are calculated, then p = .5 is not > .5 → Pres = avg 1500 (strict lookup locked)', () => {
+    const players = [
+      player(1, 'Anna', 'A', 1500),
+      player(2, 'Bo', 'B', 1400),
+      player(3, 'Cilla', 'C', 1600),
+    ]
+    const games = [game(1, 1, 1, 2, 'WHITE_WIN'), game(2, 1, 3, 1, 'WHITE_WIN')]
+    expect(byName(standings(players, games, pres, 2))['Anna A'].tiebreaks.Pres).toBe('1500')
+  })
+})
