@@ -35,6 +35,14 @@ export class ClubRepository {
   }
 
   delete(id: number): void {
+    const inUse = this.db.exec(
+      `SELECT (SELECT COUNT(*) FROM tournamentplayers WHERE clubindex = ?)
+            + (SELECT COUNT(*) FROM availableplayers WHERE clubindex = ?)`,
+      [id, id],
+    )
+    if (((inUse[0]?.values[0][0] as number) ?? 0) > 0) {
+      throw new Error('Klubben används av spelare och kan inte tas bort.')
+    }
     this.db.run('DELETE FROM clubs WHERE "index" = ?', [id])
   }
 

@@ -370,7 +370,16 @@ export function TournamentPlayersDialog({ open, tournamentId, tournamentName, on
                 }
               }}
               onRenameClub={(id, name) => renameClub.mutate({ id, dto: { name } })}
-              onDeleteClub={(id) => deleteClub.mutate(id)}
+              onDeleteClub={async (id) => {
+                try {
+                  await deleteClub.mutateAsync(id)
+                  return true
+                } catch (e) {
+                  const message = actionErrorMessage(e)
+                  if (message) showToast({ message, variant: 'error' })
+                  return false
+                }
+              }}
             />
             {((isNew && pastDraft) || (!isNew && editingLateBeforeDebut)) && (
               <label

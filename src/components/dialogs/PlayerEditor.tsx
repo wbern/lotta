@@ -18,7 +18,8 @@ interface Props {
   showTournamentFields?: boolean
   onAddClub?: (name: string) => Promise<number | void> | void
   onRenameClub?: (id: number, name: string) => void
-  onDeleteClub?: (id: number) => void
+  /** Resolves true when the club was deleted; false keeps the player's club selected. */
+  onDeleteClub?: (id: number) => Promise<boolean> | boolean | void
 }
 
 export function PlayerEditor({
@@ -52,13 +53,13 @@ export function PlayerEditor({
     if (name?.trim()) onRenameClub?.(id, name.trim())
   }
 
-  const handleDeleteClub = () => {
+  const handleDeleteClub = async () => {
     const id = player.clubIndex
     if (!id) return
     const current = clubs.find((c) => c.id === id)
     if (confirm(`${sv.common.delete} "${current?.name}"?`)) {
-      onDeleteClub?.(id)
-      update({ clubIndex: 0 })
+      const deleted = await onDeleteClub?.(id)
+      if (deleted) update({ clubIndex: 0 })
     }
   }
 

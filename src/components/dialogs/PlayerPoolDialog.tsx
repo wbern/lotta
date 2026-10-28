@@ -9,9 +9,11 @@ import {
 } from '../../hooks/usePlayers'
 import { useShiftSelect } from '../../hooks/useShiftSelect'
 import { useTableSort } from '../../hooks/useTableSort'
+import { actionErrorMessage } from '../../lib/save-error-bus'
 import { sv } from '../../lib/swedish-text'
 import type { PlayerDto } from '../../types/api'
 import { SortableHeader } from '../SortableHeader'
+import { useToast } from '../toast/useToast'
 import { ConfirmDialog } from './ConfirmDialog'
 import { Dialog } from './Dialog'
 import { PlayerEditor } from './PlayerEditor'
@@ -50,6 +52,7 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
   const addClub = useAddClub()
   const renameClub = useRenameClub()
   const deleteClub = useDeleteClub()
+  const { show: showToast } = useToast()
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [editPlayer, setEditPlayer] = useState<Partial<PlayerDto>>({ ...emptyPlayer })
@@ -241,7 +244,16 @@ export function PlayerPoolDialog({ open, onClose }: Props) {
               }
             }}
             onRenameClub={(id, name) => renameClub.mutate({ id, dto: { name } })}
-            onDeleteClub={(id) => deleteClub.mutate(id)}
+            onDeleteClub={async (id) => {
+              try {
+                await deleteClub.mutateAsync(id)
+                return true
+              } catch (e) {
+                const message = actionErrorMessage(e)
+                if (message) showToast({ message, variant: 'error' })
+                return false
+              }
+            }}
           />
           <div
             style={{

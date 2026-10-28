@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ClubDto } from '../../types/api'
 import { PlayerEditor } from './PlayerEditor'
@@ -241,5 +242,65 @@ describe('PlayerEditor club auto-select', () => {
       expect(onAddClub).toHaveBeenCalledWith('SK Gamma')
       expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ clubIndex: 3 }))
     })
+  })
+})
+
+describe('PlayerEditor delete club', () => {
+  let confirmSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  })
+
+  afterEach(() => {
+    confirmSpy.mockRestore()
+    cleanup()
+  })
+
+  it('given the club delete is refused, when Ta bort is confirmed, then the player keeps their club', async () => {
+    const user = userEvent.setup()
+    const onDeleteClub = vi.fn().mockResolvedValue(false)
+    const { onChange } = renderEditor({
+      player: { firstName: 'Anna', lastName: 'Berg', clubIndex: 1 },
+      onAddClub: vi.fn(),
+      onDeleteClub,
+    })
+
+    await user.click(screen.getByTestId('club-delete'))
+
+    expect(onDeleteClub).toHaveBeenCalledWith(1)
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ clubIndex: 0 }))
+  })
+
+  it('given the club delete succeeds, when Ta bort is confirmed, then the player club is cleared', async () => {
+    const user = userEvent.setup()
+    const onDeleteClub = vi.fn().mockResolvedValue(true)
+    const { onChange } = renderEditor({
+      player: { firstName: 'Anna', lastName: 'Berg', clubIndex: 1 },
+      onAddClub: vi.fn(),
+      onDeleteClub,
+    })
+
+    await user.click(screen.getByTestId('club-delete'))
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ clubIndex: 0 })),
+    )
+  })
+
+  it('given the delete is cancelled in the confirm, when Ta bort is clicked, then nothing is deleted', async () => {
+    confirmSpy.mockReturnValue(false)
+    const user = userEvent.setup()
+    const onDeleteClub = vi.fn().mockResolvedValue(true)
+    const { onChange } = renderEditor({
+      player: { firstName: 'Anna', lastName: 'Berg', clubIndex: 1 },
+      onAddClub: vi.fn(),
+      onDeleteClub,
+    })
+
+    await user.click(screen.getByTestId('club-delete'))
+
+    expect(onDeleteClub).not.toHaveBeenCalled()
+    expect(onChange).not.toHaveBeenCalled()
   })
 })

@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mockPlayer } from '../../test/mock-player'
+import { ToastProvider } from '../toast/ToastProvider'
 import { PlayerPoolDialog } from './PlayerPoolDialog'
 
 const mockMutate = vi.fn()
@@ -22,7 +24,7 @@ vi.mock('../../hooks/usePlayers', () => ({
 }))
 
 vi.mock('../../hooks/useClubs', () => ({
-  useClubs: () => ({ data: [] }),
+  useClubs: () => ({ data: [{ id: 5, name: 'SK Alfa', chess4Members: 0 }] }),
   useAddClub: () => mockMutation,
   useRenameClub: () => mockMutation,
   useDeleteClub: () => mockMutation,
@@ -34,7 +36,7 @@ afterEach(() => {
 })
 
 function renderDialog() {
-  render(<PlayerPoolDialog open onClose={vi.fn()} />)
+  render(<PlayerPoolDialog open onClose={vi.fn()} />, { wrapper: ToastProvider })
 }
 
 describe('PlayerPoolDialog default sort', () => {
@@ -173,7 +175,9 @@ describe('PlayerPoolDialog discard-changes confirm', () => {
 
 describe('PlayerPoolDialog reset on reopen', () => {
   it('returns to a fresh form on the pool tab when the dialog is reopened after editing a player', () => {
-    const { rerender } = render(<PlayerPoolDialog open onClose={vi.fn()} />)
+    const { rerender } = render(<PlayerPoolDialog open onClose={vi.fn()} />, {
+      wrapper: ToastProvider,
+    })
 
     fireEvent.click(screen.getByText('Anna Svensson'))
     fireEvent.click(screen.getByText('Skapa eller editera spelare'))
@@ -225,5 +229,26 @@ describe('PlayerPoolDialog multi-select', () => {
 
     const deleteButton = screen.getByTestId('delete-from-pool') as HTMLButtonElement
     expect(deleteButton.disabled).toBe(true)
+  })
+})
+
+describe('PlayerPoolDialog delete club in use', () => {
+  it('given the club still has players, when Ta bort club is confirmed, then an error toast explains why and the club stays selected', async () => {
+    const user = userEvent.setup()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockMutation.mutateAsync.mockRejectedValueOnce(
+      new Error('Klubben används av spelare och kan inte tas bort.'),
+    )
+    renderDialog()
+
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+    await user.selectOptions(screen.getByTestId('club-select'), 'SK Alfa')
+    await user.click(screen.getByTestId('club-delete'))
+
+    const toast = await screen.findByTestId('toast')
+    expect(toast.textContent).toContain('Klubben används av spelare och kan inte tas bort.')
+    expect(toast.className).toContain('toast--error')
+    expect((screen.getByTestId('club-select') as HTMLSelectElement).value).toBe('5')
+    confirmSpy.mockRestore()
   })
 })
