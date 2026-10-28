@@ -8,6 +8,7 @@ import {
   PairingTimeoutError,
   runPairingWithDeadline,
 } from '../domain/pairing-runner'
+import { compareSwedishNames } from '../domain/player-names'
 import { getPlayerRating } from '../domain/ratings'
 import type { RoundDto } from '../types/api'
 import { getDataProvider } from './active-provider'
@@ -48,8 +49,13 @@ function insertGames(
 }
 
 function assignLotNumbers(players: PairingPlayerInfo[], initialPairing: string): void {
-  // Sort by rating descending
-  players.sort((a, b) => b.rating - a.rating)
+  // Sort by rating descending; equal ratings in Swedish name order so the
+  // seeding does not depend on database order.
+  players.sort(
+    (a, b) =>
+      b.rating - a.rating ||
+      compareSwedishNames(a.lastName ?? '', a.firstName ?? '', b.lastName ?? '', b.firstName ?? ''),
+  )
 
   if (initialPairing === 'Slumpad' || initialPairing === 'Random') {
     for (const p of players) {
@@ -93,6 +99,8 @@ export async function pairNextRoundLocal(tournamentId: number): Promise<RoundDto
     rating: getPlayerRating(p, tournament.ratingChoice),
     withdrawnFromRound: p.withdrawnFromRound,
     lotNr: p.lotNr,
+    lastName: p.lastName,
+    firstName: p.firstName,
     addedAtRound: p.addedAtRound,
     protectFromByeInDebut: p.protectFromByeInDebut,
   }))

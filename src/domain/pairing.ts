@@ -3,6 +3,9 @@ export interface PairingPlayerInfo {
   rating: number
   withdrawnFromRound: number
   lotNr: number
+  /** Tie-break for equal-rating seeding (Swedish name order). */
+  lastName?: string
+  firstName?: string
   addedAtRound?: number
   protectFromByeInDebut?: boolean
 }
