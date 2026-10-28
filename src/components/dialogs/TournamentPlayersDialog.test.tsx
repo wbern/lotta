@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { emitSaveError } from '../../lib/save-error-bus'
 import { mockPlayer } from '../../test/mock-player'
 import { ToastProvider } from '../toast/ToastProvider'
 import { TournamentPlayersDialog } from './TournamentPlayersDialog'
@@ -110,12 +112,14 @@ vi.mock('../../hooks/useClubs', () => ({
 // serially. Do NOT switch this file to `describe.concurrent` / `it.concurrent`
 // without first migrating to `vi.mocked().mockReturnValueOnce()` per test.
 let phaseMode: 'draft' | 'seeded' | 'in_progress' | 'finalized' | 'loading' = 'draft'
+let pairingSystemMode: 'Monrad' | 'Berger' = 'Monrad'
 vi.mock('../../hooks/useTournaments', () => ({
   useTournament: () => {
     if (phaseMode === 'loading') return { data: undefined }
     return {
       data: {
         id: 1,
+        pairingSystem: pairingSystemMode,
         nrOfRounds: 7,
         roundsPlayed: phaseMode === 'draft' ? 0 : phaseMode === 'finalized' ? 7 : 1,
         hasRecordedResults: phaseMode === 'in_progress',
@@ -128,6 +132,7 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   phaseMode = 'draft'
+  pairingSystemMode = 'Monrad'
   updateMutationIsSuccess = false
   updateMutationShouldFail = false
 })
@@ -570,5 +575,129 @@ describe('TournamentPlayersDialog bye-protection on late-add', () => {
     const lastCall = mockUpdateMutate.mock.calls.at(-1)
     const args = lastCall?.[0] as { dto: { protectFromByeInDebut?: boolean } }
     expect(args.dto.protectFromByeInDebut).toBe(false)
+  })
+})
+
+describe('TournamentPlayersDialog Berger add gating', () => {
+  const BERGER_ADD_BLOCKED_TEXT =
+    'I en Berger-turnering måste alla spelare läggas till innan lottning. Ångra lottning för att lägga till spelare.'
+
+  it('given a Berger tournament with round 1 paired, when the add buttons are shown, then both are disabled with the Berger explanation', async () => {
+    const user = userEvent.setup()
+    pairingSystemMode = 'Berger'
+    phaseMode = 'seeded'
+    renderDialog()
+
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+    await user.type(screen.getByTestId('first-name-input'), 'Ny')
+    await user.type(screen.getByTestId('last-name-input'), 'Spelare')
+    const addPlayerButton = screen.getByTestId('add-player') as HTMLButtonElement
+    expect(addPlayerButton.disabled).toBe(true)
+    expect(addPlayerButton.title).toBe(BERGER_ADD_BLOCKED_TEXT)
+    await user.click(addPlayerButton)
+    expect(mockMutate).not.toHaveBeenCalled()
+
+    await user.click(screen.getByText('Spelarpool'))
+    await user.click(screen.getByText('Anna Svensson'))
+    const addFromPool = screen.getByTestId('add-from-pool') as HTMLButtonElement
+    expect(addFromPool.disabled).toBe(true)
+    expect(addFromPool.title).toBe(BERGER_ADD_BLOCKED_TEXT)
+    await user.click(addFromPool)
+    expect(mockBatchMutate).not.toHaveBeenCalled()
+  })
+
+  it('given a Berger tournament still in draft, when a player is added, then the add mutation runs', async () => {
+    const user = userEvent.setup()
+    pairingSystemMode = 'Berger'
+    phaseMode = 'draft'
+    renderDialog()
+
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+    await user.type(screen.getByTestId('first-name-input'), 'Ny')
+    await user.type(screen.getByTestId('last-name-input'), 'Spelare')
+    const addPlayerButton = screen.getByTestId('add-player') as HTMLButtonElement
+    expect(addPlayerButton.title).toBe('')
+    await user.click(addPlayerButton)
+    expect(mockMutate).toHaveBeenCalledTimes(1)
+  })
+
+  it('given a Monrad tournament with round 1 paired, when players are added, then both add buttons work', async () => {
+    const user = userEvent.setup()
+    pairingSystemMode = 'Monrad'
+    phaseMode = 'seeded'
+    renderDialog()
+
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+    await user.type(screen.getByTestId('first-name-input'), 'Ny')
+    await user.type(screen.getByTestId('last-name-input'), 'Spelare')
+    const addPlayerButton = screen.getByTestId('add-player') as HTMLButtonElement
+    expect(addPlayerButton.disabled).toBe(false)
+    expect(addPlayerButton.title).toBe('')
+    await user.click(addPlayerButton)
+    expect(mockMutate).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByText('Spelarpool'))
+    await user.click(screen.getByText('Anna Svensson'))
+    const addFromPool = screen.getByTestId('add-from-pool') as HTMLButtonElement
+    expect(addFromPool.disabled).toBe(false)
+    expect(addFromPool.title).toBe('')
+    await user.click(addFromPool)
+    expect(mockBatchMutate).toHaveBeenCalledTimes(1)
+  })
+
+  it('given adding a player is rejected, when Lägg till is clicked, then an error toast shows the reason', async () => {
+    const user = userEvent.setup()
+    mockMutate.mockImplementationOnce(
+      (_dto: unknown, opts?: { onError?: (e: Error, ...rest: unknown[]) => void }) => {
+        opts?.onError?.(new Error('Spelaren kunde inte läggas till.'))
+      },
+    )
+    renderDialog()
+
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+    await user.type(screen.getByTestId('first-name-input'), 'Ny')
+    await user.type(screen.getByTestId('last-name-input'), 'Spelare')
+    await user.click(screen.getByTestId('add-player'))
+
+    const toast = screen.getByTestId('toast')
+    expect(toast.textContent).toContain('Spelaren kunde inte läggas till.')
+    expect(toast.className).toContain('toast--error')
+  })
+
+  it('given adding pool players is rejected, when Lägg till i turneringen is clicked, then an error toast shows the reason', async () => {
+    const user = userEvent.setup()
+    mockBatchMutate.mockImplementationOnce(
+      (_players: unknown, opts?: { onError?: (e: Error, ...rest: unknown[]) => void }) => {
+        opts?.onError?.(new Error(BERGER_ADD_BLOCKED_TEXT))
+      },
+    )
+    renderDialog()
+
+    await user.click(screen.getByText('Spelarpool'))
+    await user.click(screen.getByText('Anna Svensson'))
+    await user.click(screen.getByTestId('add-from-pool'))
+
+    const toast = screen.getByTestId('toast')
+    expect(toast.textContent).toContain(BERGER_ADD_BLOCKED_TEXT)
+    expect(toast.className).toContain('toast--error')
+  })
+
+  it('given adding a player fails because storage is unavailable, when Lägg till is clicked, then no extra toast duplicates the shared save-failure toast', async () => {
+    const user = userEvent.setup()
+    const storageError = new Error('QuotaExceededError')
+    emitSaveError(storageError)
+    mockMutate.mockImplementationOnce(
+      (_dto: unknown, opts?: { onError?: (e: Error, ...rest: unknown[]) => void }) => {
+        opts?.onError?.(storageError)
+      },
+    )
+    renderDialog()
+
+    await user.click(screen.getByText('Skapa eller editera spelare'))
+    await user.type(screen.getByTestId('first-name-input'), 'Ny')
+    await user.type(screen.getByTestId('last-name-input'), 'Spelare')
+    await user.click(screen.getByTestId('add-player'))
+
+    expect(screen.queryByTestId('toast')).toBeNull()
   })
 })

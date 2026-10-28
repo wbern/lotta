@@ -26,6 +26,11 @@ export type LockableField =
 // each via isFieldLocked, and TournamentRepository.update enforces the same set
 // via LOCK_GUARDS below.
 
+/** Why players cannot be added to a Berger tournament once round 1 is paired. */
+export const BERGER_ADD_BLOCKED =
+  'I en Berger-turnering måste alla spelare läggas till innan lottning. ' +
+  'Ångra lottning för att lägga till spelare.'
+
 export function isFieldLocked(_field: LockableField, state: TournamentLockState): boolean {
   return state !== 'draft'
 }

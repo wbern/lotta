@@ -1,5 +1,5 @@
 import type { Database } from 'sql.js'
-import { tournamentLockState } from '../../domain/tournament-lock.ts'
+import { BERGER_ADD_BLOCKED, tournamentLockState } from '../../domain/tournament-lock.ts'
 import type { PlayerDto } from '../../types/api.ts'
 import { mapPlayerRow } from './map-player-row.ts'
 
@@ -167,10 +167,7 @@ export class TournamentPlayerRepository {
       nrOfRounds,
     })
     if (state === 'draft') return
-    throw new Error(
-      'I en Berger-turnering måste alla spelare läggas till innan lottning. ' +
-        'Ångra lottning för att lägga till spelare.',
-    )
+    throw new Error(BERGER_ADD_BLOCKED)
   }
 
   remove(id: number): void {
