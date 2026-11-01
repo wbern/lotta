@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Recovery killswitch — mirrors src/recovery/killswitch.ts.
+            // Loading ?reset=1 unregisters service workers, clears Cache Storage,
+            // and reloads. IndexedDB is preserved.
+            ;(() => {
+              if (new URLSearchParams(location.search).get('reset') !== '1') return
+              history.replaceState(null, '', location.pathname + location.hash)
+              const swDone = navigator.serviceWorker
+                ? navigator.serviceWorker
+                    .getRegistrations()
+                    .then((rs) => Promise.all(rs.map((r) => r.unregister())))
+                : Promise.resolve()
+              const cacheDone =
+                typeof caches !== 'undefined'
+                  ? caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k))))
+                  : Promise.resolve()
+              Promise.allSettled([swDone, cacheDone]).then(() => location.reload())
+            })()
+    </script>
+    <script>
+      ;(() => {
+                                                                                                              const saved = localStorage.getItem('theme')
+                                                                                                              if (saved && saved !== 'system') {
+                                                                                                                document.documentElement.setAttribute('data-theme', saved)
+                                                                                                                document.documentElement.style.colorScheme = saved
+                                                                                                              }
+                                                                                                            })()
+    </script>
+    <link
+      rel="preload"
+      href="/v/1.25.1/fonts/hanken-grotesk-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="icon" href="/v/1.25.1/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/v/1.25.1/apple-touch-icon-180x180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#0066cc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#4477aa" media="(prefers-color-scheme: dark)" />
+    <title>Lotta — Schackturneringar & Lottning i Webbläsaren</title>
+    <meta
+      name="description"
+      content="Serverlöst och lokalt tävlingssystem för att lotta och leda schackturneringar direkt i webbläsaren. Byggt för schackdomare och arrangörer."
+    />
+    <link rel="canonical" href="https://lotta.bernting.se/" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Lotta — Schackturneringar & Lottning i Webbläsaren" />
+    <meta
+      property="og:description"
+      content="Serverlöst och lokalt tävlingssystem för att lotta och leda schackturneringar direkt i webbläsaren. Byggt för schackdomare och arrangörer."
+    />
+    <meta property="og:url" content="https://lotta.bernting.se/" />
+    <meta property="og:image" content="https://lotta.bernting.se/lotta-icon-512.png" />
+    <meta property="og:site_name" content="Lotta" />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Lotta — Schackturneringar & Lottning i Webbläsaren" />
+    <meta
+      name="twitter:description"
+      content="Serverlöst och lokalt tävlingssystem för att lotta och leda schackturneringar direkt i webbläsaren."
+    />
+    <meta name="twitter:image" content="https://lotta.bernting.se/lotta-icon-512.png" />
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Lotta",
+        "applicationCategory": "SportsApplication",
+        "operatingSystem": "Any (Web Browser)",
+        "url": "https://lotta.bernting.se/",
+        "description": "Serverlöst och lokalt tävlingssystem för att lotta och leda schackturneringar direkt i webbläsaren.",
+        "image": "https://lotta.bernting.se/lotta-icon-512.png",
+        "author": {
+          "@type": "Person",
+          "name": "William Bernting",
+          "url": "https://william.bernting.se"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "KenDev AB",
+          "url": "https://kendev.se"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "SEK"
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="/v/1.25.1/assets/main-Mqg5cFic.js"></script>
+    <link rel="modulepreload" crossorigin href="/v/1.25.1/assets/nuke-DWqxxDoR.js">
+    <link rel="stylesheet" crossorigin href="/v/1.25.1/assets/main-BcieWVp5.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
