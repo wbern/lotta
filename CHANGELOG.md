@@ -1,3 +1,10 @@
+## [1.25.1](https://github.com/wbern/lotta/compare/v1.25.0...v1.25.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* **seo:** add meta tags, social preview, sitemap, and json-ld schema ([1c89aa1](https://github.com/wbern/lotta/commit/1c89aa172295929003580240274f222443858bdc))
+
 # [1.25.0](https://github.com/wbern/lotta/compare/v1.24.1...v1.25.0) (2026-11-01)
 
 
