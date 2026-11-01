@@ -426,6 +426,11 @@ export function MenuBar({
           <a href="https://william.bernting.se" target="_blank" rel="noopener noreferrer">
             William Bernting
           </a>
+          {' ('}
+          <a href="https://kendev.se" target="_blank" rel="noopener noreferrer">
+            KenDev
+          </a>
+          {')'}
           <br />
           <a href="mailto:william@bernting.se">william@bernting.se</a>
           {' | '}
