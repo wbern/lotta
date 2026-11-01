@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/wbern/lotta/compare/v1.24.1...v1.25.0) (2026-11-01)
+
+
+### Features
+
+* **about:** link KenDev in about dialog ([30af521](https://github.com/wbern/lotta/commit/30af5214cde60b51dd9e972a8b7990f8403936ca))
+
 ## [1.24.1](https://github.com/wbern/lotta/compare/v1.24.0...v1.24.1) (2026-10-28)
 
 
