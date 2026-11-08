@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/wbern/lotta/compare/v1.25.1...v1.26.0) (2026-11-08)
+
+
+### Features
+
+* **standings:** show which round an older-round standings view covers ([1ea6e36](https://github.com/wbern/lotta/commit/1ea6e36f6699e51e88516e9825fa413c3a376246))
+
 ## [1.25.1](https://github.com/wbern/lotta/compare/v1.25.0...v1.25.1) (2026-11-01)
 
 
