@@ -10,6 +10,9 @@ import {
 } from './api-helpers'
 import { expect, test } from './fixtures'
 
+// The static <title> from index.html, which the title hook must restore.
+const DEFAULT_TITLE = 'Lotta — Schackturneringar & Lottning i Webbläsaren'
+
 const PLAYERS: PlayerInput[] = [
   { lastName: 'Eriksson', firstName: 'Anna', ratingI: 1800 },
   { lastName: 'Svensson', firstName: 'Erik', ratingI: 1700 },
@@ -220,31 +223,31 @@ test.describe('Live session persistence', () => {
 // tab title leaks "Live: <name>" into states where the user isn't sharing.
 // ===========================================================================
 test.describe('Live document title', () => {
-  test('stays "Lotta" before a tournament is selected', async ({ page }) => {
+  test('keeps the default title before a tournament is selected', async ({ page }) => {
     await page.goto('/')
     await waitForApi(page)
-    await expect(page).toHaveTitle('Lotta')
+    await expect(page).toHaveTitle(DEFAULT_TITLE)
   })
 
-  test('stays "Lotta" while viewing the Live tab without hosting', async ({ page }) => {
+  test('keeps the default title while viewing the Live tab without hosting', async ({ page }) => {
     await setupTournament(page)
-    await expect(page).toHaveTitle('Lotta')
+    await expect(page).toHaveTitle(DEFAULT_TITLE)
 
     await goToLiveTab(page)
-    await expect(page).toHaveTitle('Lotta')
+    await expect(page).toHaveTitle(DEFAULT_TITLE)
   })
 
   test('becomes "Live: <tournament>" when hosting and restores on stop', async ({ page }) => {
     await setupTournament(page)
     await goToLiveTab(page)
-    await expect(page).toHaveTitle('Lotta')
+    await expect(page).toHaveTitle(DEFAULT_TITLE)
 
     await startHosting(page)
     await expect(page).toHaveTitle('Live: Live-test')
 
     await page.locator('button', { hasText: 'Stoppa Live' }).click()
     await expect(page.locator('button', { hasText: 'Starta Live' })).toBeVisible()
-    await expect(page).toHaveTitle('Lotta')
+    await expect(page).toHaveTitle(DEFAULT_TITLE)
   })
 
   test('keeps the hosting title when switching to another tab and back', async ({ page }) => {
