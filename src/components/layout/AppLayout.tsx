@@ -569,6 +569,7 @@ export function AppLayout() {
         tournamentId={tournamentId}
         tournamentName={tournament?.name}
         round={activeRound}
+        onSelectRound={setRound}
         rounds={rounds || []}
         selectedBoards={selectedBoardNrs}
         onSelectedBoardsChange={updateBoardSelection}

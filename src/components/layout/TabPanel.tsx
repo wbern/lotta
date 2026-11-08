@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { sv } from '../../lib/swedish-text'
 import type { RoundDto } from '../../types/api'
 import { EmptyState } from '../EmptyState'
+import { StandingsCaption } from '../StandingsCaption'
 import { AlphabeticalPairingTab } from '../tabs/AlphabeticalPairingTab'
 import { Chess4SetupTab } from '../tabs/Chess4SetupTab'
 import { Chess4StandingsTab } from '../tabs/Chess4StandingsTab'
@@ -17,6 +18,7 @@ interface Props {
   tournamentId: number | undefined
   tournamentName?: string
   round: number | undefined
+  onSelectRound: (round: number | undefined) => void
   rounds: RoundDto[]
   selectedBoards: Set<number>
   onSelectedBoardsChange: (updater: (prev: Set<number>) => Set<number>) => void
@@ -40,6 +42,7 @@ export function TabPanel({
   tournamentId,
   tournamentName,
   round,
+  onSelectRound,
   rounds,
   selectedBoards,
   onSelectedBoardsChange,
@@ -56,6 +59,15 @@ export function TabPanel({
   alphaPrintCompact,
   alphaPrintHideOpponentLastName,
 }: Props) {
+  const latestRound = rounds.length > 0 ? rounds[rounds.length - 1].roundNr : undefined
+  const standingsCaption = (
+    <StandingsCaption
+      round={round}
+      latestRound={latestRound}
+      onShowLatest={() => onSelectRound(latestRound)}
+    />
+  )
+
   const tabs = useMemo(() => {
     const base: { key: string; label: string }[] = [
       { key: 'pairings', label: sv.tabs.pairings },
@@ -134,12 +146,15 @@ export function TabPanel({
               />
             )}
             {activeTab === 'standings' && (
-              <StandingsTab
-                tournamentId={tournamentId}
-                round={round}
-                showELO={showELO}
-                showGroup={showGroup}
-              />
+              <div className="standings-view">
+                {standingsCaption}
+                <StandingsTab
+                  tournamentId={tournamentId}
+                  round={round}
+                  showELO={showELO}
+                  showGroup={showGroup}
+                />
+              </div>
             )}
             {activeTab === 'players' && (
               <PlayersTab
@@ -150,11 +165,17 @@ export function TabPanel({
               />
             )}
             {activeTab === 'club-standings' && (
-              <ClubStandingsTab tournamentId={tournamentId} round={round} />
+              <div className="standings-view">
+                {standingsCaption}
+                <ClubStandingsTab tournamentId={tournamentId} round={round} />
+              </div>
             )}
             {activeTab === 'chess4-setup' && <Chess4SetupTab tournamentId={tournamentId} />}
             {activeTab === 'chess4-standings' && (
-              <Chess4StandingsTab tournamentId={tournamentId} round={round} />
+              <div className="standings-view">
+                {standingsCaption}
+                <Chess4StandingsTab tournamentId={tournamentId} round={round} />
+              </div>
             )}
             <div style={activeTab !== 'live' ? { display: 'none' } : { height: '100%' }}>
               <LiveTab

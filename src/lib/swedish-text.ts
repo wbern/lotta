@@ -88,6 +88,10 @@ export const sv = {
     group: 'Grupp',
     round: 'Rond',
   },
+  standings: {
+    afterRound: (round: number) => `Efter rond ${round}`,
+    showLatest: (latest: number) => `Visa senaste (rond ${latest})`,
+  },
   common: {
     save: 'Spara',
     saveFailed:

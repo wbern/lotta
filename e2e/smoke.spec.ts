@@ -9,7 +9,7 @@
  * menu appeared, never that clicking an item did anything.
  */
 
-import { apiClient, createTournament, pairRound, waitForApi } from './api-helpers'
+import { apiClient, createTournament, pairRound, setResults, waitForApi } from './api-helpers'
 import { expect, test } from './fixtures'
 import { selectTournament } from './helpers'
 
@@ -95,6 +95,24 @@ test('pairs the next round from the Lotta menu after all results are in', async 
   await expect
     .poll(async () => (await apiClient(page).get(`/api/tournaments/${tid}`)).roundsPlayed)
     .toBe(2)
+})
+
+test('Ställning says which round it shows and can jump to the latest', async ({ page }) => {
+  const $ = apiClient(page)
+  const round1 = await $.get(`/api/tournaments/${tid}/rounds/1`)
+  await setResults($, tid, 1, round1.games, () => 'WHITE_WIN')
+  await pairRound($, tid)
+
+  await page.goto(`/?tournamentId=${tid}&round=1&tab=standings`)
+  await waitForApi(page)
+  const caption = page.getByTestId('standings-caption')
+  await expect(caption).toContainText('Efter rond 1')
+  await expect(caption).toContainText('Visa senaste (rond 2)')
+
+  await page.getByTestId('standings-show-latest').click()
+  // At the latest round the selector and status bar already say so; no caption.
+  await expect(caption).toHaveCount(0)
+  await expect(page.getByTestId('status-bar')).toContainText('Rond 2/')
 })
 
 test('shows why saving tournament settings failed', async ({ page }) => {

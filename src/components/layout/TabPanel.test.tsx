@@ -17,6 +17,7 @@ describe('TabPanel getting-started steps', () => {
         onTabChange={vi.fn()}
         tournamentId={undefined}
         round={undefined}
+        onSelectRound={vi.fn()}
         rounds={[]}
         selectedBoards={new Set()}
         onSelectedBoardsChange={vi.fn()}

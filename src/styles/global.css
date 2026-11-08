@@ -3322,3 +3322,49 @@ button.btn-danger {
     transform: rotate(360deg);
   }
 }
+
+/* Standings tabs: caption above the table, table fills the rest */
+.standings-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.standings-view .table-scroll {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+/* Only rendered when an earlier round than the latest is selected. Shares the
+   table header's background so it reads as part of the header, not a banner. */
+.standings-caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 6px 8px 2px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.standings-caption-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.standings-caption-link:hover,
+.standings-caption-link:focus-visible {
+  color: var(--color-primary-hover);
+}
+
+@media print {
+  .standings-caption-link {
+    display: none;
+  }
+}
